@@ -2,6 +2,7 @@
 // Adımlar ekranın kenarında kağıt not olarak görünür. "Gösterildi" bilgisi localStorage'da ayrı anahtarda
 // durur, oyun kaydına girmez.
 import { el } from './dom';
+import { t, type Anahtar } from './i18n';
 
 export const OGRETICI_ANAHTARI = 'kagit-kasaba-ogretici';
 
@@ -9,37 +10,19 @@ export const OGRETICI_ANAHTARI = 'kagit-kasaba-ogretici';
 export type OgreticiOlayi = 'yol' | 'ev' | 'cesme' | 'gunSonu';
 
 interface Adim {
-  baslik: string;
-  metin: string;
+  /** Dil dosyasında `ogretici.<n>.baslik` ve `ogretici.<n>.metin`. */
+  baslik: Anahtar;
+  metin: Anahtar;
   /** Bu olay gelince adım tamamlanır; yoksa "Tamam" düğmesiyle. */
   olay?: OgreticiOlayi;
 }
 
 const ADIMLAR: Adim[] = [
-  {
-    baslik: '1. Bir yol çiz',
-    metin: 'Alttaki menüden Yollar → Toprak Yol\'u seç. Başlangıç yolunun yanından sol tuşla sürükleyerek yeni bir yol çiz: yolun bir ucu mevcut bir yola değmeli.',
-    olay: 'yol',
-  },
-  {
-    baslik: '2. Yol kenarına bir ev koy',
-    metin: 'Konut → Ev\'i seç ve bir yolun hemen kenarına tıkla. Binalar yalnızca yol kenarına kurulur; ev önünü kendiliğinden yola çevirir.',
-    olay: 'ev',
-  },
-  {
-    baslik: '3. Bir Çeşme kur',
-    metin: 'Hizmet → Çeşme\'yi evlerin yakınına kur. Zemindeki halka çeşmenin etki alanıdır: içindeki evlere su gider. Su ve yemek alan ev büyür.',
-    olay: 'cesme',
-  },
-  {
-    baslik: '4. Gün sonunu bekle',
-    metin: 'Bir gün 15 saniye sürer (üstteki çubuk). Gün bitince her ev vergi öder: evlerin üstünden altın sayılar yükselir. Para\'nın üstüne gelince günün dökümünü görürsün.',
-    olay: 'gunSonu',
-  },
-  {
-    baslik: '5. Hedef kartına bak',
-    metin: 'Sol üstteki kart sıradaki hedefini gösterir. Hedefleri tamamladıkça yeni binalar ve kasabana yön veren kartlar açılır. İyi eğlenceler!',
-  },
+  { baslik: 'ogretici.1.baslik', metin: 'ogretici.1.metin', olay: 'yol' },
+  { baslik: 'ogretici.2.baslik', metin: 'ogretici.2.metin', olay: 'ev' },
+  { baslik: 'ogretici.3.baslik', metin: 'ogretici.3.metin', olay: 'cesme' },
+  { baslik: 'ogretici.4.baslik', metin: 'ogretici.4.metin', olay: 'gunSonu' },
+  { baslik: 'ogretici.5.baslik', metin: 'ogretici.5.metin' },
 ];
 
 export interface Tutorial {
@@ -72,8 +55,8 @@ export function createTutorial(root: HTMLElement): Tutorial {
   const baslik = el('h4');
   const metin = el('p');
   const dugmeler = el('div', 'dugmeler');
-  const tamam = el('button', 'dugme', 'Tamam');
-  const atla = el('button', 'dugme ikincil', 'Öğreticiyi atla');
+  const tamam = el('button', 'dugme', t('ogretici.tamam'));
+  const atla = el('button', 'dugme ikincil', t('ogretici.atla'));
   dugmeler.append(tamam, atla);
   box.append(sayac, baslik, metin, dugmeler);
   root.appendChild(box);
@@ -97,11 +80,11 @@ export function createTutorial(root: HTMLElement): Tutorial {
       return;
     }
     const a = ADIMLAR[adim];
-    sayac.textContent = `Öğretici · ${adim + 1} / ${ADIMLAR.length}`;
-    baslik.textContent = a.baslik;
-    metin.textContent = a.metin;
+    sayac.textContent = t('ogretici.sayac', { adim: adim + 1, toplam: ADIMLAR.length });
+    baslik.textContent = t(a.baslik);
+    metin.textContent = t(a.metin);
     tamam.style.display = a.olay ? 'none' : 'inline-block';
-    tamam.textContent = adim === ADIMLAR.length - 1 ? 'Bitir' : 'Tamam';
+    tamam.textContent = t(adim === ADIMLAR.length - 1 ? 'ogretici.bitir' : 'ogretici.tamam');
     box.classList.remove('ilerledi');
     void box.offsetWidth; // kısa vurgu animasyonunu yeniden başlat
     box.classList.add('ilerledi');

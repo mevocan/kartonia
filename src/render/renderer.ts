@@ -1180,6 +1180,9 @@ export function createRenderer(container: HTMLElement): GameRenderer {
     focusOn(x, z) {
       cam.focus(x, z);
     },
+    orbit(dAz) {
+      cam.orbit(dAz);
+    },
     getZoom01() {
       return cam.getZoom01();
     },

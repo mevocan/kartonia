@@ -1,4 +1,6 @@
-# Kağıt Kasaba — CLAUDE.md
+# Kartonia — CLAUDE.md
+
+Oyunun adı **Kartonia** (eski çalışma adı Kağıt Kasaba). Klasör, paket adı ve `localStorage` anahtarları (`kagit-kasaba-*`) eski adla kalır; anahtarı değiştirmek oyuncuların kayıtlarını siler.
 
 Bu klasör bağımsız bir oyundur. Üst klasördeki `sehir/CLAUDE.md` (Mini Şehir kart oyunu) bu projeye **uygulanmaz**; tek geçerli belge budur.
 
@@ -48,6 +50,8 @@ Bina kağıt maket gibi kurulur: önce düz bir kağıt açınım (taban izi) ye
 - **Sakin istekleri** (`logic/requests.ts`, `BALANCE.istek`): nüfus > 10 iken en fazla bir istek, biri bitince 3 gün sonra yenisi, süre 4 gün, dolarsa cezasız kalkar. Tür tohum + günden deterministik. Şenlik (30 yemek → 3 gün +5 mutluluk), Ağaçlandırma (5 ağaç → 40 para), Kış hazırlığı (sonbaharda 40 odun → 60 para), Susuz ev (bir ev suya kavuşsun → 30 para). Hedef kartının altında istek kartı.
 - **Karar kartları** (`data/cards.ts`, `logic/cards.ts`): 50, 100 ve 150. günlerin sonunda (`BALANCE.kartSecimi`, `kartGunSonu`; toplam 3 kart) oyun duraklar, tohum + seçim numarasından deterministik üç kart (seçilen tekrar gelmez); seçim kalıcı (`kararlar`), bekleyen seçim `bekleyenKararlar`. 8 kart, her birinin artısı ve eksisi var. Kartların etkilediği değerler ekonomide `ayar(s, anahtar)` ile okunur (taban + kart etkileri); karta özel `if` yazılmaz. Seçim ekranı `ui/cardPicker.ts`; seçilen kartlar sol alt köşedeki "Kasabanın yolu" kartında hep yazar (`ui/cardList.ts`).
 - **Öğretici** (`ui/tutorial.ts`): yalnızca ilk oyunda, atlanabilir, beş adım; eylemle ilerler, oyunu durdurmaz. Gösterildi bilgisi `localStorage` `kagit-kasaba-ogretici` (kayıttan ayrı).
+- **Giriş ekranı** (`ui/titleScreen.ts`): oyun her açılışta duraklı olarak bunu gösterir; arkada kasaba yavaşça döner (`GameRenderer.orbit`), oyun arayüzü gizlidir (`#arayuz.menude`). Kayıt varsa "Devam et" (gün · mevsim · nüfus) ve "Yeni kasaba" (onay kartıyla), yoksa yalnızca "Yeni kasaba" (arkadaki yeni harita kullanılır). Ayrıca "Nasıl oynanır" kartı ve ses aç/kapa. Dokunmatik cihazda "fare ve klavye için tasarlandı" notu. Oyun içinde sağ üstteki ☰ Menü düğmesi aynı ekranı açar. İlk ipucu, öğretici ve bekleyen kart seçimi oyuna girince gelir. Yükleme ekranı (`#yukleme`) `index.html` içinde düz HTML'dir, menü hazır olunca kalkar.
+- **Dil** (`src/lang/tr.json`, `src/lang/en.json`, yükleyici `ui/i18n.ts`): oyuncunun gördüğü bütün metinler bu dosyalardadır; kodda metin yazılmaz. Anahtarlar düz ve noktalıdır (`"hud.para"`), yer tutucular `{ad}` biçimindedir: `t('bildirim.yeniBina', { bina })`. Anahtar tipi `tr.json`'dan türetilir, olmayan anahtar derlemede hata verir. Bina, yol, mal, ihtiyaç, mevsim, kart, hedef ve komşuluk metinleri de buradadır (`binaAd`, `kartMetni`, `hedefMetni` …); `data/` ve `logic/` içindeki Türkçe `ad`/`aciklama` alanlarını arayüz göstermez. Yeni metin: önce `tr.json`'a, sonra aynı anahtarla her dil dosyasına. `tests/lang.test.ts` her dil dosyasında anahtarların ve yer tutucuların `tr.json` ile aynı olduğunu denetler. Yeni dil: `lang/<kod>.json` + `i18n.ts`'teki `Dil` ve `DILLER`. Yalnızca seçili dilin dosyası yüklenir: `main.ts` başlatıcıdır, `dilYukle()` bitince oyunu (`oyun.ts`) dinamik olarak açar. Dil açılışta bir kez belirlenir (`localStorage` `kagit-kasaba-dil`, yoksa tarayıcı dili; tr değilse en). Giriş ekranındaki dil düğmeleri kaydedip sayfayı yeniler. `index.html`'deki küçük betik, JS gelmeden yükleme ekranını ve sayfa başlığını aynı kuralla çevirir.
 - **Ses** (`src/audio/`, sözleşme `audio/api.ts`): dosya yok, Web Audio ile efekt, ortam (mevsime göre, kamera uzaklaştıkça kısılır) ve yavaş pentatonik müzik. İlk tıklamada başlar. HUD 🔊 düğmesi ses panelini açar: aç/kapa, Genel ve Müzik düzeyi sürgüleri; ayar `localStorage` `kagit-kasaba-ses` = `{acik, genel, muzik}`. Ses katmanı mantığa ve çizime dokunmaz, main olay bildirir.
 
 ## Göstergeler
@@ -112,17 +116,22 @@ Tanımlar `src/data/buildings.ts` içindedir; denge değerleri orada ayarlanır.
 - **Araçlar:** Vite + TypeScript (strict) + Three.js + Vitest. Başka bağımlılık yok. UI framework yok.
 - **Mantık** `src/logic/`: saf TypeScript. Three.js, DOM, `window` yok. Bütün kurallar burada ve birim testli. Durum düz veridir, fonksiyonlar durumu yerinde değiştirir.
 - **Çizim** `src/render/`: Three.js. Bütün modeller kodla üretilir; görsel varlık dosyası yok (kağıt dokusu canvas ile üretilir). Mantığa yalnızca `types.ts` ve `data/` üzerinden bağlıdır. Dışarıya `src/render/api.ts` içindeki `GameRenderer` arayüzünü verir.
-- **Arayüz** `src/ui/` + `src/main.ts`: HUD, bina menüsü, bilgi paneli, hedefler, hız düğmeleri düz HTML/CSS. Sol tık ve klavye girişi, oyun döngüsü (`requestAnimationFrame`), kayıt (`localStorage`, her gün sonu otomatik).
+- **Arayüz** `src/ui/` + `src/oyun.ts` (`src/main.ts` yalnızca dili yükleyip oyunu açar): HUD, bina menüsü, bilgi paneli, hedefler, hız düğmeleri düz HTML/CSS. Sol tık ve klavye girişi, oyun döngüsü (`requestAnimationFrame`), kayıt (`localStorage`, her gün sonu otomatik).
 
 ```
 src/
   data/buildings.ts, map.ts
   logic/   types.ts, geometry.ts, terrain.ts, placement.ts, roads.ts, economy.ts, game.ts, goals.ts, save.ts
   render/  api.ts, palette.ts, paper.ts, scene.ts, terrain.ts, roads.ts, camera.ts, models/*.ts, anim.ts, renderer.ts
-  ui/      hud.ts, buildMenu.ts, infoPanel.ts, toast.ts, input.ts
-  main.ts
+  ui/      hud.ts, buildMenu.ts, infoPanel.ts, toast.ts, input.ts, titleScreen.ts, i18n.ts
+  lang/    tr.json, en.json
+  main.ts  (başlatıcı), oyun.ts
 tests/
 ```
+
+## Yayın
+
+GitHub'da herkese açık depo. `main`'e her push'ta `.github/workflows/deploy.yml` testleri ve `npm run build`'i çalıştırır, `dist/`'i GitHub Pages'te yayınlar (`vite.config.ts` `base: './'` alt klasörde çalışmayı sağlar). Depoya kişisel bilgi (yerel klasör yolu, e-posta) yazılmaz.
 
 ## YAPMA listesi
 

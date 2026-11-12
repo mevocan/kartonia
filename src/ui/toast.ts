@@ -3,6 +3,7 @@ import type { GameState, IstekSonuc, IstekTuru, PlaceFailReason } from '../logic
 import { BALANCE } from '../data/buildings';
 import { GOALS, goalProgress, istekHedefi, istekKalanGun, kisaKalanGun, mevsim, mevsimGunu } from '../logic/game';
 import { el } from './dom';
+import { hedefMetni, t } from './i18n';
 
 export type ToastKind = 'iyi' | 'kotu' | 'bilgi';
 
@@ -14,24 +15,8 @@ export interface GoalCard {
   update(s: GameState): void;
 }
 
-export const YERLESTIRME_SEBEP: Record<PlaceFailReason, string> = {
-  disarida: 'Harita sınırının dışı.',
-  gol: 'Göle yapılamaz.',
-  egim: 'Zemin çok eğimli.',
-  cakisiyor: 'Başka bir binaya ya da ağaca çok yakın.',
-  yol: 'Yolun üstüne yapılamaz.',
-  yolYok: 'Bir yolun kenarına koymalısın.',
-  baglantisiz: 'Yol mevcut bir yola bağlanmalı.',
-  kisa: 'Yol çok kısa.',
-  golYok: 'Balıkçı göl kıyısına kurulmalı.',
-  taslikYok: 'Taş ocağı taşlık bir alana kurulmalı.',
-  tas: 'Taş yetmiyor. Taş ocağı kur.',
-  odun: 'Odun yetmiyor. Oduncu kur ya da ağaç kes.',
-  mobilya: 'Mobilya yetmiyor. Marangoz kur.',
-  para: 'Para yetmiyor.',
-  kilitli: 'Bu bina henüz açılmadı.',
-  bitti: 'Oyun bitti.',
-};
+/** Yerleştirilemeyen bina / yol için gerekçe metni. */
+export const yerlestirmeSebebi = (s: PlaceFailReason): string => t(`sebep.${s}`);
 
 export function createToasts(root: HTMLElement): Toasts {
   const box = el('div');
@@ -48,12 +33,12 @@ export function createToasts(root: HTMLElement): Toasts {
       sonMetin = text;
       sonZaman = now;
 
-      const t = el('div', `kagit bildirim ${kind}`, text);
-      box.appendChild(t);
+      const el_ = el('div', `kagit bildirim ${kind}`, text);
+      box.appendChild(el_);
       while (box.children.length > 5) box.firstElementChild?.remove();
       window.setTimeout(() => {
-        t.classList.add('gidiyor');
-        window.setTimeout(() => t.remove(), 450);
+        el_.classList.add('gidiyor');
+        window.setTimeout(() => el_.remove(), 450);
       }, 3200);
     },
   };
@@ -71,15 +56,15 @@ export function createGoalCard(root: HTMLElement): GoalCard {
   return {
     update(s) {
       const tamam = Math.min(s.hedef, GOALS.length);
-      ilerleme.textContent = `Hedef ${Math.min(tamam + 1, GOALS.length)} / ${GOALS.length}  ` +
+      ilerleme.textContent = `${t('hedef.baslik')} ${Math.min(tamam + 1, GOALS.length)} / ${GOALS.length}  ` +
         '●'.repeat(tamam) + '○'.repeat(GOALS.length - tamam);
       if (s.hedef >= GOALS.length) {
-        baslik.textContent = '🏆 Kasaba efsanesi!';
-        aciklama.textContent = 'Bütün hedefler bitti. Kasabanı büyütmeye devam et.';
+        baslik.textContent = t('hedef.efsane');
+        aciklama.textContent = t('hedef.efsaneMetin');
         ilerleme.textContent = '●'.repeat(GOALS.length);
         return;
       }
-      const g = GOALS[s.hedef];
+      const g = hedefMetni(s.hedef);
       baslik.textContent = `🎯 ${g.ad}`;
       const p = goalProgress(s);
       aciklama.textContent = p ? `${g.aciklama} (${p.mevcut} / ${p.hedef})` : g.aciklama;
@@ -92,8 +77,7 @@ export function createGoalCard(root: HTMLElement): GoalCard {
  */
 export function mevsimBildirimi(gun: number): { metin: string; tur: ToastKind } | null {
   if (mevsimGunu(gun) !== 1) return null;
-  const m = mevsim(gun);
-  if (m === 'sonbahar') return { metin: `🍂 Kış ${kisaKalanGun(gun)} gün sonra. Yemek ve odun biriktir.`, tur: 'kotu' };
+  if (mevsim(gun) === 'sonbahar') return { metin: t('bildirim.kisGeliyor', { n: kisaKalanGun(gun) }), tur: 'kotu' };
   return null;
 }
 
@@ -101,13 +85,18 @@ export function mevsimBildirimi(gun: number): { metin: string; tur: ToastKind } 
 
 const I = BALANCE.istek;
 
-/** İsteklerin başlığı ve açıklaması. */
-export const ISTEK_METIN: Record<IstekTuru, { ad: string; aciklama: string }> = {
-  senlik: { ad: '🎉 Şenlik', aciklama: `Sakinler şenlik istiyor: stoktan ${I.senlikYemek} yemek teslim et. Ödül: ${I.senlikGun} gün bütün evlere +${I.senlikMutluluk} mutluluk.` },
-  agaclandirma: { ad: '🌳 Ağaçlandırma', aciklama: `${I.agacSayisi} ağaç dik. Ödül: ${I.agacOdul} para.` },
-  kisHazirligi: { ad: '🪵 Kış hazırlığı', aciklama: `Stokta ${I.kisOdun} odun bulunsun. Ödül: ${I.kisOdul} para.` },
-  susuzEv: { ad: '💧 Susuz ev', aciklama: `Bir ev suya kavuşsun (yakınına Çeşme kur). Ödül: ${I.suOdul} para.` },
-};
+/** İsteğin başlığı. */
+export const istekAd = (tur: IstekTuru): string => t(`istek.${tur}.ad`);
+
+/** İsteğin açıklaması (sayılar BALANCE'tan). */
+export function istekAciklama(tur: IstekTuru): string {
+  switch (tur) {
+    case 'senlik': return t('istek.senlik.aciklama', { yemek: I.senlikYemek, gun: I.senlikGun, mutluluk: I.senlikMutluluk });
+    case 'agaclandirma': return t('istek.agaclandirma.aciklama', { sayi: I.agacSayisi, odul: I.agacOdul });
+    case 'kisHazirligi': return t('istek.kisHazirligi.aciklama', { odun: I.kisOdun, odul: I.kisOdul });
+    case 'susuzEv': return t('istek.susuzEv.aciklama', { odul: I.suOdul });
+  }
+}
 
 export interface RequestCard {
   update(s: GameState): void;
@@ -120,9 +109,9 @@ export function createRequestCard(root: HTMLElement, onFeast: () => void, onShow
   const baslik = el('h4');
   const aciklama = el('p');
   const alt = el('div', 'ilerleme');
-  const dugme = el('button', 'dugme', `Yemeği teslim et (🍽️ ${I.senlikYemek})`);
+  const dugme = el('button', 'dugme', t('istek.teslimEt', { n: I.senlikYemek }));
   dugme.addEventListener('click', onFeast);
-  const goster = el('button', 'dugme', 'Evi göster');
+  const goster = el('button', 'dugme', t('istek.eviGoster'));
   goster.addEventListener('click', () => {
     if (hedefId !== undefined) onShowHouse(hedefId);
   });
@@ -138,14 +127,13 @@ export function createRequestCard(root: HTMLElement, onFeast: () => void, onShow
         return;
       }
       box.style.display = 'block';
-      const m = ISTEK_METIN[ist.tur];
-      baslik.textContent = m.ad;
-      aciklama.textContent = m.aciklama;
+      baslik.textContent = istekAd(ist.tur);
+      aciklama.textContent = istekAciklama(ist.tur);
       const hedef = istekHedefi(ist.tur);
       const ilerleme = ist.tur === 'senlik' ? Math.min(Math.floor(s.stok.yemek), hedef) : Math.min(Math.floor(ist.ilerleme), hedef);
       const kalan = istekKalanGun(s);
-      const sayac = ist.tur === 'susuzEv' ? '' : ist.tur === 'senlik' ? `Stok ${ilerleme} / ${hedef} · ` : `${ilerleme} / ${hedef} · `;
-      alt.textContent = `${sayac}${kalan > 1 ? `${kalan} gün kaldı` : 'son gün'}`;
+      const sayac = ist.tur === 'susuzEv' ? '' : ist.tur === 'senlik' ? `${t('istek.stok')} ${ilerleme} / ${hedef} · ` : `${ilerleme} / ${hedef} · `;
+      alt.textContent = sayac + (kalan > 1 ? t('istek.kalanGun', { n: kalan }) : t('istek.sonGun'));
       dugme.style.display = ist.tur === 'senlik' ? 'block' : 'none';
       dugme.disabled = s.stok.yemek < I.senlikYemek;
       hedefId = ist.hedefBinaId;
@@ -156,6 +144,6 @@ export function createRequestCard(root: HTMLElement, onFeast: () => void, onShow
 
 /** Tamamlanan istek bildirimi. */
 export function istekTamamMetni(r: IstekSonuc): string {
-  if (r.tur === 'senlik') return `🎉 Şenlik yapıldı! ${I.senlikGun} gün boyunca bütün evlere +${I.senlikMutluluk} mutluluk.`;
-  return `✅ İstek tamamlandı: ${ISTEK_METIN[r.tur].ad} (+${r.para} para)`;
+  if (r.tur === 'senlik') return t('istek.senlikYapildi', { gun: I.senlikGun, mutluluk: I.senlikMutluluk });
+  return t('istek.tamamlandi', { ad: istekAd(r.tur), para: r.para });
 }

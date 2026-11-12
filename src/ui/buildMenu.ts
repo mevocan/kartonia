@@ -3,6 +3,7 @@ import type { BuildingType, GameState, Good, RoadType } from '../logic/types';
 import { BUILDINGS, BUILDING_ORDER, ROADS } from '../data/buildings';
 import { isRoadUnlocked, isUnlocked } from '../logic/game';
 import { el } from './dom';
+import { binaAciklama, binaAd, malAdKucuk, t, yolAciklama, yolAd } from './i18n';
 
 export type Tool = BuildingType | RoadType | 'yikim' | null;
 
@@ -61,21 +62,18 @@ function yolResmi(t: RoadType): string {
   return url;
 }
 
-const MAL_AD: Record<Good, string> = {
-  bugday: 'buğday', un: 'un', yemek: 'yemek', odun: 'odun', tas: 'taş', mobilya: 'mobilya',
-};
-
 function malListesi(m: Partial<Record<Good, number>>): string {
-  return (Object.keys(m) as Good[]).map((g) => `${m[g]} ${MAL_AD[g]}`).join(', ');
+  return (Object.keys(m) as Good[]).map((g) => `${m[g]} ${malAdKucuk(g)}`).join(', ');
 }
 
-function uretimMetni(t: BuildingType): string | null {
-  const d = BUILDINGS[t];
-  if (d.agacBasinaOdun) return `Ağaç başına ${d.agacBasinaOdun} odun/gün`;
+function uretimMetni(tur: BuildingType): string | null {
+  const d = BUILDINGS[tur];
+  const gun = t('genel.gun');
+  if (d.agacBasinaOdun) return t('menu.agacBasina', { n: d.agacBasinaOdun });
   if (!d.uretim) return null;
   const girdi = malListesi(d.uretim.girdi);
   const cikti = malListesi(d.uretim.cikti);
-  return girdi ? `${girdi} → ${cikti} /gün` : `${cikti} /gün`;
+  return girdi ? `${girdi} → ${cikti} ${gun}` : `${cikti} ${gun}`;
 }
 
 type MenuKey = BuildingType | RoadType;
@@ -91,15 +89,17 @@ type Kategori = 'yol' | 'konut' | 'uretim' | 'hizmet';
 const KATEGORI_SIRASI: Kategori[] = ['yol', 'konut', 'uretim', 'hizmet'];
 
 const KATEGORILER: Record<Kategori, { ad: string; renk: string; ogeler: MenuKey[] }> = {
-  yol: { ad: 'Yollar', renk: '#e3c08f', ogeler: ['toprak', 'asfalt'] },
-  konut: { ad: 'Konut', renk: '#f4b7a3', ogeler: ['ev', 'agac'] },
+  yol: { ad: t('menu.yollar'), renk: '#e3c08f', ogeler: ['toprak', 'asfalt'] },
+  konut: { ad: t('menu.konut'), renk: '#f4b7a3', ogeler: ['ev', 'agac'] },
   uretim: {
-    ad: 'Üretim', renk: '#f2d272',
+    ad: t('menu.uretim'), renk: '#f2d272',
     ogeler: ['tarla', 'degirmen', 'firin', 'oduncu', 'balikci', 'tasOcagi', 'marangoz', 'ambar'],
   },
-  hizmet: { ad: 'Hizmet', renk: '#a9d5e8', ogeler: ['cesme', 'pazar', 'okul', 'hastane', 'saatKulesi'] },
+  hizmet: { ad: t('menu.hizmet'), renk: '#a9d5e8', ogeler: ['cesme', 'pazar', 'okul', 'hastane', 'saatKulesi'] },
 };
 const YIKIM_RENK = '#f0a399';
+/** Kilitli kartın altındaki "🔒 35 nüfus". */
+const NUFUS_KISA = t('genel.nufusKisa');
 
 function kategoriOf(t: MenuKey): Kategori {
   return KATEGORI_SIRASI.find((k) => KATEGORILER[k].ogeler.includes(t)) ?? 'konut';
@@ -130,7 +130,7 @@ export function createBuildMenu(
   let kilitli = new Set<MenuKey>();
   const kartlar = new Map<MenuKey, Kart>();
 
-  function ipucuGoster(b: HTMLElement, t: MenuKey | 'yikim'): void {
+  function ipucuGoster(b: HTMLElement, tur: MenuKey | 'yikim'): void {
     ipucu.replaceChildren();
     const tablo = el('table');
     const satir = (a: string, v: string): void => {
@@ -138,33 +138,34 @@ export function createBuildMenu(
       tr.append(el('td', '', a), el('td', '', v));
       tablo.appendChild(tr);
     };
-    if (t === 'yikim') {
-      ipucu.append(
-        el('h4', '', 'Yıkma aracı'),
-        el('p', '', 'Bir binaya ya da yola tıkla, yıkılsın. Maliyetin yarısı geri gelir. Orman ağacını kesmek para ister, odun verir. (X)'),
-      );
-    } else if (isRoadTool(t)) {
-      const d = ROADS[t];
-      ipucu.append(el('h4', '', d.ad), el('p', '', d.aciklama + ' Sol tuşla sürükleyerek çiz.'));
-      satir('Maliyet', `${d.birimMaliyet} /birim`);
-      satir('Gider', d.birimGider > 0 ? `${d.birimGider} /birim/gün` : 'yok');
-      satir('Mutluluk', d.mutluluk !== 0 ? `${d.mutluluk > 0 ? '+' : ''}${d.mutluluk} (kenardaki evler)` : 'yok');
-      if (kilitli.has(t)) satir('Açılma', `${d.acilmaNufus} nüfus`);
+    const yok = t('genel.yok');
+    const acilma = t('menu.acilma');
+    const nufusMetni = (n: number): string => t('genel.nufusSayisi', { n });
+    if (tur === 'yikim') {
+      ipucu.append(el('h4', '', t('menu.yikimBaslik')), el('p', '', t('menu.yikimMetin')));
+    } else if (isRoadTool(tur)) {
+      const d = ROADS[tur];
+      ipucu.append(el('h4', '', yolAd(tur)), el('p', '', yolAciklama(tur) + t('menu.yolCiz')));
+      satir(t('menu.maliyet'), `${d.birimMaliyet} ${t('genel.birimBasi')}`);
+      satir(t('menu.gider'), d.birimGider > 0 ? `${d.birimGider} ${t('genel.birimGun')}` : yok);
+      satir(t('menu.mutluluk'), d.mutluluk !== 0
+        ? `${d.mutluluk > 0 ? '+' : ''}${d.mutluluk} ${t('menu.kenarEvler')}` : yok);
+      if (kilitli.has(tur)) satir(acilma, nufusMetni(d.acilmaNufus));
       ipucu.appendChild(tablo);
     } else {
-      const d = BUILDINGS[t];
-      ipucu.append(el('h4', '', d.ad), el('p', '', d.aciklama));
-      satir('Maliyet', String(d.maliyet));
-      satir('Gider', d.gider > 0 ? `${d.gider} /gün` : 'yok');
-      if (d.isci > 0) satir('İşçi', String(d.isci));
-      if (d.etki > 0) satir('Etki yarıçapı', String(d.etki));
-      if (d.mutluluk !== 0) satir('Mutluluk', (d.mutluluk > 0 ? '+' : '') + d.mutluluk);
-      const u = uretimMetni(t);
-      if (u) satir('Üretim', u);
-      if (d.yer === 'gol') satir('Yer', 'göl kıyısı');
-      if (d.yer === 'taslik') satir('Yer', 'taşlık alan');
-      if (d.depo) satir('Stok sınırı', `+${d.depo}`);
-      if (kilitli.has(t)) satir('Açılma', `${d.acilmaNufus} nüfus`);
+      const d = BUILDINGS[tur];
+      ipucu.append(el('h4', '', binaAd(tur)), el('p', '', binaAciklama(tur)));
+      satir(t('menu.maliyet'), String(d.maliyet));
+      satir(t('menu.gider'), d.gider > 0 ? `${d.gider} ${t('genel.gun')}` : yok);
+      if (d.isci > 0) satir(t('menu.isci'), String(d.isci));
+      if (d.etki > 0) satir(t('menu.etki'), String(d.etki));
+      if (d.mutluluk !== 0) satir(t('menu.mutluluk'), (d.mutluluk > 0 ? '+' : '') + d.mutluluk);
+      const u = uretimMetni(tur);
+      if (u) satir(t('menu.uretimSatir'), u);
+      if (d.yer === 'gol') satir(t('menu.yer'), t('menu.golKiyisi'));
+      if (d.yer === 'taslik') satir(t('menu.yer'), t('menu.taslik'));
+      if (d.depo) satir(t('menu.stokSiniri'), `+${d.depo}`);
+      if (kilitli.has(tur)) satir(acilma, nufusMetni(d.acilmaNufus));
       ipucu.appendChild(tablo);
     }
     ipucu.style.display = 'block';
@@ -227,8 +228,8 @@ export function createBuildMenu(
     if (k !== null) kategoriButonlari.get(k)?.classList.remove('yeni-var');
   }
 
-  for (const t of ROAD_ORDER) kartEkle(t, ROADS[t].ad, `🪙 ${ROADS[t].birimMaliyet}/birim`, 'yol-kart');
-  for (const t of BUILDING_ORDER) kartEkle(t, BUILDINGS[t].ad, `🪙 ${BUILDINGS[t].maliyet}`);
+  for (const yol of ROAD_ORDER) kartEkle(yol, yolAd(yol), `🪙 ${ROADS[yol].birimMaliyet}${t('genel.birimBasi')}`, 'yol-kart');
+  for (const bina of BUILDING_ORDER) kartEkle(bina, binaAd(bina), `🪙 ${BUILDINGS[bina].maliyet}`);
 
   for (const k of KATEGORI_SIRASI) {
     const d = KATEGORILER[k];
@@ -243,7 +244,7 @@ export function createBuildMenu(
 
   const yikB = el('button', 'kagit kategori yikim');
   yikB.style.setProperty('--kat', YIKIM_RENK);
-  yikB.append(el('div', 'ad', 'Yık'), el('div', 'sayi', 'X tuşu'));
+  yikB.append(el('div', 'ad', t('menu.yik')), el('div', 'sayi', t('menu.xTusu')));
   yikB.addEventListener('click', () => onSelect(secili === 'yikim' ? null : 'yikim'));
   yikB.addEventListener('mouseenter', () => ipucuGoster(yikB, 'yikim'));
   yikB.addEventListener('mouseleave', ipucuGizle);
@@ -268,7 +269,7 @@ export function createBuildMenu(
         }
         if (!acik) yeniKilitli.add(t);
         k.b.classList.toggle('kilitli', !acik);
-        k.kilit.textContent = acik ? '' : `🔒 ${esik} nüfus`;
+        k.kilit.textContent = acik ? '' : `🔒 ${esik} ${NUFUS_KISA}`;
         k.maliyet.style.display = acik ? '' : 'none';
         k.maliyet.classList.toggle('yetmez', s.para < fiyat);
       }
@@ -282,7 +283,7 @@ export function createBuildMenu(
         const b = kategoriButonlari.get(k)!;
         const ogeler = KATEGORILER[k].ogeler;
         const acikSayi = ogeler.filter((t) => !kilitli.has(t)).length;
-        b.querySelector('.sayi')!.textContent = `${acikSayi}/${ogeler.length} açık`;
+        b.querySelector('.sayi')!.textContent = t('menu.acik', { acik: acikSayi, toplam: ogeler.length });
         if (k === acikKategori) for (const t of ogeler) if (!kilitli.has(t)) gorulen.add(t);
         b.classList.toggle('yeni-var', ogeler.some((t) => !kilitli.has(t) && !gorulen.has(t)));
       }

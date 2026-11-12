@@ -3,7 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kağıt Kasaba</title>
+  <title>Kartonia — kağıttan kasaba kurma oyunu</title>
+  <meta name="description" content="Kartonia: tarayıcıda oynanan, kağıttan maket görünümlü, sakin bir 3D kasaba kurma oyunu. Yol çiz, evler kur, sakinlerini mutlu et. Ücretsiz, kurulum yok." />
+  <meta name="theme-color" content="#e9dcc3" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Kartonia" />
+  <meta property="og:description" content="Kağıttan maket görünümlü, sakin bir 3D kasaba kurma oyunu. Tarayıcında hemen oyna." />
+  <meta property="og:locale" content="tr_TR" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23fbf3e2'/%3E%3Cpath d='M12 30 32 13l20 17z' fill='%23c9544a' stroke='%234a3b2e' stroke-width='2.5' stroke-linejoin='round'/%3E%3Crect x='17' y='30' width='30' height='22' fill='%23f1e4c8' stroke='%234a3b2e' stroke-width='2.5'/%3E%3Crect x='28' y='38' width='8' height='14' fill='%23d9a13b' stroke='%234a3b2e' stroke-width='2'/%3E%3C/svg%3E" />
   <style>
     :root {
       --kagit: #fbf3e2;
@@ -292,11 +300,146 @@
     #sonEkran table { margin: 0 auto; font-size: 15px; }
     #sonEkran td { padding: 3px 8px; }
     #sonEkran td:last-child { font-weight: bold; text-align: right; }
+
+    /* ---- Yükleme ekranı ---- */
+    #yukleme {
+      position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at 50% 40%, #f6ecd6 0%, #e9dcc3 60%, #dccaa8 100%);
+      transition: opacity 0.5s;
+    }
+    #yukleme.bitti { opacity: 0; pointer-events: none; }
+    .yukleme-kart { width: 270px; padding: 30px 24px 22px; text-align: center; transform: rotate(-1.5deg); box-shadow: var(--golge-buyuk); }
+    .yukleme-kart h1 { margin: 10px 0 4px; font-size: 26px; }
+    .yukleme-kart p { margin: 0 0 14px; color: var(--soluk); font-size: 13px; }
+    .yukleme-ev { width: 54px; height: 46px; margin: 0 auto; position: relative; animation: evSalla 1.4s ease-in-out infinite; }
+    .yukleme-ev::before { /* çatı */
+      content: ""; position: absolute; left: 0; top: 0; width: 0; height: 0;
+      border-left: 27px solid transparent; border-right: 27px solid transparent; border-bottom: 20px solid var(--kirmizi);
+      filter: drop-shadow(0 0 0.6px var(--murekkep)) drop-shadow(0 0 0.6px var(--murekkep));
+    }
+    .yukleme-ev span { position: absolute; left: 7px; top: 20px; width: 40px; height: 26px; background: var(--kagit-koyu); border: 2px solid var(--murekkep); }
+    .yukleme-ev span::after { content: ""; position: absolute; left: 14px; bottom: 0; width: 9px; height: 13px; background: var(--altin); border: 1.5px solid var(--murekkep); border-bottom: none; }
+    @keyframes evSalla { 0%, 100% { transform: rotate(-4deg) translateY(0); } 50% { transform: rotate(4deg) translateY(-4px); } }
+    .yukleme-cubuk { height: 6px; border-radius: 3px; background: var(--kagit-koyu); overflow: hidden; }
+    .yukleme-cubuk > div { width: 40%; height: 100%; background: var(--altin); border-radius: 3px; animation: yuklemeKay 1.2s ease-in-out infinite; }
+    @keyframes yuklemeKay { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+    #jsYok { position: fixed; z-index: 60; top: 50%; left: 50%; width: 300px; margin: -40px 0 0 -150px; padding: 20px; text-align: center; }
+
+    /* ---- Giriş ekranı (ana menü) ---- */
+    #arayuz.menude > :not(#giris) { display: none !important; }
+    #giris {
+      position: absolute; inset: 0; z-index: 20; display: none;
+      flex-direction: column; align-items: center; justify-content: safe center; gap: 18px; padding: 24px 16px;
+      /* Arkadaki dönen kasaba görünsün: ortası açık, kenarları kağıt rengine kararır. */
+      background: radial-gradient(ellipse at 50% 45%, rgba(251,243,226,0.10) 0%, rgba(233,220,195,0.45) 55%, rgba(120,90,55,0.55) 100%);
+      animation: girisGir 0.45s ease-out; overflow-y: auto;
+    }
+    #giris.kapaniyor { opacity: 0; transition: opacity 0.25s; pointer-events: none !important; }
+    @keyframes girisGir { from { opacity: 0; } }
+    .kapak { text-align: center; }
+    .kapak-binalar { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 92px; margin-bottom: -12px; }
+    .kapak-bina { height: 70px; filter: drop-shadow(0 4px 3px rgba(74,59,46,0.35)); animation: binaKalk 0.7s cubic-bezier(.3,1.6,.5,1) backwards; }
+    .kapak-bina.saatKulesi { height: 92px; }
+    .kapak-bina.agac { height: 58px; }
+    .kapak-bina:nth-child(1) { animation-delay: 0.15s; } .kapak-bina:nth-child(2) { animation-delay: 0.25s; }
+    .kapak-bina:nth-child(3) { animation-delay: 0.35s; } .kapak-bina:nth-child(4) { animation-delay: 0.45s; }
+    .kapak-bina:nth-child(5) { animation-delay: 0.55s; }
+    @keyframes binaKalk { from { transform: translateY(18px) scaleY(0.2); opacity: 0; } }
+    .kapak-baslik { margin: 0; font-size: 58px; line-height: 1; display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; }
+    .kapak-baslik .kelime { display: inline-flex; }
+    .kapak-baslik .harf {
+      display: inline-block; padding: 6px 7px 4px; margin: 0 -1px; background: var(--kagit);
+      border-radius: 3px; box-shadow: var(--golge); color: var(--murekkep);
+      animation: harfDus 0.5s cubic-bezier(.3,1.5,.5,1) backwards;
+    }
+    .kapak-baslik .harf.kirmizi { background: var(--kirmizi); color: var(--kagit); }
+    .kapak-baslik .harf:nth-child(odd) { transform: rotate(-4deg); }
+    .kapak-baslik .harf:nth-child(even) { transform: rotate(3deg) translateY(3px); }
+    .kapak-baslik .harf:nth-child(3n) { transform: rotate(1deg) translateY(-2px); }
+    @keyframes harfDus { from { opacity: 0; translate: 0 -30px; } }
+    .kapak-alt {
+      display: inline-block; margin: 16px 0 0; padding: 4px 14px; font-size: 15px;
+      background: var(--bant); transform: rotate(-1deg); box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    }
+    .dil-secim { position: absolute; top: 14px; right: 14px; display: flex; gap: 2px; padding: 4px; transform: rotate(1.5deg); }
+    .dil-secim button { border: none; background: none; padding: 4px 10px; font-size: 13px; font-weight: bold; color: var(--soluk); border-radius: 3px; }
+    .dil-secim button.secili { background: var(--altin); color: #fff; }
+    .dil-secim button:not(.secili):hover { color: var(--murekkep); }
+    .giris-kartlar { display: grid; place-items: center; }
+    .giris-kart {
+      grid-area: 1 / 1; width: 290px; padding: 26px 22px 18px; box-shadow: var(--golge-buyuk);
+      display: none; flex-direction: column; gap: 10px; transform: rotate(-0.8deg);
+    }
+    .giris-kart.gorunur { display: flex; animation: kartGir 0.3s cubic-bezier(.3,1.4,.5,1); }
+    @keyframes kartGir { from { opacity: 0; transform: translateY(14px) rotate(2deg) scale(0.96); } }
+    .giris-kart h3 { margin: 0; font-size: 18px; text-align: center; }
+    .giris-kart p { margin: 0; font-size: 13px; color: var(--soluk); text-align: center; line-height: 1.4; }
+    .giris-dugme {
+      display: flex; flex-direction: column; align-items: center; gap: 1px; width: 100%; padding: 10px 12px;
+      font-size: 17px; font-weight: bold; border: 2px solid var(--murekkep); border-radius: 5px;
+      background: var(--kagit-koyu); box-shadow: 0 3px 0 rgba(74,59,46,0.35); transition: transform 0.12s, box-shadow 0.12s;
+    }
+    .giris-dugme:nth-child(odd) { transform: rotate(-0.6deg); }
+    .giris-dugme:nth-child(even) { transform: rotate(0.6deg); }
+    .giris-dugme:hover { transform: translateY(-2px) rotate(-1deg) scale(1.02); box-shadow: 0 5px 0 rgba(74,59,46,0.35); }
+    .giris-dugme:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(74,59,46,0.35); }
+    .giris-dugme.birincil { background: var(--altin); color: #fff; text-shadow: 0 1px 0 rgba(74,59,46,0.5); font-size: 20px; }
+    .giris-dugme .alt { font-size: 12px; font-weight: normal; opacity: 0.9; }
+    .giris-dugme.kucuk { padding: 6px 10px; font-size: 14px; font-weight: normal; background: none; border-style: dashed; box-shadow: none; }
+    .giris-dugme.tehlike { background: var(--kirmizi); color: #fff; border-color: #8e2f28; }
+    .giris-kart.nasil { width: 380px; max-width: calc(100vw - 32px); padding-top: 30px; }
+    .nasil ol { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.45; }
+    .nasil h4 { margin: 4px 0 0; font-size: 14px; }
+    .nasil table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .nasil td { padding: 3px 0; border-bottom: 1px dashed rgba(154,138,120,0.4); }
+    .nasil td:first-child { width: 46%; }
+    kbd {
+      display: inline-block; padding: 1px 6px; font-family: inherit; font-size: 11px;
+      background: var(--kagit-koyu); border: 1px solid var(--soluk); border-bottom-width: 2px; border-radius: 3px;
+    }
+    .giris-altbilgi { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; }
+    .giris-altbilgi .surum { padding: 3px 12px; background: rgba(251,243,226,0.8); border-radius: 3px; color: var(--soluk); transform: rotate(0.5deg); }
+    .giris-altbilgi .uyari { max-width: 300px; padding: 8px 12px; text-align: center; border-left: 5px solid var(--altin); transform: rotate(0.6deg); }
+    @media (max-height: 640px) {
+      .kapak-binalar { display: none; }
+      .kapak-baslik { font-size: 40px; }
+    }
+    @media (max-width: 480px) {
+      .kapak-baslik { font-size: 38px; gap: 10px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #giris, #giris *, .yukleme-ev, .yukleme-cubuk > div { animation: none !important; }
+    }
   </style>
 </head>
 <body>
   <div id="sahne"></div>
   <div id="arayuz"></div>
+  <!-- Yükleme ekranı: JS gelene kadar görünür, main.ts menü hazır olunca kaldırır. -->
+  <div id="yukleme">
+    <div class="kagit bant yukleme-kart">
+      <div class="yukleme-ev"><span></span></div>
+      <h1>Kartonia</h1>
+      <p>Kağıtlar katlanıyor…</p>
+      <div class="yukleme-cubuk"><div></div></div>
+    </div>
+  </div>
+  <script>
+    // Dil (ui/i18n.ts ile aynı kural): kayıtlı seçim, yoksa tarayıcı dili. JS yüklenmeden yükleme ekranı doğru dilde görünsün.
+    (function () {
+      var d = null;
+      try { d = localStorage.getItem('kagit-kasaba-dil'); } catch (e) { /* yok say */ }
+      if (d !== 'tr' && d !== 'en') d = (navigator.language || '').toLowerCase().indexOf('tr') === 0 ? 'tr' : 'en';
+      document.documentElement.lang = d;
+      if (d === 'en') {
+        document.title = 'Kartonia — build a little paper town';
+        document.querySelector('.yukleme-kart p').textContent = 'Folding the paper…';
+      }
+    })();
+  </script>
+  <noscript>
+    <div id="jsYok" class="kagit">Kartonia'yı oynamak için tarayıcında JavaScript'i açman gerekiyor.</div>
+  </noscript>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

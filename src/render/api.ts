@@ -88,6 +88,8 @@ export interface GameRenderer {
   getZoom01(): number;
   /** Kamerayı yumuşakça (x, z) noktasına kaydırır; açı ve yakınlaşma değişmez. */
   focusOn(x: number, z: number): void;
+  /** Kamerayı hedef çevresinde dAz radyan döndürür (giriş ekranında yavaş tur). */
+  orbit(dAz: number): void;
   /** Sol sürükleme şu an kaydırma yapıyor mu (arayüz bu sırada tıklama/hover işlemez). */
   isPanning(): boolean;
 

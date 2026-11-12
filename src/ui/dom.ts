@@ -1,4 +1,5 @@
 // Küçük DOM yardımcıları.
+import { sayi } from './i18n';
 
 export function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -21,5 +22,5 @@ export function flash(e: HTMLElement, extra?: string): void {
 }
 
 export function tr(n: number): string {
-  return Math.round(n).toLocaleString('tr-TR');
+  return sayi(n);
 }

@@ -2,10 +2,11 @@
 import type { BuildingType, GameState, RoadType, Vec2 } from '../logic/types';
 import type { GameRenderer } from '../render/api';
 import { BUILDINGS } from '../data/buildings';
-import { adjacencyBonus, bonusText, canPlace, effectRadius, nearestRoad, planRoad } from '../logic/game';
+import { adjacencyBonus, canPlace, effectRadius, nearestRoad, planRoad } from '../logic/game';
 import { isBuildingTool, isRoadTool, type Tool } from './buildMenu';
-import { YERLESTIRME_SEBEP } from './toast';
+import { yerlestirmeSebebi } from './toast';
 import { el } from './dom';
+import { bonusMetni, t } from './i18n';
 
 export interface Selection {
   kind: 'bina' | 'yol';
@@ -70,9 +71,9 @@ export function createInput(deps: InputDeps): Input {
     const plan = planRoad(deps.getState(), firca.tur, firca.noktalar);
     renderer.setRoadGhost(firca.tur, plan.noktalar, plan.ok);
     if (plan.ok) {
-      etiket.textContent = `${plan.uzunluk.toFixed(1)} birim · 🪙 ${plan.maliyet}`;
+      etiket.textContent = `${plan.uzunluk.toFixed(1)} ${t('genel.birim')} · 🪙 ${plan.maliyet}`;
     } else {
-      const sebep = YERLESTIRME_SEBEP[plan.sebep ?? 'kisa'];
+      const sebep = yerlestirmeSebebi(plan.sebep ?? 'kisa');
       etiket.textContent = plan.sebep === 'para' ? `🪙 ${plan.maliyet} · ${sebep}` : sebep;
     }
     etiket.classList.toggle('kotu', !plan.ok);
@@ -88,14 +89,14 @@ export function createInput(deps: InputDeps): Input {
    * Hayalet binanın üstünde komşuluk etiketi (fırça etiketiyle aynı kağıt): bonus varsa "+%25 sulama",
    * kural var ama şart tutmuyorsa soluk "bonus yok". Kuralı olmayan binada gizli.
    */
-  function bonusEtiketi(t: BuildingType, x: number, z: number): void {
-    const b = adjacencyBonus(deps.getState(), t, x, z);
+  function bonusEtiketi(tur: BuildingType, x: number, z: number): void {
+    const b = adjacencyBonus(deps.getState(), tur, x, z);
     if (b.durumlar.length === 0 || !fare) {
       etiketGizle();
       return;
     }
     const aktif = b.durumlar.filter((d) => d.aktif);
-    etiket.textContent = aktif.length > 0 ? aktif.map(bonusText).join(' · ') : 'bonus yok';
+    etiket.textContent = aktif.length > 0 ? aktif.map(bonusMetni).join(' · ') : t('bilgi.bonusYok');
     etiket.classList.remove('kotu');
     etiket.classList.toggle('soluk', aktif.length === 0);
     etiket.classList.toggle('iyi', aktif.length > 0);

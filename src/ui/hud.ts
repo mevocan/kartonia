@@ -4,13 +4,14 @@ import type { SesKanali } from '../audio/api';
 import { el, flash, tr } from './dom';
 import { kisaKalanGun, mevsim, mevsimGunu, type Mevsim } from '../logic/season';
 import { tuccarVarMi } from '../logic/trade';
+import { malAd, mevsimAd, t } from './i18n';
 
 /** Mevsim simgesi ve adı (HUD ve bildirimler). */
 export const MEVSIM_GORUNUM: Record<Mevsim, { ikon: string; ad: string }> = {
-  ilkbahar: { ikon: '🌸', ad: 'İlkbahar' },
-  yaz: { ikon: '☀️', ad: 'Yaz' },
-  sonbahar: { ikon: '🍂', ad: 'Sonbahar' },
-  kis: { ikon: '❄️', ad: 'Kış' },
+  ilkbahar: { ikon: '🌸', ad: mevsimAd('ilkbahar') },
+  yaz: { ikon: '☀️', ad: mevsimAd('yaz') },
+  sonbahar: { ikon: '🍂', ad: mevsimAd('sonbahar') },
+  kis: { ikon: '❄️', ad: mevsimAd('kis') },
 };
 
 export interface Hud {
@@ -25,12 +26,12 @@ export interface Hud {
 }
 
 const GOODS: { key: Good; ad: string; ikon: string }[] = [
-  { key: 'bugday', ad: 'Buğday', ikon: '🌾' },
-  { key: 'un', ad: 'Un', ikon: '🥣' },
-  { key: 'yemek', ad: 'Yemek', ikon: '🍽️' },
-  { key: 'odun', ad: 'Odun', ikon: '🪵' },
-  { key: 'tas', ad: 'Taş', ikon: '🪨' },
-  { key: 'mobilya', ad: 'Mobilya', ikon: '🪑' },
+  { key: 'bugday', ad: malAd('bugday'), ikon: '🌾' },
+  { key: 'un', ad: malAd('un'), ikon: '🥣' },
+  { key: 'yemek', ad: malAd('yemek'), ikon: '🍽️' },
+  { key: 'odun', ad: malAd('odun'), ikon: '🪵' },
+  { key: 'tas', ad: malAd('tas'), ikon: '🪨' },
+  { key: 'mobilya', ad: malAd('mobilya'), ikon: '🪑' },
 ];
 
 function yuz(m: number): string {
@@ -68,7 +69,7 @@ export function createHud(
   }
   const sep = (): void => { box.appendChild(el('div', 'ayrac')); };
 
-  const gun = item('Gün');
+  const gun = item(t('hud.gun'));
   const cubuk = el('div', 'gun-cubuk');
   const cubukIc = el('div');
   cubuk.appendChild(cubukIc);
@@ -77,10 +78,10 @@ export function createHud(
   const mevsimKutu = el('div', 'hud-oge mevsim');
   const mevsimDeger = el('div', 'deger');
   const mevsimAlt = el('div', 'etiket');
-  mevsimKutu.append(el('div', 'etiket', 'Mevsim'), mevsimDeger, mevsimAlt);
+  mevsimKutu.append(el('div', 'etiket', t('hud.mevsim')), mevsimDeger, mevsimAlt);
   box.appendChild(mevsimKutu);
   sep();
-  const para = item('Para');
+  const para = item(t('hud.para'));
   para.wrap.classList.add('para');
   const dokum = el('div', 'kagit');
   dokum.id = 'paraDokum';
@@ -90,10 +91,13 @@ export function createHud(
   function raporYaz(r: DayReport | null): void {
     dokum.replaceChildren();
     if (!r) {
-      dokum.append(el('h4', '', 'Gelir-gider dökümü'), el('div', '', 'İlk gün sonunda görünür.'));
+      dokum.append(
+        el('h4', '', t('hud.dokumBaslik')),
+        el('div', '', t('hud.dokumBos')),
+      );
       return;
     }
-    dokum.appendChild(el('h4', '', `${r.gun}. günün dökümü`));
+    dokum.appendChild(el('h4', '', t('hud.dokumGun', { gun: r.gun })));
     const tablo = el('table');
     const satir = (ad: string, v: number, sinif = ''): void => {
       const t = el('tr', sinif);
@@ -101,14 +105,14 @@ export function createHud(
       t.append(el('td', '', ad), deger);
       tablo.appendChild(t);
     };
-    satir('Vergi', r.vergi);
-    satir('Bina gideri', -r.binaGider);
-    satir('Yol gideri', -r.yolGider);
-    satir('Net', r.net, 'net');
+    satir(t('hud.vergi'), r.vergi);
+    satir(t('hud.binaGider'), -r.binaGider);
+    satir(t('hud.yolGider'), -r.yolGider);
+    satir(t('hud.net'), r.net, 'net');
     dokum.appendChild(tablo);
   }
-  const nufus = item('Nüfus');
-  const mutluluk = item('Mutluluk');
+  const nufus = item(t('hud.nufus'));
+  const mutluluk = item(t('hud.mutluluk'));
   const mCubuk = el('div', 'mutluluk-cubuk');
   const mCubukIc = el('div');
   mCubuk.appendChild(mCubukIc);
@@ -125,19 +129,19 @@ export function createHud(
   sep();
 
   // Gezgin tüccar yalnızca geldiği gün görünür; tıklayınca takas paneli açılır.
-  const tuccarDugme = el('button', 'dugme', '🛒 Tüccar');
+  const tuccarDugme = el('button', 'dugme', t('hud.tuccar'));
   tuccarDugme.id = 'tuccarDugme';
-  tuccarDugme.title = 'Gezgin tüccar kasabada: takas için tıkla';
+  tuccarDugme.title = t('hud.tuccarIpucu');
   tuccarDugme.addEventListener('click', onMerchant);
   box.appendChild(tuccarDugme);
   // Ses: düğme küçük bir panel açar (aç/kapa, genel ses ve müzik düzeyi sürgüleri).
   const sesKutu = el('div', 'ses-kutu');
   const sesDugme = el('button', 'dugme', '🔊');
   sesDugme.id = 'sesDugme';
-  sesDugme.title = 'Ses ayarları';
+  sesDugme.title = t('hud.sesAyar');
   const sesPanel = el('div', 'kagit');
   sesPanel.id = 'sesPanel';
-  const sesAc = el('button', 'dugme', '🔊 Ses açık');
+  const sesAc = el('button', 'dugme', t('hud.sesAcik'));
   sesAc.addEventListener('click', onSound);
   function surgu(ad: string, kanal: SesKanali): [HTMLInputElement, HTMLSpanElement] {
     const satir = el('label', 'surgu');
@@ -148,7 +152,7 @@ export function createHud(
     s.step = '5';
     const deger = el('span', 'deger');
     s.addEventListener('input', () => {
-      deger.textContent = `%${s.value}`;
+      deger.textContent = t('hud.yuzde', { n: s.value });
       onVolume(kanal, Number(s.value) / 100);
     });
     satir.append(el('span', 'ad', ad), s, deger);
@@ -156,8 +160,8 @@ export function createHud(
     return [s, deger];
   }
   sesPanel.appendChild(sesAc);
-  const [genelSurgu, genelDeger] = surgu('Genel', 'genel');
-  const [muzikSurgu, muzikDeger] = surgu('Müzik', 'muzik');
+  const [genelSurgu, genelDeger] = surgu(t('hud.genelSes'), 'genel');
+  const [muzikSurgu, muzikDeger] = surgu(t('hud.muzik'), 'muzik');
   sesDugme.addEventListener('click', (e) => {
     e.stopPropagation();
     sesPanel.classList.toggle('acik');
@@ -171,10 +175,10 @@ export function createHud(
   const hizlar = el('div', 'hizlar');
   const hizDugmeleri: { speed: number; b: HTMLButtonElement }[] = [];
   for (const [speed, label, title] of [
-    [0, '⏸', 'Duraklat (Boşluk)'],
-    [1, '1x', 'Normal hız (1)'],
-    [2, '2x', 'Hızlı (2)'],
-    [3, '3x', 'Çok hızlı (3)'],
+    [0, '⏸', t('hud.duraklat')],
+    [1, '1x', t('hud.hiz1')],
+    [2, '2x', t('hud.hiz2')],
+    [3, '3x', t('hud.hiz3')],
   ] as const) {
     const b = el('button', '', label);
     b.title = title;
@@ -201,7 +205,9 @@ export function createHud(
       set(gun.wrap, gun.deger, s.gun, String(s.gun));
       const m = mevsim(s.gun);
       mevsimDeger.textContent = `${MEVSIM_GORUNUM[m].ikon} ${MEVSIM_GORUNUM[m].ad}`;
-      mevsimAlt.textContent = m === 'kis' ? `kışın ${mevsimGunu(s.gun)}. günü` : `kışa ${kisaKalanGun(s.gun)} gün`;
+      mevsimAlt.textContent = m === 'kis'
+        ? t('hud.kisinGunu', { n: mevsimGunu(s.gun) })
+        : t('hud.kisaKalan', { n: kisaKalanGun(s.gun) });
       mevsimKutu.classList.toggle('kis', m === 'kis');
       mevsimKutu.classList.toggle('yakin', m === 'sonbahar');
       set(para.wrap, para.deger, s.para, tr(s.para));
@@ -225,18 +231,18 @@ export function createHud(
     },
     setSound(on, genel, muzik) {
       sesDugme.textContent = on ? (genel > 0 ? '🔊' : '🔈') : '🔇';
-      sesAc.textContent = on ? '🔊 Ses açık' : '🔇 Ses kapalı';
+      sesAc.textContent = t(on ? 'hud.sesAcik' : 'hud.sesKapali');
       sesAc.classList.toggle('kapali', !on);
       genelSurgu.value = String(Math.round(genel * 100));
       muzikSurgu.value = String(Math.round(muzik * 100));
-      genelDeger.textContent = `%${genelSurgu.value}`;
-      muzikDeger.textContent = `%${muzikSurgu.value}`;
+      genelDeger.textContent = t('hud.yuzde', { n: genelSurgu.value });
+      muzikDeger.textContent = t('hud.yuzde', { n: muzikSurgu.value });
     },
     setSpeed(speed) {
       for (const h of hizDugmeleri) h.b.classList.toggle('secili', h.speed === speed);
       const durdu = speed === 0;
       durdurB.textContent = durdu ? '▶' : '⏸';
-      durdurB.title = durdu ? 'Devam et (Boşluk)' : 'Duraklat (Boşluk)';
+      durdurB.title = t(durdu ? 'hud.devam' : 'hud.duraklat');
     },
   };
 }

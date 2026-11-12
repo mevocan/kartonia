@@ -92,6 +92,13 @@ export class OrbitCamera {
     this.constrain();
   }
 
+  /** Kamerayı hedef çevresinde yavaşça döndürür (giriş ekranının arkası). */
+  orbit(dAz: number): void {
+    this.tAz += dAz;
+    this.constrain();
+    this.moving = true;
+  }
+
   getTarget(): THREE.Vector3 {
     return this.target;
   }
