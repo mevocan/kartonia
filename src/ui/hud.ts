@@ -112,7 +112,14 @@ export function createHud(
   mCubuk.appendChild(mCubukIc);
   mutluluk.wrap.appendChild(mCubuk);
   sep();
-  const stoklar = GOODS.map((g) => ({ g, ...item(`${g.ikon} ${g.ad}`) }));
+  const stoklar = GOODS.map((g) => {
+    const o = item('');
+    // Etiket: simge + ad; dar pencerede ad gizlenir (CSS), simge kalır. Tam ad title'da.
+    const et = o.wrap.querySelector('.etiket')!;
+    et.append(el('span', '', g.ikon), el('span', 'ad', ` ${g.ad}`));
+    o.wrap.title = g.ad;
+    return { g, ...o };
+  });
   sep();
 
   // Seçilmiş karar kartlarının simgeleri; üstüne gelince kartın adı, artısı ve eksisi.

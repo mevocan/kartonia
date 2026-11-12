@@ -85,6 +85,13 @@ export class OrbitCamera {
     return this.dist;
   }
 
+  /** Kamerayı yumuşakça bir noktaya kaydırır (açı ve uzaklık değişmez; sınırlar korunur). */
+  focus(x: number, z: number): void {
+    this.tTarget.x = THREE.MathUtils.clamp(x, -this.limit, this.limit);
+    this.tTarget.z = THREE.MathUtils.clamp(z, -this.limit, this.limit);
+    this.constrain();
+  }
+
   getTarget(): THREE.Vector3 {
     return this.target;
   }

@@ -35,6 +35,8 @@ export interface FoldOpts {
   fixed?: (p: PieceBaked) => boolean;
   /** Verilirse yalnızca bunu geçen (ve sabit olmayan) parçalar oynatılır; geri kalanlar hiç çizilmez. */
   only?: (p: PieceBaked) => boolean;
+  /** Duvarlar menteşeyle dışarıdan kalkmak yerine yerinde büyür (iskele içindeki anıt aşamaları: duvar iskeleyi kesmesin). */
+  menteseYok?: boolean;
 }
 
 /** mat: parça malzemesi (ağaçlar mevsim renkli ağaç malzemesini verir). */
@@ -80,8 +82,9 @@ export function createFold(tpl: ModelTemplate, mat: THREE.Material = modelMateri
   let wallEnd = t;
   walls.forEach((p, i) => {
     const st = t + i * ws;
-    const d = p.hinge ? 0.42 : 0.38;
-    mk(p, st, d, p.hinge ? 'hinge' : 'grow');
+    const mentese = !!p.hinge && !opts.menteseYok;
+    const d = mentese ? 0.42 : 0.38;
+    mk(p, st, d, mentese ? 'hinge' : 'grow');
     wallEnd = Math.max(wallEnd, st + d);
   });
   // (c) çatı

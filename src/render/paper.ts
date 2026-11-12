@@ -244,6 +244,44 @@ export function roadMaterial(kind: ModelMatKind): THREE.MeshStandardMaterial {
 export const ruzgar = { value: 0 };
 let treeMat: THREE.MeshStandardMaterial | null = null;
 
+/** Yaprak tepe renklerine mevsim dönüşümü (ağaç malzemesi ve hayalet ağaç ortak kullanır). */
+const MEVSIM_RENK_VERTEX = [
+  '#include <color_vertex>',
+  '#ifdef USE_COLOR',
+  'vec3 mvIc = vec3(1.0);',
+  '#ifdef USE_INSTANCING_COLOR',
+  'mvIc = instanceColor.rgb;',
+  '#endif',
+  'vec4 mvW = modelMatrix * vec4(0.0, 0.0, 0.0, 1.0);',
+  '#ifdef USE_INSTANCING',
+  'mvW = modelMatrix * instanceMatrix[3];',
+  '#endif',
+  'float mvSeed = fract(sin(dot(mvW.xz, vec2(12.9898, 78.233))) * 43758.5453);',
+  'vColor.rgb = mevsimYaprak(color.rgb, mvSeed) * mvIc;',
+  '#endif',
+].join('\n');
+
+const treeGhostMats = new Map<'ghost' | 'ghostBad', THREE.MeshStandardMaterial>();
+
+/**
+ * Yerleştirme önizlemesindeki hayalet ağaç: hayalet malzemesi (yarı saydam) + mevsim yaprak rengi,
+ * böylece sonbaharda / kışın konacak ağaç oyundaki ağaçlarla aynı renkte görünür. Rüzgâr yok.
+ */
+export function treeGhostMaterial(kind: 'ghost' | 'ghostBad'): THREE.MeshStandardMaterial {
+  let m = treeGhostMats.get(kind);
+  if (m) return m;
+  m = modelMaterial(kind).clone();
+  m.onBeforeCompile = (sh) => {
+    bindMevsim(sh.uniforms);
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\n' + MEVSIM_GLSL)
+      .replace('#include <color_vertex>', MEVSIM_RENK_VERTEX);
+  };
+  m.customProgramCacheKey = () => `mevsim-${kind}`;
+  treeGhostMats.set(kind, m);
+  return m;
+}
+
 /**
  * Ağaç malzemesi: taban malzemesi + vertex shader'da çok hafif, zamana bağlı rüzgâr eğimi.
  * Instanced ağaçlarda faz, örneğin konumundan gelir (her ağaç biraz farklı sallanır).
@@ -257,24 +295,7 @@ export function treeMaterial(): THREE.MeshStandardMaterial {
     bindMevsim(sh.uniforms);
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nuniform float uRuzgar;\n' + MEVSIM_GLSL)
-      .replace(
-        '#include <color_vertex>',
-        [
-          '#include <color_vertex>',
-          '#ifdef USE_COLOR',
-          'vec3 mvIc = vec3(1.0);',
-          '#ifdef USE_INSTANCING_COLOR',
-          'mvIc = instanceColor.rgb;',
-          '#endif',
-          'vec4 mvW = modelMatrix * vec4(0.0, 0.0, 0.0, 1.0);',
-          '#ifdef USE_INSTANCING',
-          'mvW = modelMatrix * instanceMatrix[3];',
-          '#endif',
-          'float mvSeed = fract(sin(dot(mvW.xz, vec2(12.9898, 78.233))) * 43758.5453);',
-          'vColor.rgb = mevsimYaprak(color.rgb, mvSeed) * mvIc;',
-          '#endif',
-        ].join('\n'),
-      )
+      .replace('#include <color_vertex>', MEVSIM_RENK_VERTEX)
       .replace(
         '#include <begin_vertex>',
         [
@@ -344,6 +365,8 @@ export function disposeMaterials(): void {
   for (const m of roadMats.values()) m.dispose();
   treeMat?.dispose();
   treeMat = null;
+  for (const m of treeGhostMats.values()) m.dispose();
+  treeGhostMats.clear();
   roadMats.clear();
   paperTex?.dispose();
   paperTex = null;

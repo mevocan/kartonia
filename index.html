@@ -59,9 +59,16 @@
       /* Hedef kartının (sol üst, ~230 px) sağından başlar: şerit genişledikçe kartın altına girmesin. */
       position: absolute; top: 10px; left: 238px; transform: rotate(-0.4deg);
       display: flex; align-items: center; gap: 8px; padding: 10px 12px 8px;
+      flex-wrap: wrap; row-gap: 4px; max-width: calc(100vw - 238px - 110px);
       white-space: nowrap;
     }
     .hud-oge { display: flex; flex-direction: column; align-items: center; min-width: 46px; transition: transform 0.15s; }
+    /* Dar pencere: mal adları gizlenir (simge kalır), öğeler daralır; yine sığmazsa şerit iki satıra kayar. */
+    @media (max-width: 1500px) {
+      #hud .etiket .ad { display: none; }
+      #hud .hud-oge { min-width: 34px; }
+      #hud .hud-oge.mevsim { min-width: 62px; }
+    }
     .hud-oge .etiket { font-size: 11px; color: var(--soluk); }
     .hud-oge .deger { font-size: 17px; font-weight: bold; }
     .hud-oge.vurgu { animation: vurgu 0.6s ease-out; }

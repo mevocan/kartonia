@@ -4,6 +4,7 @@ import { HARITA } from '../data/map';
 import { heightAt, isLake, SU_SEVIYESI } from '../logic/terrain';
 import { PALETTE } from './palette';
 import { paperTexture } from './paper';
+import { kisW } from './season';
 
 // Canlılık: yürüyen kağıt insanlar, çiftçi, pazar kalabalığı, okul çocukları, baca dumanı,
 // göl ördekleri, kuş sürüleri, el arabaları. Yalnızca çizim; mantığa etkisi yok.
@@ -1510,7 +1511,10 @@ export class TownLife {
       this.e.set(Math.sin(d.phase * 1.7) * 0.05, d.yaw, Math.sin(d.phase * 2.3) * 0.06);
       this.q.setFromEuler(this.e);
       this.v.set(d.x, SU_SEVIYESI - 0.01 + bob, d.z);
-      this.sc.setScalar(1.25);
+      // Kışın göl buz tutar: ördekler mevsim geçişiyle küçülerek gider, ilkbaharda döner.
+      const k = 1 - kisW();
+      if (k < 0.02) continue;
+      this.sc.setScalar(1.25 * k);
       this.m4.compose(this.v, this.q, this.sc);
       this.ducks.push(this.m4);
     }

@@ -95,6 +95,8 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   const istekKarti = createRequestCard(ui, () => senlik(), (id) => {
     setTool(null);
     select({ kind: 'bina', id });
+    const b = s.binalar.find((x) => x.id === id);
+    if (b) renderer.focusOn(b.x, b.z); // ev ekran dışındaysa kamera oraya kayar
   });
   const tuccar = createTradePanel(ui, (g, n) => ticaret(g, n, true), (g, n) => ticaret(g, n, false));
   const secici = createCardPicker(ui, (id) => kartSecildi(id));

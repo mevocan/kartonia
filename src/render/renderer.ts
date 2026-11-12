@@ -5,7 +5,9 @@ import { heightAt } from '../logic/terrain';
 import { DIS_SINIR } from '../data/map';
 import type { GameRenderer } from './api';
 import { PALETTE, EV_DUVAR } from './palette';
-import { modelMaterial, lineMaterial, paperMaterial, canvasTexture, disposeMaterials, roadMaterial, treeMaterial, ruzgar } from './paper';
+import {
+  modelMaterial, lineMaterial, paperMaterial, canvasTexture, disposeMaterials, roadMaterial, treeMaterial, treeGhostMaterial, ruzgar,
+} from './paper';
 import { createWorld, applyDayProgress, followShadow, updateFog, ZEMIN_R } from './scene';
 import { rayTerrain } from './terrain';
 import { getThumbnail, renderThumbnails } from './thumbnails';
@@ -86,8 +88,10 @@ interface RoadEntry {
 const KRAFT = [PALETTE.mukavva, PALETTE.mukavvaAcik, PALETTE.kutuk, PALETTE.krem] as const;
 const TOZ = [PALETTE.toprak, PALETTE.kum, PALETTE.kutuk] as const;
 
-function applyLook(model: THREE.Object3D, look: Look): void {
-  const mm = modelMaterial(look);
+function applyLook(model: THREE.Object3D, look: Look, agac = false): void {
+  const ghost0 = look === 'ghost' || look === 'ghostBad';
+  // Hayalet ağaç mevsim yaprak rengini taşır (oyundaki ağaçlarla aynı görünsün).
+  const mm = agac && ghost0 ? treeGhostMaterial(look) : modelMaterial(look);
   const lm = lineMaterial(look === 'ghostBad' ? 'ghost' : look);
   const ghost = look === 'ghost' || look === 'ghostBad';
   forEachPart(model, (o) => {
@@ -803,7 +807,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
             confetti.burst(p.x, p.y + tpl.height, p.z, 44, undefined, 1.3);
             confetti.burst(p.x, p.y + tpl.height * 0.5, p.z, 18, undefined, 0.9);
           } else confetti.burst(p.x, p.y + 0.15, p.z, 8, KRAFT, 0.5);
-        }, 0, 'asama', { fixed: (q) => parcaAsama(q) <= eski });
+        }, 0, 'asama', { fixed: (q) => parcaAsama(q) <= eski, menteseYok: yeni < ANIT_ASAMA }); // iskele varken duvarlar yerinde büyür
       if (yeni === ANIT_ASAMA) {
         // Önce iskele sökülür (yalnızca iskele parçaları geri katlanır), sonra çatı ve bayrak kurulur.
         confetti.burst(p.x, p.y + 0.15, p.z, 10, KRAFT, 0.6);
@@ -861,10 +865,10 @@ export function createRenderer(container: HTMLElement): GameRenderer {
         ghostRoot.add(ghostModel);
         ghostSpinners = findSpinners(ghostModel);
         ghostType = type;
-        applyLook(ghostModel, valid ? 'ghost' : 'ghostBad');
+        applyLook(ghostModel, valid ? 'ghost' : 'ghostBad', type === 'agac');
         ghostValid = valid;
       } else if (valid !== ghostValid) {
-        applyLook(ghostModel, valid ? 'ghost' : 'ghostBad');
+        applyLook(ghostModel, valid ? 'ghost' : 'ghostBad', type === 'agac');
         ghostValid = valid;
       }
       ghostRoot.visible = true;
@@ -1138,6 +1142,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
         for (const s of ghostSpinners) s.rotation.z += 0.9 * d;
         const m = modelMaterial(ghostValid ? 'ghost' : 'ghostBad');
         m.opacity = (ghostValid ? 0.5 : 0.42) + Math.sin(time * 4) * 0.08;
+        if (ghostType === 'agac') treeGhostMaterial(ghostValid ? 'ghost' : 'ghostBad').opacity = m.opacity;
       }
       gl.render(world.scene, cam.camera);
     },
@@ -1172,6 +1177,9 @@ export function createRenderer(container: HTMLElement): GameRenderer {
       cam.setLeftDragPan(on);
     },
 
+    focusOn(x, z) {
+      cam.focus(x, z);
+    },
     getZoom01() {
       return cam.getZoom01();
     },

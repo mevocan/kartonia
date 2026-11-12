@@ -86,6 +86,8 @@ export interface GameRenderer {
   setLeftDragPan(on: boolean): void;
   /** Kamera yakınlaşması: 0 en yakın, 1 en uzak (ses katmanı ortam sesini buna göre kısar). */
   getZoom01(): number;
+  /** Kamerayı yumuşakça (x, z) noktasına kaydırır; açı ve yakınlaşma değişmez. */
+  focusOn(x: number, z: number): void;
   /** Sol sürükleme şu an kaydırma yapıyor mu (arayüz bu sırada tıklama/hover işlemez). */
   isPanning(): boolean;
 

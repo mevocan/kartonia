@@ -108,7 +108,7 @@ Proje klasörü: `C:\Users\mc.dag\Projects\Oyun\sehir\kagit-kasaba`
 
 ## 4. Ekran ve arayüz
 
-- **Üst şerit (HUD):** Gün ve günün ilerleme çubuğu, Para (üstüne gelince dünkü vergi, bina gideri, yol gideri ve net), Nüfus, Mutluluk, altı mal stoğu (🌾 Buğday, 🥣 Un, 🍽️ Yemek, 🪵 Odun, 🪨 Taş, 🪑 Mobilya) ve hız düğmeleri. ⏸ düğmesi duraklatınca ▶'ye döner.
+- **Üst şerit (HUD):** Gün ve günün ilerleme çubuğu, Para (üstüne gelince dünkü vergi, bina gideri, yol gideri ve net), Nüfus, Mutluluk, altı mal stoğu (🌾 Buğday, 🥣 Un, 🍽️ Yemek, 🪵 Odun, 🪨 Taş, 🪑 Mobilya) ve hız düğmeleri. ⏸ düğmesi duraklatınca ▶'ye döner. Şerit hedef kartının sağından başlar; 1500 pikselden dar pencerede mal adları gizlenir (simge kalır, tam ad fareyle görünür), yine sığmazsa şerit iki satıra kayar.
 - **Sol üst hedef kartı:** Sıradaki hedef. Sayılabilen hedeflerde ilerleme `(x / y)` olarak görünür.
 - **Alt bina menüsü:** Kategoriler **Yollar**, **Konut**, **Üretim**, **Hizmet** ve **Yık**. Her kategorinin kendi rengi vardır. Kategoriye tıklayınca üstünde kartlar açılır. Bina kartlarında binanın oyundaki 3D modelinden üretilmiş resim, yol kartlarında kağıt yol çizimi vardır. Yeni açılan kartlarda "yeni" noktası görünür. Kilitli kartlar açılma nüfusunu gösterir.
 - **Sağdaki bilgi paneli:** Seçili binanın ya da yolun bilgileri:
@@ -539,7 +539,7 @@ Saat Kulesi tek seferde kurulmaz. Yerleştirince (100 para) iskele kurulur, kule
 
 - Ödül şart tuttuğu anda verilir: oyuncu eyleminden sonra ve gün sonunda `checkRequest` denetler. Hedef ev yıkılırsa istek cezasız kalkar.
 - Durum: `istek?: { tur, baslangicGun, ilerleme, hedefBinaId? }`, `geciciMutluluk?: { deger, bitisGun }`, `sonrakiIstekGunu?`. Hepsi isteğe bağlı; eski kayıtlar etkilenmez.
-- **Ekranda:** hedef kartının altında küçük istek kartı: başlık, açıklama, ilerleme, kalan gün. Şenlik'te "Yemeği teslim et", Susuz ev'de "Evi göster" düğmesi (evi seçip vurgular). Yeni istek ve tamamlanma bildirimle duyurulur.
+- **Ekranda:** hedef kartının altında küçük istek kartı: başlık, açıklama, ilerleme, kalan gün. Şenlik'te "Yemeği teslim et", Susuz ev'de "Evi göster" düğmesi (evi seçer, vurgular ve kamerayı oraya kaydırır: `renderer.focusOn`). Yeni istek ve tamamlanma bildirimle duyurulur.
 
 ## 13d. Karar kartları
 
@@ -851,7 +851,7 @@ Bütün görseller **kodla** üretilir. Görsel ya da model dosyası yoktur.
 
 - `buildClockTower(asama)` kuleyi beş görünümde üretir: 0 taban + iskele, 1 gövdenin alt yarısı, 2 üst yarısı, 3 saat ve balkon, 4 çatı ve bayrak (iskele kalkar). `ModelBuilder.grup` her parçaya bir grup etiketi verir, `keep` pişirirken grupları süzer. Atılan parçalar da üretilir, böylece ortak parçalar her aşamada birebir aynı kalır.
 - Şablon anahtarı aşamayı içerir (`saatKulesi-1-0-a2`); aşama 4 eski anahtarı kullanır, menü resmi ve hayalet tam kuledir.
-- `setMonumentStage(id, asama, anim)`: yalnızca yeni parçalar katlanır, öncekiler `createFold(tpl, mat, { fixed })` ile kurulu hâlde durur. 3→4 geçişinde önce iskele geri katlanarak sökülür, sonra çatı ve bayrak iner, konfeti saçılır. `addBuilding` ardından hemen `setMonumentStage(id, 0)` gelirse ilk kurulum yalnızca taban ve iskeleyi katlar.
+- `setMonumentStage(id, asama, anim)`: yalnızca yeni parçalar katlanır, öncekiler `createFold(tpl, mat, { fixed })` ile kurulu hâlde durur. İskele dururken (aşama 1–3) yeni duvarlar menteşeyle dışarıdan kalkmaz, yerinde büyür (`menteseYok`), böylece iskeleyi kesmez. 3→4 geçişinde önce iskele geri katlanarak sökülür, sonra çatı ve bayrak iner, konfeti saçılır. `addBuilding` ardından hemen `setMonumentStage(id, 0)` gelirse ilk kurulum yalnızca taban ve iskeleyi katlar.
 - Deneme: `?preview&anit` (beş aşama yan yana), `?preview&anit=dongu` (bir kule sırayla ilerler), `?preview&anit=kare&asama=N&t=S` (geçişin sabit bir anı).
 
 ### Kurulma animasyonu (`fold.ts`)
@@ -883,7 +883,8 @@ Toplam süre yaklaşık 1.2 saniyedir (`KURULUM_HIZI`). Animasyon `time ∈ [0, 
 - Renkler `palette.ts` içindedir (`yaprakHardal`, `yaprakTuruncu`, `yaprakTerrakota`, `cimenSonbahar`, `karYaprak`, `karZemin`, `karKum`, `karTane`, `buz`, `sisKis`, `sisSonbahar`).
 - Menü resimleri mevsimden etkilenmez. Yeni harita (`rebuildTerrain`) mevcut mevsim görünümünü korur.
 - Deneme: `?preview&mevsim=kis` (ya da `sonbahar`, `yaz`, `ilkbahar`); `mevsim=dongu` 6 saniyede bir sıradaki mevsime geçer.
-- Bilinen küçük eksikler: ördekler kışın buzun üstünde yüzmeye devam eder; yerleştirme önizlemesindeki hayalet ağaç mevsim renginde değildir; bazı ağaç çeşitlerindeki hardal vurgu kışın da kalır.
+- Kışın ördekler göl buz tutarken küçülerek gider, ilkbaharda döner. Yerleştirme önizlemesindeki hayalet ağaç da mevsim renginde görünür (`treeGhostMaterial`).
+- Bilinen küçük eksik: bazı ağaç çeşitlerindeki hardal vurgu kışın da kalır (kuru yaprak gibi durur).
 
 ### Canlılık (`life.ts`)
 
