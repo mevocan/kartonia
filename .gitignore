@@ -3,3 +3,11 @@ dist/
 *.log
 .DS_Store
 kontrol-gecici.*
+
+# Editör
+.idea/
+.vscode/
+
+# Yerel ortam dosyaları
+*.local
+.env*

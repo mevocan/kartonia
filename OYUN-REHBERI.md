@@ -60,7 +60,7 @@ Izgara yoktur, binalar serbestçe konur. Gökdelen ve apartman yoktur; en büyü
 
 ## 2. Çalıştırma, derleme, test
 
-Proje klasörü: `C:\Users\mc.dag\Projects\Oyun\sehir\kagit-kasaba`
+Komutlar deponun kök klasöründe (`package.json`'un olduğu yer) çalıştırılır.
 
 | Komut | Ne yapar |
 |---|---|
