@@ -199,7 +199,7 @@ export interface GameState {
   geciciMutluluk?: { deger: number; bitisGun: number };
   /** Seçilmiş karar kartlarının id'leri (seçim sırasıyla, kalıcı). Eski kayıtta yok = boş. */
   kararlar?: string[];
-  /** Kart seçimi bekleyen hedef indeksleri (tamamlandı ama kart seçilmedi). Seçilene kadar oyun duraklar. */
+  /** Kart seçimi bekleyen seçim numaraları (0: 50. gün, 1: 100. gün, 2: 150. gün). Seçilene kadar oyun duraklar. */
   bekleyenKararlar?: number[];
 }
 
@@ -300,8 +300,6 @@ export interface BuildingInfo {
 export interface GoalDef {
   ad: string;
   aciklama: string;
-  /** Tamamlanınca karar kartı seçimi açılır. */
-  kart?: true;
 }
 
 /*

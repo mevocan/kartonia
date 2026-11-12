@@ -1,9 +1,9 @@
 // Üst şerit: gün, para, nüfus, mutluluk, stoklar, hız düğmeleri.
 import type { DayReport, GameState, Good } from '../logic/types';
+import type { SesKanali } from '../audio/api';
 import { el, flash, tr } from './dom';
 import { kisaKalanGun, mevsim, mevsimGunu, type Mevsim } from '../logic/season';
 import { tuccarVarMi } from '../logic/trade';
-import { kartBul } from '../logic/cards';
 
 /** Mevsim simgesi ve adı (HUD ve bildirimler). */
 export const MEVSIM_GORUNUM: Record<Mevsim, { ikon: string; ad: string }> = {
@@ -20,7 +20,8 @@ export interface Hud {
   setDayProgress(t: number): void;
   setSpeed(speed: number): void;
   /** Ses düğmesinin simgesi: açık 🔊, kapalı 🔇. */
-  setSound(on: boolean): void;
+  /** Ses düğmesi ve paneli: aç/kapa durumu ve düzeyler (0..1). */
+  setSound(on: boolean, genel: number, muzik: number): void;
 }
 
 const GOODS: { key: Good; ad: string; ikon: string }[] = [
@@ -52,6 +53,7 @@ export function createHud(
   onTogglePause: () => void,
   onMerchant: () => void,
   onSound: () => void,
+  onVolume: (kanal: SesKanali, v: number) => void,
 ): Hud {
   const box = el('div', 'kagit bant');
   box.id = 'hud';
@@ -122,20 +124,50 @@ export function createHud(
   });
   sep();
 
-  // Seçilmiş karar kartlarının simgeleri; üstüne gelince kartın adı, artısı ve eksisi.
-  const kartlar = el('div', 'hud-kartlar');
-  box.appendChild(kartlar);
-  let kartImza = '';
   // Gezgin tüccar yalnızca geldiği gün görünür; tıklayınca takas paneli açılır.
   const tuccarDugme = el('button', 'dugme', '🛒 Tüccar');
   tuccarDugme.id = 'tuccarDugme';
-  tuccarDugme.title = 'Gezgin tüccar bugün kasabada: takas için tıkla';
+  tuccarDugme.title = 'Gezgin tüccar kasabada: takas için tıkla';
   tuccarDugme.addEventListener('click', onMerchant);
   box.appendChild(tuccarDugme);
+  // Ses: düğme küçük bir panel açar (aç/kapa, genel ses ve müzik düzeyi sürgüleri).
+  const sesKutu = el('div', 'ses-kutu');
   const sesDugme = el('button', 'dugme', '🔊');
   sesDugme.id = 'sesDugme';
-  sesDugme.addEventListener('click', onSound);
-  box.appendChild(sesDugme);
+  sesDugme.title = 'Ses ayarları';
+  const sesPanel = el('div', 'kagit');
+  sesPanel.id = 'sesPanel';
+  const sesAc = el('button', 'dugme', '🔊 Ses açık');
+  sesAc.addEventListener('click', onSound);
+  function surgu(ad: string, kanal: SesKanali): [HTMLInputElement, HTMLSpanElement] {
+    const satir = el('label', 'surgu');
+    const s = el('input');
+    s.type = 'range';
+    s.min = '0';
+    s.max = '100';
+    s.step = '5';
+    const deger = el('span', 'deger');
+    s.addEventListener('input', () => {
+      deger.textContent = `%${s.value}`;
+      onVolume(kanal, Number(s.value) / 100);
+    });
+    satir.append(el('span', 'ad', ad), s, deger);
+    sesPanel.appendChild(satir);
+    return [s, deger];
+  }
+  sesPanel.appendChild(sesAc);
+  const [genelSurgu, genelDeger] = surgu('Genel', 'genel');
+  const [muzikSurgu, muzikDeger] = surgu('Müzik', 'muzik');
+  sesDugme.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sesPanel.classList.toggle('acik');
+  });
+  // Panelin dışına tıklanınca kapanır.
+  document.addEventListener('pointerdown', (e) => {
+    if (!sesKutu.contains(e.target as Node)) sesPanel.classList.remove('acik');
+  });
+  sesKutu.append(sesDugme, sesPanel);
+  box.appendChild(sesKutu);
   const hizlar = el('div', 'hizlar');
   const hizDugmeleri: { speed: number; b: HTMLButtonElement }[] = [];
   for (const [speed, label, title] of [
@@ -184,18 +216,6 @@ export function createHud(
       }
       cubukIc.style.width = `${Math.round(s.gunIlerleme * 100)}%`;
       tuccarDugme.style.display = tuccarVarMi(s.gun) ? 'inline-block' : 'none';
-      const imza = (s.kararlar ?? []).join(',');
-      if (imza !== kartImza) {
-        kartImza = imza;
-        kartlar.replaceChildren();
-        for (const id of s.kararlar ?? []) {
-          const k = kartBul(id);
-          if (!k) continue;
-          const sp = el('span', '', k.ikon);
-          sp.title = `${k.ad}\n＋ ${k.arti}\n－ ${k.eksi}`;
-          kartlar.appendChild(sp);
-        }
-      }
     },
     setReport(r) {
       raporYaz(r);
@@ -203,9 +223,14 @@ export function createHud(
     setDayProgress(t) {
       cubukIc.style.width = `${Math.round(t * 100)}%`;
     },
-    setSound(on) {
-      sesDugme.textContent = on ? '🔊' : '🔇';
-      sesDugme.title = on ? 'Sesi kapat' : 'Sesi aç';
+    setSound(on, genel, muzik) {
+      sesDugme.textContent = on ? (genel > 0 ? '🔊' : '🔈') : '🔇';
+      sesAc.textContent = on ? '🔊 Ses açık' : '🔇 Ses kapalı';
+      sesAc.classList.toggle('kapali', !on);
+      genelSurgu.value = String(Math.round(genel * 100));
+      muzikSurgu.value = String(Math.round(muzik * 100));
+      genelDeger.textContent = `%${genelSurgu.value}`;
+      muzikDeger.textContent = `%${muzikSurgu.value}`;
     },
     setSpeed(speed) {
       for (const h of hizDugmeleri) h.b.classList.toggle('secili', h.speed === speed);

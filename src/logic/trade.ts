@@ -1,4 +1,4 @@
-// Gezgin tüccar: her BALANCE.ticaret.aralik günde bir, başlangıç yolunun kenar ucuna gelir ve o gün kalır.
+// Gezgin tüccar: her BALANCE.ticaret.aralik günde bir, başlangıç yolunun kenar ucuna gelir ve `kalis` gün kalır.
 // Geliş günleri gün sayısından türetilir (durum alanı yok); yalnızca ziyaretteki kota sayacı saklanır.
 import { BALANCE } from '../data/buildings';
 import { HARITA } from '../data/map';
@@ -6,16 +6,28 @@ import type { GameState, Good } from './types';
 import { stockLimit } from './placement';
 import { ayar } from './cards';
 
-/** Tüccar bu gün kasabada mı (aralik, 2 × aralik, ... günleri). */
+/** Tüccar bu gün kasabada mı: aralik. günden başlayarak her ziyarette kalis gün (ör. 8–10, 16–18, ...). */
 export function tuccarVarMi(gun: number): boolean {
-  const a = BALANCE.ticaret.aralik;
-  return gun >= a && Math.floor(gun) % a === 0;
+  const { aralik, kalis } = BALANCE.ticaret;
+  const g = Math.floor(gun);
+  return g >= aralik && g % aralik < kalis;
+}
+
+/** Ziyaretin ilk günü mü (geliş bildirimi için). */
+export function tuccarGeldiMi(gun: number): boolean {
+  return tuccarVarMi(gun) && Math.floor(gun) % BALANCE.ticaret.aralik === 0;
+}
+
+/** Tüccar buradaysa bugün dahil kaç gün daha kalacak; değilse 0. */
+export function tuccarKalisGunu(gun: number): number {
+  if (!tuccarVarMi(gun)) return 0;
+  return BALANCE.ticaret.kalis - (Math.floor(gun) % BALANCE.ticaret.aralik);
 }
 
 /** Sıradaki gelişe kaç gün var (bugün buradaysa 0). */
 export function tuccaraKalanGun(gun: number): number {
-  const a = BALANCE.ticaret.aralik;
   if (tuccarVarMi(gun)) return 0;
+  const a = BALANCE.ticaret.aralik;
   return a - (Math.floor(gun) % a);
 }
 
@@ -78,7 +90,7 @@ export function sellGood(s: GameState, g: Good, miktar: number): number | null {
   return tutar;
 }
 
-/** Gün sonu: tüccar yalnızca bir gün kalır, kota sayacı sıfırlanır. */
+/** Gün sonu: ziyaretin son günü bittiyse kota sayacı sıfırlanır (kota bütün ziyaret içindir). */
 export function ticaretGunSonu(s: GameState): void {
-  delete s.tuccarKota;
+  if (!tuccarVarMi(s.gun + 1)) delete s.tuccarKota;
 }

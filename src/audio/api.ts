@@ -13,6 +13,9 @@ export type SesEfekti =
   | 'hedef' // hedef tamamlandı, kart seçildi
   | 'seviye'; // ev büyüdü / anıt aşaması
 
+/** Oyuncunun ayarlayabildiği ses düzeyleri. */
+export type SesKanali = 'genel' | 'muzik';
+
 export interface GameAudio {
   /**
    * Tarayıcı kuralı: ses ilk kullanıcı etkileşiminden sonra başlar. Main bunu ilk pointerdown / keydown'da
@@ -23,6 +26,12 @@ export interface GameAudio {
   /** Ana aç/kapa: efekt, ortam ve müzik birlikte. Kapatma/açma kısa bir yumuşak geçişle olur. */
   setEnabled(on: boolean): void;
   isEnabled(): boolean;
+  /**
+   * Oyuncunun ses düzeyi (0..1): 'genel' bütün sesi (efekt, ortam, müzik), 'muzik' yalnızca müziği çarpar.
+   * Aç/kapa'dan bağımsızdır: kapalıyken düzey değişirse açılınca o düzeyle gelir. Unlock'tan önce de saklanır.
+   */
+  setVolume(kanal: SesKanali, v: number): void;
+  getVolume(kanal: SesKanali): number;
   /**
    * Ortam sesi: ilkbahar ve yazda kuş sesleri (seyrek cıvıltılar), sonbaharda hafif rüzgâr + seyrek kuş,
    * kışın rüzgâr. zoom01: 0 kamera en yakın, 1 en uzak; uzaklaştıkça ortam sesi kısılır.

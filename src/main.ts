@@ -3,8 +3,8 @@ import type { BuildingType, DayReport, GameState, Good, RoadType, Vec2 } from '.
 import {
   canPlace, canUpgrade, createGame, upgradeBuilding, demolish, demolishRoad, deserialize, getBuildingInfo, getRoadInfo, GOALS, KASABA_TAMAM_HEDEFI, placeBuilding,
   placeRoad, planRoad, serialize, tick, mevsim, monumentStage, canAdvanceMonument, advanceMonument,
-  tuccarVarMi, tuccarKonumu, buyGood, sellGood, canBuy, canSell, checkRequest, deliverFeast,
-  bekleyenSecim, kartCek, kartSec, kartBul,
+  tuccarVarMi, tuccarGeldiMi, tuccarKalisGunu, tuccarKonumu, buyGood, sellGood, canBuy, canSell, checkRequest, deliverFeast,
+  bekleyenSecim, kartCek, kartSec, kartBul, secimGunu, toplamSecim,
 } from './logic/game';
 import { BALANCE, BUILDINGS } from './data/buildings';
 import { createRenderer } from './render/renderer';
@@ -17,13 +17,15 @@ import {
 } from './ui/toast';
 import { createTradePanel } from './ui/tradePanel';
 import { createCardPicker } from './ui/cardPicker';
+import { createCardList } from './ui/cardList';
 import { createTutorial } from './ui/tutorial';
 import { createAudio } from './audio/index';
+import type { SesKanali } from './audio/api';
 import { createInput, type Selection } from './ui/input';
 import { el } from './ui/dom';
 
 const KAYIT_ANAHTARI = 'kagit-kasaba-kayit';
-/** Ses aç/kapa ayarı (oyun kaydından ayrı). '0' kapalı. */
+/** Ses ayarı (oyun kaydından ayrı): {acik, genel, muzik}. */
 const SES_ANAHTARI = 'kagit-kasaba-ses';
 const ALTIN = '#d9a13b';
 const KIRMIZI = '#c9544a';
@@ -90,6 +92,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     ui, (v) => setSpeed(v), () => setSpeed(hiz === 0 ? duraklamadanOnce : 0),
     () => (tuccar.isOpen() ? tuccar.close() : (tuccar.open(), tuccar.update(s), ses.play('secim'))),
     () => sesAyarla(!ses.isEnabled()),
+    (kanal, v) => sesDuzeyi(kanal, v),
   );
   const goal = createGoalCard(ui);
   const istekKarti = createRequestCard(ui, () => senlik(), (id) => {
@@ -100,6 +103,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   });
   const tuccar = createTradePanel(ui, (g, n) => ticaret(g, n, true), (g, n) => ticaret(g, n, false));
   const secici = createCardPicker(ui, (id) => kartSecildi(id));
+  const kasabaYolu = createCardList(ui);
   // Olumsuz bildirimler (yapılamayan işlem, küçülen ev, borç) kısa bir hata sesiyle gelir.
   const toastlar = createToasts(ui);
   const toasts = {
@@ -110,14 +114,20 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   };
   const ogretici = createTutorial(ui);
   {
-    let acik = true;
+    // Kayıtlı ses ayarı: {acik, genel, muzik} (eski biçim: '0' kapalı, '1' açık).
+    let ayar: { acik?: unknown; genel?: unknown; muzik?: unknown } = {};
     try {
-      acik = localStorage.getItem(SES_ANAHTARI) !== '0';
+      const ham = localStorage.getItem(SES_ANAHTARI);
+      if (ham === '0' || ham === '1') ayar = { acik: ham === '1' };
+      else if (ham) ayar = JSON.parse(ham) as typeof ayar;
     } catch {
       /* yok say */
     }
-    ses.setEnabled(acik);
-    hud.setSound(acik);
+    const sayi = (v: unknown, d: number): number => (typeof v === 'number' && v >= 0 && v <= 1 ? v : d);
+    ses.setEnabled(ayar.acik !== false);
+    ses.setVolume('genel', sayi(ayar.genel, 1));
+    ses.setVolume('muzik', sayi(ayar.muzik, 1));
+    hud.setSound(ses.isEnabled(), ses.getVolume('genel'), ses.getVolume('muzik'));
   }
   const menu = createBuildMenu(ui, (t) => setTool(t), (t) => renderer.buildingThumbnail(t));
   const info = createInfoPanel(
@@ -167,15 +177,27 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   });
 
   // ---- Durum değiştiren işlemler ----
-  /** Ses aç/kapa: ses katmanına, HUD simgesine ve localStorage'a yazar. */
-  function sesAyarla(on: boolean): void {
-    ses.setEnabled(on);
-    hud.setSound(on);
+  /** Ses ayarı: aç/kapa ve düzeyler. Ses katmanına, HUD paneline ve localStorage'a yazar. */
+  function sesKaydet(): void {
+    hud.setSound(ses.isEnabled(), ses.getVolume('genel'), ses.getVolume('muzik'));
     try {
-      localStorage.setItem(SES_ANAHTARI, on ? '1' : '0');
+      localStorage.setItem(SES_ANAHTARI, JSON.stringify({
+        acik: ses.isEnabled(), genel: ses.getVolume('genel'), muzik: ses.getVolume('muzik'),
+      }));
     } catch {
       /* yok say */
     }
+  }
+
+  function sesAyarla(on: boolean): void {
+    ses.setEnabled(on);
+    sesKaydet();
+  }
+
+  function sesDuzeyi(kanal: SesKanali, v: number): void {
+    ses.setVolume(kanal, v);
+    if (v > 0 && !ses.isEnabled()) ses.setEnabled(true); // sürgüyü açmak sesi de açar
+    sesKaydet();
   }
 
   function setSpeed(v: number): void {
@@ -247,7 +269,8 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     setTool(null);
     tuccar.close();
     setSpeed(0);
-    secici.show(GOALS[h]?.ad ?? 'Hedef', kartCek(s, h));
+    const n = Math.min(h, toplamSecim() - 1); // eski kayıtta hedef numarası kalmış olabilir
+    secici.show(`📅 ${secimGunu(n)}. gün: kasabanın karakterini seç (${n + 1} / ${toplamSecim()}). Seçim kalıcıdır.`, kartCek(s, h));
   }
 
   function kartSecildi(id: string): void {
@@ -409,6 +432,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     menu.update(s);
     goal.update(s);
     istekKarti.update(s);
+    kasabaYolu.update(s);
     tuccar.update(s);
   }
 
@@ -461,7 +485,9 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     for (const t of r.yeniAcilanlar) toasts.show(`🔓 Yeni bina açıldı: ${BUILDINGS[t].ad}`, 'iyi');
     if (r.tamamlananIstek) toasts.show(istekTamamMetni(r.tamamlananIstek), 'iyi');
     if (r.yeniIstek) toasts.show(`📜 Yeni istek: ${ISTEK_METIN[r.yeniIstek].ad}`, 'bilgi');
-    if (tuccarVarMi(s.gun)) toasts.show('🛒 Gezgin tüccar geldi! Bugün takas yapabilirsin (üst şeritteki düğme).', 'bilgi');
+    if (tuccarGeldiMi(s.gun)) {
+      toasts.show(`🛒 Gezgin tüccar geldi! ${BALANCE.ticaret.kalis} gün kalacak; takas için üst şeritteki düğme.`, 'bilgi');
+    } else if (tuccarKalisGunu(s.gun) === 1) toasts.show('🛒 Tüccar yarın gidiyor: bugün son takas günü.', 'bilgi');
     const mb = mevsimBildirimi(s.gun);
     if (mb) toasts.show(mb.metin, mb.tur);
 

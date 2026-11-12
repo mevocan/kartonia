@@ -10,7 +10,7 @@ import { adjacencyBonus } from './adjacency';
 import { mevsim } from './season';
 import { geciciMutlulukBugun, istekGunSonu } from './requests';
 import { ticaretGunSonu } from './trade';
-import { ayar } from './cards';
+import { ayar, kartGunSonu } from './cards';
 
 // Marangoz odunu kullandığı için oduncudan sonra gelir.
 export const URETIM_SIRASI: BuildingType[] = ['tarla', 'degirmen', 'firin', 'oduncu', 'balikci', 'tasOcagi', 'marangoz'];
@@ -274,6 +274,7 @@ export function endDay(s: GameState): DayReport {
   if (ist.tamamlanan) rapor.tamamlananIstek = ist.tamamlanan;
   if (ist.yeni) rapor.yeniIstek = ist.yeni;
   ticaretGunSonu(s);
+  kartGunSonu(s); // 50, 100, 150. gün: karar kartı seçimi
 
   rapor.oyunBitti = s.bitti;
   s.gun++;

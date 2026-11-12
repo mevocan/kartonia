@@ -15,12 +15,12 @@ function enYuksekSeviye(s: GameState, t: BuildingType): number {
 }
 
 const GOAL_LIST: Goal[] = [
-  { kart: true, ad: 'Küçük köy', aciklama: '10 nüfusa ulaş.', check: (s) => s.nufus >= 10, ilerleme: (s) => [s.nufus, 10] },
+  { ad: 'Küçük köy', aciklama: '10 nüfusa ulaş.', check: (s) => s.nufus >= 10, ilerleme: (s) => [s.nufus, 10] },
   { ad: 'İlk yemek', aciklama: 'Fırında ya da balıkçıda ilk yemeği üret.', check: (s) => s.toplamYemek > 0 },
-  { kart: true, ad: 'Kasaba', aciklama: '50 nüfusa ulaş.', check: (s) => s.nufus >= 50, ilerleme: (s) => [s.nufus, 50] },
+  { ad: 'Kasaba', aciklama: '50 nüfusa ulaş.', check: (s) => s.nufus >= 50, ilerleme: (s) => [s.nufus, 50] },
   { ad: 'İki katlı ev', aciklama: 'Bir evi 3. seviyeye çıkar.', check: (s) => seviye3Ev(s) >= 1 },
   {
-    kart: true, ad: 'Kasaba tamamlandı', aciklama: "150 nüfusa ulaş ve Saat Kulesi'ni tamamla.",
+    ad: 'Kasaba tamamlandı', aciklama: "150 nüfusa ulaş ve Saat Kulesi'ni tamamla.",
     // Yalnızca tamamlanmış kule sayılır (insaat alanı yok).
     check: (s) => s.nufus >= 150 && s.binalar.some((b) => b.type === 'saatKulesi' && !b.insaat),
     ilerleme: (s) => [s.nufus, 150],
@@ -32,7 +32,7 @@ const GOAL_LIST: Goal[] = [
     ilerleme: (s) => [enYuksekSeviye(s, 'cesme'), 3],
   },
   {
-    kart: true, ad: 'Mutlu kasaba', aciklama: '200 nüfusa ulaş, ortalama mutluluk en az 70 olsun.',
+    ad: 'Mutlu kasaba', aciklama: '200 nüfusa ulaş, ortalama mutluluk en az 70 olsun.',
     check: (s) => s.nufus >= 200 && s.mutluluk >= 70,
     ilerleme: (s) => [s.nufus, 200],
   },
@@ -46,7 +46,7 @@ const GOAL_LIST: Goal[] = [
     check: (s) => enYuksekSeviye(s, 'pazar') >= 3 && enYuksekSeviye(s, 'okul') >= 3,
   },
   {
-    kart: true, ad: 'Dolu ambar', aciklama: 'Ambarda aynı anda 150 yemek ve 100 odun biriktir.',
+    ad: 'Dolu ambar', aciklama: 'Ambarda aynı anda 150 yemek ve 100 odun biriktir.',
     check: (s) => s.stok.yemek >= 150 && s.stok.odun >= 100,
   },
   {
@@ -66,7 +66,7 @@ const GOAL_LIST: Goal[] = [
   },
 ];
 
-export const GOALS: GoalDef[] = GOAL_LIST.map(({ ad, aciklama, kart }) => (kart ? { ad, aciklama, kart } : { ad, aciklama }));
+export const GOALS: GoalDef[] = GOAL_LIST.map(({ ad, aciklama }) => ({ ad, aciklama }));
 
 /** "Kasaba tamamlandı" hedefinin indeksi (eski son hedef; sonrasında yeni hedefler başlar). */
 export const KASABA_TAMAM_HEDEFI = 4;
@@ -84,8 +84,6 @@ export function checkGoals(s: GameState): number[] {
   const yeni: number[] = [];
   while (s.hedef < GOAL_LIST.length && GOAL_LIST[s.hedef].check(s)) {
     yeni.push(s.hedef);
-    // Karar kartı hedefi: seçim kuyruğa girer, main seçilene kadar oyunu duraklatır.
-    if (GOAL_LIST[s.hedef].kart) s.bekleyenKararlar = [...(s.bekleyenKararlar ?? []), s.hedef];
     s.hedef++;
   }
   return yeni;

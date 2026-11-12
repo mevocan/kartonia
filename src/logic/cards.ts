@@ -46,13 +46,13 @@ export function ayar(s: GameState, a: AyarAnahtari): number {
 }
 
 /**
- * `hedef` numaralı hedef için gösterilecek üç kart: tohum ve hedeften deterministik,
+ * `secim` numaralı seçim (0: 50. gün, 1: 100. gün, ...) için gösterilecek üç kart: tohum ve seçim numarasından deterministik,
  * daha önce seçilmiş kartlar hariç.
  */
-export function kartCek(s: GameState, hedef: number): KararKarti[] {
+export function kartCek(s: GameState, secim: number): KararKarti[] {
   const secilen = new Set(s.kararlar ?? []);
   const havuz = KARTLAR.filter((k) => !secilen.has(k.id));
-  const rng = makeRng(((s.haritaTohum ?? 0) ^ Math.imul(hedef + 1, 0x85ebca6b)) >>> 0);
+  const rng = makeRng(((s.haritaTohum ?? 0) ^ Math.imul(secim + 1, 0x85ebca6b)) >>> 0);
   // Fisher–Yates, sonra ilk üçü.
   for (let i = havuz.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
@@ -61,18 +61,40 @@ export function kartCek(s: GameState, hedef: number): KararKarti[] {
   return havuz.slice(0, KART_SECENEK);
 }
 
-/** Seçim bekleyen ilk hedef (yoksa null). */
+/** Seçim bekleyen ilk seçim numarası (yoksa null). */
 export function bekleyenSecim(s: GameState): number | null {
   return s.bekleyenKararlar?.[0] ?? null;
 }
 
 /** Bekleyen ilk seçimde kartı seç. Kart gösterilenlerden değilse false. */
 export function kartSec(s: GameState, id: string): boolean {
-  const hedef = bekleyenSecim(s);
-  if (hedef === null) return false;
-  if (!kartCek(s, hedef).some((k) => k.id === id)) return false;
+  const secim = bekleyenSecim(s);
+  if (secim === null) return false;
+  if (!kartCek(s, secim).some((k) => k.id === id)) return false;
   s.kararlar = [...(s.kararlar ?? []), id];
   s.bekleyenKararlar = s.bekleyenKararlar!.slice(1);
   if (s.bekleyenKararlar.length === 0) delete s.bekleyenKararlar;
   return true;
+}
+
+/** Toplam kart seçimi (50, 100, 150. günler → 3). */
+export function toplamSecim(): number {
+  return Math.floor(BALANCE.kartSecimi.son / BALANCE.kartSecimi.aralik);
+}
+
+/** Seçim numarasının günü (0 → 50. gün). */
+export function secimGunu(secim: number): number {
+  return (secim + 1) * BALANCE.kartSecimi.aralik;
+}
+
+/**
+ * Gün sonu (endDay, s.gun henüz artmadan): seçim günüyse (50, 100, 150) seçim kuyruğa girer; main oyunu
+ * seçilene kadar duraklatır. Toplam seçim sayısı aşılmaz (eski kayıtlarda hedeflerden gelmiş kartlar dahil).
+ */
+export function kartGunSonu(s: GameState): void {
+  const { aralik, son } = BALANCE.kartSecimi;
+  if (s.gun % aralik !== 0 || s.gun > son) return;
+  const yapilan = (s.kararlar?.length ?? 0) + (s.bekleyenKararlar?.length ?? 0);
+  if (yapilan >= toplamSecim()) return;
+  s.bekleyenKararlar = [...(s.bekleyenKararlar ?? []), s.gun / aralik - 1];
 }

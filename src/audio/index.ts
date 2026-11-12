@@ -1,6 +1,6 @@
 // GameAudio uygulaması. AudioContext ilk unlock'ta oluşturulur; ondan önce gelen çağrılar yalnızca durumu saklar.
 // Tarayıcıda Web Audio yoksa ya da bir şey ters giderse hiçbir metot hata fırlatmaz.
-import type { GameAudio, SesEfekti } from './api';
+import type { GameAudio, SesEfekti, SesKanali } from './api';
 import type { Mevsim } from '../logic/season';
 import { SesMotoru } from './engine';
 
@@ -23,6 +23,7 @@ export function createAudio(): GameAudio {
   let durak = false;
   let mevsim: Mevsim = 'ilkbahar';
   let zoom = 0.5;
+  const duzey: Record<SesKanali, number> = { genel: 1, muzik: 1 };
   let kapandi = false;
 
   const guvenli = (f: () => void): void => {
@@ -44,6 +45,8 @@ export function createAudio(): GameAudio {
           motor = new SesMotoru(ctx, acik);
           motor.setAmbience(mevsim, zoom, true);
           motor.setPaused(durak);
+          motor.setVolume('genel', duzey.genel);
+          motor.setVolume('muzik', duzey.muzik);
           const m = motor;
           zamanlayici = setInterval(() => guvenli(() => m.zamanla()), TIK_MS);
         }
@@ -56,6 +59,13 @@ export function createAudio(): GameAudio {
     setEnabled(on: boolean) {
       acik = on;
       if (motor) guvenli(() => motor!.setEnabled(on));
+    },
+    setVolume(kanal: SesKanali, v: number) {
+      duzey[kanal] = Math.min(1, Math.max(0, v));
+      if (motor) guvenli(() => motor!.setVolume(kanal, duzey[kanal]));
+    },
+    getVolume(kanal: SesKanali) {
+      return duzey[kanal];
     },
     isEnabled() {
       return acik;

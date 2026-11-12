@@ -26,10 +26,11 @@ export { heightAt, isLand, isLake } from './terrain';
 export { adjacencyBonus, bonusText } from './adjacency';
 export { mevsim, mevsimGunu, kisaKalanGun, MEVSIMLER, type Mevsim } from './season';
 export {
-  tuccarVarMi, tuccaraKalanGun, kalanKota, tuccarKonumu, canBuy, canSell, buyGood, sellGood, type TicaretSebep,
+  tuccarVarMi, tuccarGeldiMi, tuccarKalisGunu, tuccaraKalanGun, kalanKota, tuccarKonumu, canBuy, canSell, buyGood, sellGood,
+  type TicaretSebep,
 } from './trade';
 export { checkRequest, deliverFeast, istekHedefi, istekKalanGun, geciciMutlulukBugun } from './requests';
-export { ayar, kartCek, kartSec, kartBul, bekleyenSecim } from './cards';
+export { ayar, kartCek, kartSec, kartBul, bekleyenSecim, secimGunu, toplamSecim } from './cards';
 export { serialize, deserialize } from './save';
 export { GOALS, goalProgress, KASABA_TAMAM_HEDEFI } from './goals';
 

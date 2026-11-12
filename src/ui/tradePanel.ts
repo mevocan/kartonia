@@ -1,7 +1,7 @@
 // Gezgin tüccar paneli: 6 mal, sat / al düğmeleri, kalan kota. Tüccar yalnızca geldiği gün açılır.
 import type { GameState, Good } from '../logic/types';
 import { BALANCE } from '../data/buildings';
-import { ayar, canBuy, canSell, kalanKota, tuccarVarMi } from '../logic/game';
+import { ayar, canBuy, canSell, kalanKota, tuccarKalisGunu, tuccarVarMi } from '../logic/game';
 import { el, tr } from './dom';
 
 /** Bir tıklamada alınıp satılan birim. */
@@ -33,12 +33,15 @@ export function createTradePanel(
   box.id = 'tuccar';
   const kapat = el('button', 'kapat', '×');
   kapat.title = 'Kapat';
+  // Kota bütün ziyaret içindir (birkaç gün), gün başına değil.
   const kota = el('div', 'alt');
+  const kalis = el('div', 'alt');
   const tablo = el('table');
   box.append(
     kapat,
     el('h3', '', '🛒 Gezgin tüccar'),
-    el('div', 'alt', `Bugün kasabada. Fiyatlar sabit; satış fiyatı alıştan düşük. Her düğme ${TICARET_ADIM} birim.`),
+    kalis,
+    el('div', 'alt', `Fiyatlar sabit; satış fiyatı alıştan düşük. Her düğme ${TICARET_ADIM} birim.`),
     kota,
     tablo,
   );
@@ -87,6 +90,8 @@ export function createTradePanel(
         return;
       }
       kota.textContent = `Kalan takas hakkı: ${kalanKota(s)} / ${ayar(s, 'ticaretKota')} birim`;
+      const g = tuccarKalisGunu(s.gun);
+      kalis.textContent = g > 1 ? `Kasabada ${g} gün daha (bugün dahil).` : 'Bugün son gün: yarın gidiyor.';
       for (const r of satirlar) {
         r.stok.textContent = tr(Math.floor(s.stok[r.g]));
         r.sat.disabled = !canSell(s, r.g, TICARET_ADIM).ok;

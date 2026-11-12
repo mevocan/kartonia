@@ -3,29 +3,48 @@ import { BALANCE } from '../src/data/buildings';
 import { HARITA } from '../src/data/map';
 import {
   buyGood, canBuy, canSell, deserialize, endDay, kalanKota, sellGood, serialize, stockLimit, tuccaraKalanGun,
+  tuccarGeldiMi, tuccarKalisGunu,
   tuccarKonumu, tuccarVarMi,
 } from '../src/logic/game';
 import { add, blank } from './helpers';
 
 function tuccarGunu() {
   const s = blank();
-  s.gun = 6;
+  s.gun = 8;
   s.para = 1000;
   return s;
 }
 
 describe('tüccar: geliş günleri', () => {
-  it('her 6 günde bir, ilk geliş 6. gün', () => {
-    expect(BALANCE.ticaret.aralik).toBe(6);
+  it('her 8 günde bir gelir ve 3 gün kalır (8–10, 16–18, 24–26)', () => {
+    expect([BALANCE.ticaret.aralik, BALANCE.ticaret.kalis]).toEqual([8, 3]);
     const gunler = Array.from({ length: 30 }, (_, i) => i + 1).filter(tuccarVarMi);
-    expect(gunler).toEqual([6, 12, 18, 24, 30]);
+    expect(gunler).toEqual([8, 9, 10, 16, 17, 18, 24, 25, 26]);
+    expect([7, 8, 9, 10, 16].map(tuccarGeldiMi)).toEqual([false, true, false, false, true]);
   });
 
-  it('sıradaki gelişe kalan gün', () => {
-    expect(tuccaraKalanGun(1)).toBe(5);
-    expect(tuccaraKalanGun(5)).toBe(1);
-    expect(tuccaraKalanGun(6)).toBe(0);
-    expect(tuccaraKalanGun(7)).toBe(5);
+  it('kalan kalış günü ve sıradaki gelişe kalan gün', () => {
+    expect([8, 9, 10, 11].map(tuccarKalisGunu)).toEqual([3, 2, 1, 0]);
+    expect(tuccaraKalanGun(1)).toBe(7);
+    expect(tuccaraKalanGun(9)).toBe(0);
+    expect(tuccaraKalanGun(11)).toBe(5);
+  });
+
+  it('kota bütün ziyaret içindir; ziyaret bitince sıfırlanır', () => {
+    const s = tuccarGunu();
+    s.stok.bugday = 100;
+    sellGood(s, 'bugday', 25);
+    endDay(s); // 8 → 9: tüccar hâlâ burada, kota sürer
+    expect(kalanKota(s)).toBe(15);
+    sellGood(s, 'bugday', 15);
+    expect(canSell(s, 'bugday', 1).sebep).toBe('kota');
+    endDay(s); // 9 → 10
+    expect(kalanKota(s)).toBe(0);
+    endDay(s); // 10 → 11: tüccar gitti
+    expect(s.tuccarKota).toBeUndefined();
+    expect(canSell(s, 'bugday', 1).sebep).toBe('kilitli');
+    s.gun = 16;
+    expect(kalanKota(s)).toBe(40);
   });
 
   it('araba başlangıç yolunun kenar ucunda (sınırdan bir nokta içeride), kasabaya bakar', () => {
@@ -69,18 +88,6 @@ describe('tüccar: kota ve sınırlar', () => {
     expect(canSell(s, 'bugday', 1).sebep).toBe('kota');
   });
 
-  it('kota gün sonunda sıfırlanır; tüccar gidince ticaret yok', () => {
-    const s = tuccarGunu();
-    s.stok.bugday = 100;
-    sellGood(s, 'bugday', 40);
-    endDay(s);
-    expect(s.gun).toBe(7);
-    expect(s.tuccarKota).toBeUndefined();
-    expect(canSell(s, 'bugday', 1).sebep).toBe('kilitli');
-    s.gun = 12;
-    expect(kalanKota(s)).toBe(40);
-    expect(sellGood(s, 'bugday', 1)).toBe(1);
-  });
 
   it('para, stok ve depo sınırı', () => {
     const s = tuccarGunu();

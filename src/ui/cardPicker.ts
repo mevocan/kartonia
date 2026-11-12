@@ -3,8 +3,8 @@ import type { KararKarti } from '../data/cards';
 import { el } from './dom';
 
 export interface CardPicker {
-  /** Kartları gösterir; `baslik` tamamlanan hedefin adı. */
-  show(baslik: string, kartlar: KararKarti[]): void;
+  /** Kartları gösterir; `alt` başlığın altındaki açıklama (gün ve seçim sırası). */
+  show(alt: string, kartlar: KararKarti[]): void;
   hide(): void;
   isOpen(): boolean;
 }
@@ -23,9 +23,9 @@ export function createCardPicker(root: HTMLElement, onPick: (id: string) => void
   let acik = false;
 
   return {
-    show(baslik, kartlar) {
+    show(metin, kartlar) {
       acik = true;
-      alt.textContent = `🎯 ${baslik} tamamlandı. Kasabanın karakterini seç: seçim kalıcıdır.`;
+      alt.textContent = metin;
       sira.replaceChildren();
       kartlar.forEach((k, i) => {
         const b = el('button', 'kagit kart');

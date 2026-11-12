@@ -28,9 +28,15 @@ describe('createGame', () => {
     createGame(); // klasik harita etkin olsun
     const hedef = HARITA.ormanlar.reduce((a, o) => a + o.agac, 0);
     createGame(); // ısınma
-    const t0 = performance.now();
-    const s = createGame();
-    expect(performance.now() - t0).toBeLessThan(50);
+    // Üç denemenin en hızlısı: testler paralel koşarken tek ölçüm işlemci yükünden sapabiliyor.
+    let enIyi = Infinity;
+    let s = createGame();
+    for (let i = 0; i < 3; i++) {
+      const t0 = performance.now();
+      s = createGame();
+      enIyi = Math.min(enIyi, performance.now() - t0);
+    }
+    expect(enIyi).toBeLessThan(50);
     expect(s.binalar.filter((b) => b.dogal)).toHaveLength(hedef);
   });
 

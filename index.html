@@ -60,6 +60,7 @@
       position: absolute; top: 10px; left: 238px; transform: rotate(-0.4deg);
       display: flex; align-items: center; gap: 8px; padding: 10px 12px 8px;
       flex-wrap: wrap; row-gap: 4px; max-width: calc(100vw - 238px - 110px);
+      z-index: 7; /* açılır ses paneli tüccar panelinin üstünde kalsın */
       white-space: nowrap;
     }
     .hud-oge { display: flex; flex-direction: column; align-items: center; min-width: 46px; transition: transform 0.15s; }
@@ -220,6 +221,24 @@
     #ogretici.ilerledi { animation: vurgu 0.5s ease-out; }
     /* Ses aç/kapa (HUD) */
     #sesDugme { width: auto; margin: 0; padding: 4px 8px; font-size: 14px; }
+    .ses-kutu { position: relative; }
+    #sesPanel { position: absolute; top: calc(100% + 10px); right: -8px; width: 210px; padding: 12px 12px 8px; display: none; z-index: 7; transform: rotate(0.8deg); white-space: normal; }
+    #sesPanel.acik { display: block; }
+    #sesPanel .dugme { width: 100%; margin: 0 0 8px; padding: 4px 8px; font-size: 13px; }
+    #sesPanel .dugme.kapali { color: var(--soluk); }
+    #sesPanel .surgu { display: grid; grid-template-columns: 52px 1fr 38px; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 6px; }
+    #sesPanel .surgu input { width: 100%; accent-color: var(--altin); }
+    #sesPanel .surgu .deger { text-align: right; color: var(--soluk); }
+    /* Sol alt: kasabanın seçtiği karar kartları (hep görünür) */
+    #kasabaYolu { position: absolute; left: 16px; bottom: 16px; width: 220px; padding: 16px 13px 10px; transform: rotate(-1deg); font-size: 12px; }
+    #kasabaYolu h4 { margin: 0 0 6px; font-size: 13px; }
+    #kasabaYolu .kart { padding: 4px 0 5px; border-bottom: 1px dashed rgba(154, 138, 120, 0.45); }
+    #kasabaYolu .kart:last-child { border-bottom: none; }
+    #kasabaYolu .ad { font-weight: bold; margin-bottom: 1px; }
+    #kasabaYolu .arti { color: var(--yesil); }
+    #kasabaYolu .eksi { color: var(--kirmizi); }
+    #kasabaYolu .bos { color: var(--soluk); }
+    #kasabaYolu .alt { margin-top: 6px; font-size: 11px; color: var(--soluk); }
     /* Karar kartı seçimi: oyun duraklar, üç kağıt kart */
     #kartSecim { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 22px; background: rgba(60, 45, 30, 0.35); z-index: 8; }
     #kartSecim .baslik { padding: 18px 26px 12px; text-align: center; transform: rotate(-1deg); }
@@ -233,9 +252,6 @@
     #kartSecim .kart .arti { color: var(--yesil); font-size: 13px; margin-bottom: 6px; }
     #kartSecim .kart .eksi { color: var(--kirmizi); font-size: 13px; }
     #kartSecim .kart .sec { margin-top: 14px; text-align: center; font-size: 12px; color: var(--soluk); border-top: 1px dashed var(--soluk); padding-top: 6px; }
-    /* Seçilmiş kartların simgeleri (HUD) */
-    .hud-kartlar { display: flex; gap: 2px; font-size: 16px; cursor: default; }
-    .hud-kartlar:empty { display: none; }
     /* Gezgin tüccar paneli */
     #tuccar { position: absolute; top: 120px; left: 50%; width: 330px; margin-left: -165px; padding: 26px 16px 14px; transform: rotate(-0.8deg); display: none; font-size: 12px; z-index: 6; }
     #tuccar h3 { margin: 0 0 2px; font-size: 17px; }

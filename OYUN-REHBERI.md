@@ -509,8 +509,8 @@ Saat Kulesi tek seferde kurulmaz. Yerleştirince (100 para) iskele kurulur, kule
 
 ### Gezgin tüccar (`logic/trade.ts`)
 
-- Her **6 günde bir** gelir (6, 12, 18, ... günler) ve o gün kalır. Araba başlangıç yolunun kenar ucunda, sınırdan bir nokta içeride durur (`tuccarKonumu`); gelirken yuvarlanır, tente açılır, tüccar figürü çıkar (`render/merchant.ts`). Geliş günleri gün sayısından türetilir (`tuccarVarMi(gun)`); durumda yalnızca ziyaretteki kota sayacı (`tuccarKota`) saklanır, gün sonunda silinir.
-- Geldiği gün bildirim çıkar ve üst şeritte **🛒 Tüccar** düğmesi görünür. Düğme takas panelini açar: 6 mal, stok, satış ve alış fiyatı, her tıklamada 5 birimlik **−** (sat) ve **+** (al) düğmeleri, kalan takas hakkı.
+- Her **8 günde bir** gelir ve **3 gün kalır** (8–10, 16–18, 24–26. günler; `BALANCE.ticaret.aralik`, `kalis`). Araba başlangıç yolunun kenar ucunda, sınırdan bir nokta içeride durur (`tuccarKonumu`); gelirken yuvarlanır, tente açılır, tüccar figürü çıkar (`render/merchant.ts`). Geliş günleri gün sayısından türetilir (`tuccarVarMi(gun)`); durumda yalnızca ziyaretteki kota sayacı (`tuccarKota`) saklanır, gün sonunda silinir.
+- Geldiği gün ve gitmeden önceki son gün bildirim çıkar; kaldığı sürece üst şeritte **🛒 Tüccar** düğmesi görünür. Panel tüccarın kaç gün daha kalacağını yazar. Düğme takas panelini açar: 6 mal, stok, satış ve alış fiyatı, her tıklamada 5 birimlik **−** (sat) ve **+** (al) düğmeleri, kalan takas hakkı.
 - Fiyatlar sabittir (`BALANCE.ticaret.fiyat`). Satış alıştan belirgin düşüktür; tüccar para basma yolu değil, takas ve acil durum aracıdır.
 
 | Mal | Sen satarsın | Sen alırsın |
@@ -522,7 +522,7 @@ Saat Kulesi tek seferde kurulmaz. Yerleştirince (100 para) iskele kurulur, kule
 | Taş | 3 | 8 |
 | Mobilya | 6 | 15 |
 
-- Ziyaret başına alım + satım toplamı **40 birim** (`kota`). Alımda para ve depo sınırı (`stockLimit`), satışta stok denetlenir (`canBuy`, `canSell`, `buyGood`, `sellGood`).
+- Ziyaret başına alım + satım toplamı **40 birim** (`kota`); bu hak 3 günlük ziyaretin tamamı içindir, ziyaret bitince sıfırlanır. Alımda para ve depo sınırı (`stockLimit`), satışta stok denetlenir (`canBuy`, `canSell`, `buyGood`, `sellGood`).
 
 ### Sakin istekleri (`logic/requests.ts`)
 
@@ -543,12 +543,12 @@ Saat Kulesi tek seferde kurulmaz. Yerleştirince (100 para) iskele kurulur, kule
 
 ## 13d. Karar kartları
 
-Her kasaba farklı bir yöne gitsin diye bazı hedefler tamamlanınca **oyun duraklar ve üç kart gösterilir**. Oyuncu birini seçer, seçim kalıcıdır.
+Her kasaba farklı bir yöne gitsin diye **50, 100 ve 150. günlerin sonunda** oyun duraklar ve üç kart gösterilir. Oyuncu birini seçer, seçim kalıcıdır; toplam **3 kart** seçilir.
 
-- Kart hedefleri: **1, 3, 5, 7 ve 10** (Küçük köy, Kasaba, Kasaba tamamlandı, Mutlu kasaba, Dolu ambar; `GOAL_LIST` içinde `kart: true`).
-- Üç kart harita tohumu ve hedef numarasından deterministik çekilir (`kartCek`); daha önce seçilen kart tekrar gelmez.
-- Hedef tamamlanınca seçim `bekleyenKararlar` kuyruğuna girer. Seçilene kadar oyun duraklıdır ve hız düğmeleri çalışmaz; kayıt kapatılıp açılırsa seçim ekranı yeniden gelir. Aynı gün iki kart hedefi biterse seçimler sırayla gelir.
-- Seçilen kartlar `kararlar` dizisinde durur. Üst şeritte simgeleri görünür; üstüne gelince adı, artısı ve eksisi.
+- Seçim günleri `BALANCE.kartSecimi` (`aralik: 50`, `son: 150`) ile ayarlanır; `kartGunSonu` gün sonunda seçimi kuyruğa ekler. Hedefler artık kart açmaz. Eski kayıtlarda hedeflerden gelmiş kartlar toplam 3 sınırına sayılır.
+- Üç kart harita tohumu ve seçim numarasından deterministik çekilir (`kartCek`); daha önce seçilen kart tekrar gelmez.
+- Seçim `bekleyenKararlar` kuyruğuna girer. Seçilene kadar oyun duraklıdır ve hız düğmeleri çalışmaz; kayıt kapatılıp açılırsa seçim ekranı yeniden gelir. Aynı gün iki kart hedefi biterse seçimler sırayla gelir.
+- Seçilen kartlar `kararlar` dizisinde durur ve **sol alt köşedeki "Kasabanın yolu" kartında hep yazar** (ad, artı, eksi; altında sıradaki seçim günü). `ui/cardList.ts`.
 
 | Kart | Artı | Eksi |
 |---|---|---|
@@ -586,7 +586,7 @@ Ses dosyası yoktur; efektler, ortam sesi ve müzik Web Audio API ile kodla üre
 - **Müzik:** Sol majör pentatonik, 66 BPM. Dört akor (Sol, Mi minör, La sus, Re sus) arasında rastgele dolaşan yumuşak pad ve bas, üstünde küçük adımlarla yürüyen sinüs melodi; 4 ölçülük cümlelerden sonra kısa sessizlikler, hafif yankı. Kışın biraz daha mat.
 - **Seviyeler:** ana 0.8 → efekt 0.8, ortam 0.45, müzik 0.22, sonunda bir sınırlayıcı (kırpılma yok). Aynı efekt 70 ms içinde tekrar çalmaz. Ayar noktaları: `SEVIYE` (`audio/engine.ts`), `AYAR` (`audio/ambience.ts`), efektlerdeki `tepe` değerleri (`audio/effects.ts`).
 - Ses ilk tıklama ya da tuştan sonra başlar (tarayıcı kuralı). Oyun duraklıyken ortam ve müzik hafifçe kısılır.
-- Üst şeritteki 🔊 / 🔇 düğmesi sesi açar / kapar. Ayar `localStorage`'da `kagit-kasaba-ses` anahtarında durur, oyun kaydından ayrıdır.
+- Üst şeritteki 🔊 düğmesi küçük bir ses paneli açar: aç/kapa düğmesi, **Genel** ve **Müzik** düzeyi sürgüleri (0–100). Genel bütün sesi, Müzik yalnızca müziği çarpar; sürgüyü açmak kapalı sesi de açar. Ayar `localStorage`'da `kagit-kasaba-ses` anahtarında `{acik, genel, muzik}` olarak durur (eski '0'/'1' biçimi de okunur), oyun kaydından ayrıdır.
 
 ## 14. Hedefler
 
@@ -734,6 +734,7 @@ src/
     toast.ts            Bildirimler, hedef kartı, istek kartı, hata metinleri
     tradePanel.ts       Gezgin tüccar paneli
     cardPicker.ts       Karar kartı seçim ekranı
+    cardList.ts         Sol alt "Kasabanın yolu": seçilmiş kartlar
     tutorial.ts         Öğretici (ilk oyun, beş adım)
     input.ts            Sol tık, yol fırçası, klavye
     dom.ts              el(), flash(), tr() yardımcıları
@@ -930,7 +931,7 @@ Ayrı ve geçici bir `WebGLRenderer` ile her binanın 1. seviye modeli sabit bir
 
 ## 21. Testler
 
-Testler `tests/` klasöründedir ve Vitest ile çalışır. Son çalıştırmada **194 testin hepsi geçti**. `tests/helpers.ts` boş bir klasik harita durumu (`blank()`), bina ekleme (`add`) ve yol ekleme (`addRoad`) yardımcıları verir.
+Testler `tests/` klasöründedir ve Vitest ile çalışır. Son çalıştırmada **196 testin hepsi geçti**. `tests/helpers.ts` boş bir klasik harita durumu (`blank()`), bina ekleme (`add`) ve yol ekleme (`addRoad`) yardımcıları verir.
 
 | Dosya | Kapsam |
 |---|---|
@@ -943,8 +944,8 @@ Testler `tests/` klasöründedir ve Vitest ile çalışır. Son çalıştırmada
 | `mapgen.test.ts` | Rastgele harita garantileri (yol karada, göl ve orman dışında, merkez boş, aynı tohum = aynı harita) |
 | `newBuildings.test.ts` | Ambar, Balıkçı, ortak yemek stoğu ve satış yeri şartı, Taş Ocağı ve taşlıklar, Marangoz/mobilya/hastane, eski kayıt göçü |
 | `upgrade.test.ts` | Hizmet binası yükseltmesi (maliyet, taş, etki, gider, iade) |
-| `cards.test.ts` | Karar kartları: havuz ve kart hedefleri, her kartın artı ve eksisi, deterministik çekiliş, seçilenin tekrar gelmemesi, seçim sırası, kayıt |
-| `trade.test.ts` | Gezgin tüccar: geliş günleri, fiyatlar, alım/satım, kota ve sıfırlanması, para/stok/depo sınırı, kayıt |
+| `cards.test.ts` | Karar kartları: havuz, 50 / 100 / 150. gün seçimleri ve 3 sınırı, her kartın artı ve eksisi, deterministik çekiliş, seçilenin tekrar gelmemesi, seçim sırası, kayıt |
+| `trade.test.ts` | Gezgin tüccar: geliş günleri, fiyatlar, alım/satım, 3 günlük kalış, ziyaret boyu kota ve sıfırlanması, para/stok/depo sınırı, kayıt |
 | `requests.test.ts` | Sakin istekleri: nüfus eşiği, tek istek, 4 günlük süre ve cezasız kalkma, 3 gün bekleme, deterministik seçim, her türün şartı ve ödülü, kayıt |
 | `monument.test.ts` | Saat Kulesi anıtı: aşama maliyetleri, eksik para/mal nedenleri, yarım kulenin aura/gider/hedef vermemesi, bilgi paneli, eski kayıttaki kulenin tamam sayılması, yarım kulenin kayıtta korunması, iade |
 | `season.test.ts` | Mevsim takvimi ve sınır günleri, kışa kalan gün, kışın tarla çıktısı 0, kışın odun tüketimi 2 kat, bilgi paneli işareti, kayıt biçiminin değişmemesi |

@@ -1,7 +1,7 @@
 // Ses motoru: verilen bir bağlam (AudioContext ya da test için OfflineAudioContext) üstünde kazanç ağacını kurar.
 // ana → sınırlayıcı → hoparlör; ana ← efekt / ortam / müzik alt kazançları.
 // Zamanlama yalnızca ctx.currentTime ile yapılır; `zamanla` dışarıdan kaba bir zamanlayıcıyla çağrılır.
-import type { SesEfekti } from './api';
+import type { SesEfekti, SesKanali } from './api';
 import type { Mevsim } from '../logic/season';
 import { Ortam } from './ambience';
 import { efektCal } from './effects';
@@ -34,6 +34,8 @@ export class SesMotoru {
   private readonly sonCalma = new Map<SesEfekti, number>();
   private acik: boolean;
   private durak = false;
+  /** Oyuncunun ses düzeyleri (0..1): genel ana kazancı, müzik müzik kazancını çarpar. */
+  private duzey = { genel: 1, muzik: 1 };
   private zoom = -1;
   private mevsim: Mevsim | null = null;
 
@@ -77,6 +79,30 @@ export class SesMotoru {
     return this.acik;
   }
 
+  /** Ana kazancın hedefi: kapalıysa 0, açıksa SEVIYE.ana × genel düzey. */
+  private anaHedef(): number {
+    return this.acik ? SEVIYE.ana * this.duzey.genel : 0;
+  }
+
+  /** Müzik kazancının hedefi: SEVIYE.muzik × müzik düzeyi × (duraklıysa SEVIYE.durak). */
+  private muzikHedef(): number {
+    return SEVIYE.muzik * this.duzey.muzik * (this.durak ? SEVIYE.durak : 1);
+  }
+
+  /** Oyuncunun ses düzeyi (0..1). Yumuşak geçişle uygulanır. */
+  setVolume(kanal: SesKanali, v: number): void {
+    const d = Math.min(1, Math.max(0, v));
+    if (d === this.duzey[kanal]) return;
+    this.duzey[kanal] = d;
+    const t = this.ctx.currentTime;
+    if (kanal === 'genel') this.ana.gain.setTargetAtTime(this.anaHedef(), t, 0.08);
+    else this.muzikKazanc.gain.setTargetAtTime(this.muzikHedef(), t, 0.08);
+  }
+
+  getVolume(kanal: SesKanali): number {
+    return this.duzey[kanal];
+  }
+
   setEnabled(on: boolean): void {
     if (on === this.acik) return;
     this.acik = on;
@@ -84,7 +110,7 @@ export class SesMotoru {
     const g = this.ana.gain;
     g.cancelScheduledValues(t);
     g.setValueAtTime(g.value, t);
-    g.linearRampToValueAtTime(on ? SEVIYE.ana : 0, t + 0.3);
+    g.linearRampToValueAtTime(this.anaHedef(), t + 0.3);
   }
 
   setAmbience(m: Mevsim, zoom01: number, anlik = false): void {
@@ -105,7 +131,7 @@ export class SesMotoru {
     if (p === this.durak) return;
     this.durak = p;
     this.ortamGuncelle();
-    this.muzikKazanc.gain.setTargetAtTime(SEVIYE.muzik * (p ? SEVIYE.durak : 1), this.ctx.currentTime, 0.3);
+    this.muzikKazanc.gain.setTargetAtTime(this.muzikHedef(), this.ctx.currentTime, 0.3);
   }
 
   private ortamGuncelle(): void {
