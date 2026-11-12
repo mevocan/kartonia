@@ -1,0 +1,204 @@
+import { describe, expect, it } from 'vitest';
+import { BALANCE, BUILDINGS } from '../src/data/buildings';
+import { KARTLAR } from '../src/data/cards';
+import {
+  ayar, bekleyenSecim, buildingUpkeep, deserialize, endDay, kalanKota, kartCek, kartSec, serialize, stockLimit,
+  upgradeStone, GOALS,
+} from '../src/logic/game';
+import { emptyGoods, evaluateNeeds, houseHappiness, houseTax, runProduction } from '../src/logic/economy';
+import { checkGoals } from '../src/logic/goals';
+import type { GameState } from '../src/logic/types';
+import { add, blank } from './helpers';
+
+/** Kartı doğrudan seçili yap (çekiliş kuralından bağımsız etki testleri için). */
+function kartli(id: string): GameState {
+  const s = blank();
+  s.kararlar = [id];
+  return s;
+}
+
+function uret(s: GameState) {
+  const u = emptyGoods();
+  runProduction(s, u, emptyGoods());
+  return u;
+}
+
+describe('karar kartları: veri', () => {
+  it('8 kartlık havuz, her kartın bir artısı ve bir eksisi var', () => {
+    expect(KARTLAR).toHaveLength(8);
+    for (const k of KARTLAR) {
+      expect(k.arti.length).toBeGreaterThan(0);
+      expect(k.eksi.length).toBeGreaterThan(0);
+      expect(k.etkiler.length).toBe(2);
+    }
+    expect(new Set(KARTLAR.map((k) => k.id)).size).toBe(8);
+  });
+
+  it('kart hedefleri 1, 3, 5, 7 ve 10', () => {
+    expect(GOALS.map((g, i) => (g.kart ? i + 1 : 0)).filter(Boolean)).toEqual([1, 3, 5, 7, 10]);
+  });
+
+  it('kartsızken ayar taban değeri verir', () => {
+    const s = blank();
+    expect(ayar(s, 'odunKisiBasi')).toBe(BALANCE.odunKisiBasi);
+    expect(ayar(s, 'uretim.tarla.bugday')).toBe(6);
+    expect(ayar(s, 'gider.pazar')).toBe(BUILDINGS.pazar.gider);
+    expect(ayar(s, 'vergiCarpani')).toBe(1);
+    expect(ayar(s, 'ticaretKota')).toBe(BALANCE.ticaret.kota);
+  });
+});
+
+describe('karar kartları: etkiler', () => {
+  it('Balıkçı kasabası: balıkçı +2 yemek, tarla −1 buğday', () => {
+    const s = kartli('balikciKasabasi');
+    s.nufus = 100;
+    add(s, 'balikci', 0, 20);
+    add(s, 'tarla', 0, 0);
+    const u = uret(s);
+    expect(u.yemek).toBeCloseTo(5);
+    expect(u.bugday).toBeCloseTo(5);
+  });
+
+  it('Odun tasarrufu: odun tüketimi −%30, bütün evlere −5 mutluluk', () => {
+    const s = kartli('odunTasarrufu');
+    const h = add(s, 'ev', 0, 0, 3);
+    s.stok.odun = 100;
+    const t = emptyGoods();
+    evaluateNeeds(s, h, t);
+    expect(t.odun).toBeCloseTo(10 * BALANCE.odunKisiBasi * 0.7);
+    const bos = blank();
+    const h2 = add(bos, 'ev', 0, 0, 1);
+    const k = kartli('odunTasarrufu');
+    const h3 = add(k, 'ev', 0, 0, 1);
+    expect(houseHappiness(k, h3, evaluateNeeds(k, h3))).toBe(houseHappiness(bos, h2, evaluateNeeds(bos, h2)) - 5);
+  });
+
+  it('Ağır vergi: vergi +%15, evler 3 iyi günde büyür', () => {
+    expect(houseTax(10, 50, 2, 1.15)).toBe(Math.floor(10 * 1.0 * 1.15));
+    const s = kartli('agirVergi');
+    const h = add(s, 'ev', 0, 0, 1);
+    add(s, 'cesme', 3, 0);
+    add(s, 'firin', 0, -3);
+    s.stok.yemek = 100;
+    endDay(s);
+    endDay(s);
+    expect(h.seviye).toBe(1); // kartsız 2 günde büyürdü
+    endDay(s);
+    expect(h.seviye).toBe(2);
+  });
+
+  it('Ağır vergi: gün sonu vergisi %15 artar', () => {
+    const vergi = (s: GameState) => endDay(s).vergi;
+    const a = blank();
+    const b = kartli('agirVergi');
+    for (const s of [a, b]) for (let i = 0; i < 5; i++) add(s, 'ev', i * 3, 0, 2);
+    expect(vergi(b)).toBe(5 * houseTax(6, 45, 2, 1.15));
+    expect(vergi(a)).toBe(5 * houseTax(6, 45, 2));
+  });
+
+  it('Taş ustaları: yükseltme taşı −%40, taş ocağı gürültüsü −8', () => {
+    const s = kartli('tasUstalari');
+    const o = add(s, 'okul', 30, 30);
+    expect(upgradeStone(o, s)).toBe(6); // 10 × 0.6
+    expect(upgradeStone(o)).toBe(10); // kartsız
+    expect(ayar(s, 'mutluluk.tasOcagi')).toBe(-8);
+  });
+
+  it('Yeşil kasaba: ağaç tavanı +6, oduncu −%25', () => {
+    const s = kartli('yesilKasaba');
+    s.nufus = 100;
+    expect(ayar(s, 'agacMutlulukSinir')).toBe(BALANCE.agacMutlulukSinir + 6);
+    const h = add(s, 'ev', 20, 20);
+    for (let i = 0; i < 6; i++) add(s, 'agac', 22, 18 + i);
+    expect(houseHappiness(s, h, evaluateNeeds(s, h))).toBe(BALANCE.mutlulukTaban + 15);
+    add(s, 'oduncu', 0, 0);
+    for (let i = 0; i < 4; i++) add(s, 'agac', 2, i - 2);
+    expect(uret(s).odun).toBeCloseTo(3);
+  });
+
+  it('Tüccar dostu: kota 70, pazar gideri 2 katı', () => {
+    const s = kartli('tuccarDostu');
+    expect(kalanKota(s)).toBe(70);
+    const p = add(s, 'pazar', 0, 0);
+    expect(buildingUpkeep(p, s)).toBe(BUILDINGS.pazar.gider * 2);
+  });
+
+  it('Sessiz değirmen: gürültü 0, değirmen −1 un', () => {
+    const s = kartli('sessizDegirmen');
+    s.nufus = 100;
+    s.stok.bugday = 6;
+    const h = add(s, 'ev', 0, 0);
+    add(s, 'degirmen', 3, 0);
+    expect(houseHappiness(s, h, evaluateNeeds(s, h))).toBe(BALANCE.mutlulukTaban);
+    const u = uret(s);
+    expect(u.un).toBeCloseTo(5);
+  });
+
+  it('Büyük ambar: ambar +200, gider 3', () => {
+    const s = kartli('buyukAmbar');
+    const a = add(s, 'ambar', 0, 0);
+    expect(stockLimit(s)).toBe(BALANCE.stokSinir + 200);
+    expect(buildingUpkeep(a, s)).toBe(3);
+  });
+});
+
+describe('karar kartları: çekiliş ve seçim', () => {
+  it('hedef tamamlanınca seçim kuyruğa girer', () => {
+    const s = blank();
+    s.nufus = 12;
+    expect(checkGoals(s)).toEqual([0]);
+    expect(bekleyenSecim(s)).toBe(0);
+  });
+
+  it('aynı tohum ve hedefte aynı üç kart; seçilen tekrar gelmez', () => {
+    const a = blank();
+    const b = blank();
+    a.haritaTohum = b.haritaTohum = 777;
+    const ids = (s: GameState, h: number) => kartCek(s, h).map((k) => k.id);
+    expect(ids(a, 0)).toEqual(ids(b, 0));
+    expect(ids(a, 0)).toHaveLength(3);
+    expect(new Set(ids(a, 0)).size).toBe(3);
+    a.bekleyenKararlar = [0];
+    const secilen = ids(a, 0)[0];
+    expect(kartSec(a, secilen)).toBe(true);
+    for (const h of [2, 4, 6, 9]) expect(ids(a, h)).not.toContain(secilen);
+  });
+
+  it('yalnızca gösterilen kart seçilebilir; seçimler sırayla tüketilir', () => {
+    const s = blank();
+    s.haritaTohum = 5;
+    s.bekleyenKararlar = [0, 2];
+    const gosterilmeyen = KARTLAR.find((k) => !kartCek(s, 0).some((x) => x.id === k.id))!;
+    expect(kartSec(s, gosterilmeyen.id)).toBe(false);
+    expect(kartSec(s, kartCek(s, 0)[1].id)).toBe(true);
+    expect(bekleyenSecim(s)).toBe(2);
+    expect(kartSec(s, kartCek(s, 2)[0].id)).toBe(true);
+    expect(bekleyenSecim(s)).toBeNull();
+    expect(s.kararlar).toHaveLength(2);
+    expect(kartSec(s, KARTLAR[0].id)).toBe(false); // bekleyen yok
+  });
+
+  it('beş seçimin hepsinde üç kart çıkar (havuz 8)', () => {
+    const s = blank();
+    for (const h of [0, 2, 4, 6, 9]) {
+      s.bekleyenKararlar = [h];
+      const c = kartCek(s, h);
+      expect(c).toHaveLength(3);
+      kartSec(s, c[0].id);
+    }
+    expect(new Set(s.kararlar).size).toBe(5);
+  });
+
+  it('kayıt: seçilen kartlar ve bekleyen seçim korunur; eski kayıtta kart yok', () => {
+    const s = blank();
+    s.kararlar = ['agirVergi'];
+    s.bekleyenKararlar = [2];
+    const y = deserialize(serialize(s));
+    expect(y.kararlar).toEqual(['agirVergi']);
+    expect(bekleyenSecim(y)).toBe(2);
+    expect(ayar(y, 'vergiCarpani')).toBeCloseTo(1.15);
+    const eski = deserialize(serialize(blank()));
+    expect(eski.kararlar).toBeUndefined();
+    expect(ayar(eski, 'vergiCarpani')).toBe(1);
+  });
+});
