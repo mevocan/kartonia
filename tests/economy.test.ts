@@ -228,7 +228,7 @@ describe('mutluluk', () => {
     expect(houseHappiness(s, h, evaluateNeeds(s, h))).toBe(45 - 6 + 2 + 2 * 2);
   });
 
-  // Plandaki beklenen sonuç tablosu (GELISTIRME-PLANI.md, Aşama 1a).
+  // Plandaki beklenen sonuç tablosu.
   describe('yeni ölçek: örnek evler', () => {
     /** Evin etrafına 3 ağaç (toplam +9, tavan). */
     const agaclar = (s: GameState): void => {

@@ -1,4 +1,4 @@
-// Denge ölçümü (GELISTIRME-PLANI.md, Aşama 1b): elle kurulmuş üç referans kasabanın
+// Denge ölçümü: elle kurulmuş üç referans kasabanın
 // bir günlük vergi, gider ve net gelirini hesaplayıp yazdırır. Sayı değiştirmez, yalnızca ölçer.
 // Çıktıyı görmek için: npx vitest run tests/denge.test.ts
 import { describe, expect, it } from 'vitest';
