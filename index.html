@@ -206,16 +206,27 @@
     #fircaEtiket.soluk { color: var(--soluk); opacity: 0.85; }
     .bina-kart .tus { position: absolute; top: 3px; right: 6px; font-size: 10px; color: var(--soluk); }
 
-    /* Tooltip */
-    #ipucu {
-      position: absolute; width: 220px; padding: 12px 14px; font-size: 12px; pointer-events: none !important;
-      transform: rotate(-1deg); display: none; z-index: 5;
+    /* Bina kartı: alt menüde karta tıklanınca sağda açılan detay (bilgi paneliyle aynı yer) */
+    #binaKarti {
+      position: absolute; top: 120px; right: 18px; width: 270px; padding: 24px 16px 14px; font-size: 13px;
+      transform: rotate(1deg); display: none; z-index: 4;
+      max-height: calc(100vh - 260px); overflow-y: auto;
     }
-    #ipucu h4 { margin: 0 0 4px; font-size: 14px; }
-    #ipucu p { margin: 0 0 6px; }
-    #ipucu table { border-collapse: collapse; width: 100%; }
-    #ipucu td { padding: 1px 0; }
-    #ipucu td:last-child { text-align: right; font-weight: bold; }
+    #binaKarti .ust { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    #binaKarti .ust .resim { width: 56px; height: 48px; object-fit: contain; filter: drop-shadow(0 2px 1px rgba(74,59,46,0.25)); }
+    #binaKarti h3 { margin: 0; font-size: 18px; }
+    #binaKarti p { margin: 0 0 8px; line-height: 1.35; }
+    #binaKarti p.alt { color: var(--soluk); font-size: 12px; }
+    #binaKarti table { border-collapse: collapse; width: 100%; margin-bottom: 4px; }
+    #binaKarti td { padding: 2px 0; border-bottom: 1px dashed rgba(154,138,120,0.35); }
+    #binaKarti td:last-child { text-align: right; font-weight: bold; }
+    #binaKarti h4 { margin: 10px 0 4px; font-size: 14px; }
+    #binaKarti ul { margin: 0 0 6px; padding-left: 18px; line-height: 1.4; }
+    #binaKarti ul.bonus { list-style: none; padding-left: 0; }
+    #binaKarti ul.bonus li { padding: 5px 8px; margin-bottom: 4px; background: rgba(217,161,59,0.12); border-left: 3px solid var(--altin); border-radius: 3px; }
+    #binaKarti .etki { color: var(--yesil); font-weight: bold; white-space: nowrap; }
+    #binaKarti p.not { font-size: 11.5px; color: var(--soluk); }
+    #binaKarti p.kilit { margin-top: 8px; font-weight: bold; color: var(--kirmizi); }
 
     /* Bilgi paneli */
     /* Öğretici: sağ altta kağıt not, oyunu durdurmaz */

@@ -101,6 +101,18 @@
   "menu.taslik": "rocky ground",
   "menu.stokSiniri": "Storage limit",
 
+  "detay.gurultu": "noise",
+  "detay.evBuyume": "How do houses grow?",
+  "detay.evSeviye": "{ad} ({kisi} residents): {ihtiyac}",
+  "detay.ihtiyacYok": "no needs",
+  "detay.evNot": "A house grows when all needs of the next level are met for a few days in a row, and shrinks when its current needs are not met. For water, market and school the house must be inside that building's range.",
+  "detay.bonusBaslik": "Placement bonus",
+  "detay.bonusOran": "+{n}% {mal}",
+  "detay.bonusMutluluk": "+{n} happiness",
+  "detay.bonusIpucu": "While placing, the preview shows when the bonus applies.",
+  "detay.yukseltilebilir": "Once built, it can be upgraded up to level 3 from the info panel; each level widens its range.",
+  "detay.kilitli": "🔒 Unlocks at {n} population.",
+
   "bilgi.ormanAgaci": "Forest tree",
   "bilgi.ormanAgaciMetin": "A natural forest tree. Gives wood when cut down.",
   "bilgi.seviyeAlt": "Level {n} / 3",

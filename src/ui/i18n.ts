@@ -95,6 +95,14 @@ function komsuluk(d: KomsulukDurum, alan: 'etiket' | 'sart'): string {
   return tur ? t(`komsuluk.${tur}.${alan}` as Anahtar) : d[alan];
 }
 
+/** Binanın komşuluk kuralının adı, büyük harfle ("Sulama"). Her binanın en fazla bir kuralı vardır. */
+export function komsulukEtiket(tur: BuildingType): string {
+  const m = t(`komsuluk.${tur}.etiket` as Anahtar);
+  return m.charAt(0).toLocaleUpperCase(DIL) + m.slice(1);
+}
+/** Binanın komşuluk kuralının şartı ("kenarı göle en fazla 4 birim"). */
+export const komsulukSart = (tur: BuildingType): string => t(`komsuluk.${tur}.sart` as Anahtar);
+
 /** Etkin bonus metni: "+%25 sulama", "+3 mutluluk (göl manzarası)". */
 export function bonusMetni(d: KomsulukDurum): string {
   const parca: string[] = [];

@@ -101,6 +101,18 @@
   "menu.taslik": "taşlık alan",
   "menu.stokSiniri": "Stok sınırı",
 
+  "detay.gurultu": "gürültü",
+  "detay.evBuyume": "Ev nasıl büyür?",
+  "detay.evSeviye": "{ad} ({kisi} kişi): {ihtiyac}",
+  "detay.ihtiyacYok": "ihtiyaç yok",
+  "detay.evNot": "Bir üst seviyenin bütün ihtiyaçları üst üste birkaç gün karşılanırsa ev büyür; mevcut seviyesininkiler karşılanmazsa küçülür. Su, pazar ve okul için ev o binanın etki alanında olmalı.",
+  "detay.bonusBaslik": "Yerleşim bonusu",
+  "detay.bonusOran": "+%{n} {mal}",
+  "detay.bonusMutluluk": "+{n} mutluluk",
+  "detay.bonusIpucu": "Yerleştirirken bonus tutarsa önizlemenin üstünde yazar.",
+  "detay.yukseltilebilir": "Kurduktan sonra bilgi panelinden 3. seviyeye kadar yükseltilebilir; her seviyede etki alanı genişler.",
+  "detay.kilitli": "🔒 {n} nüfusta açılır.",
+
   "bilgi.ormanAgaci": "Orman ağacı",
   "bilgi.ormanAgaciMetin": "Ormanın doğal ağacı. Kesilirse odun verir.",
   "bilgi.seviyeAlt": "Seviye {n} / 3",

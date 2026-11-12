@@ -1,9 +1,11 @@
 // Alt kenardaki kağıt kart düğmeleri: yollar, binalar ve yıkma aracı.
-import type { BuildingType, GameState, Good, RoadType } from '../logic/types';
+// Karta tıklamak aracı seçer ve sağda bina kartını (detay) açar; kilitli kartta yalnızca detay açılır.
+import type { BuildingType, GameState, RoadType } from '../logic/types';
 import { BUILDINGS, BUILDING_ORDER, ROADS } from '../data/buildings';
 import { isRoadUnlocked, isUnlocked } from '../logic/game';
 import { el } from './dom';
-import { binaAciklama, binaAd, malAdKucuk, t, yolAciklama, yolAd } from './i18n';
+import { binaAd, t, yolAd } from './i18n';
+import { createBuildingCard } from './buildingCard';
 
 export type Tool = BuildingType | RoadType | 'yikim' | null;
 
@@ -19,7 +21,10 @@ export function isBuildingTool(t: Tool): t is BuildingType {
 
 export interface BuildMenu {
   update(s: GameState): void;
+  /** Seçili araç değişti: kart vurgusu ve bina kartı (null → kart kapanır). */
   setSelected(tool: Tool): void;
+  /** Bina kartını kapatır (ör. haritada bir bina seçilince bilgi paneli açılır). */
+  hideDetail(): void;
 }
 
 /** Yol kartlarının resmi: kağıt üstünde kıvrımlı kısa bir yol parçası (canvas, bir kez üretilir). */
@@ -60,20 +65,6 @@ function yolResmi(t: RoadType): string {
   const url = c.toDataURL('image/png');
   yolResimleri.set(t, url);
   return url;
-}
-
-function malListesi(m: Partial<Record<Good, number>>): string {
-  return (Object.keys(m) as Good[]).map((g) => `${m[g]} ${malAdKucuk(g)}`).join(', ');
-}
-
-function uretimMetni(tur: BuildingType): string | null {
-  const d = BUILDINGS[tur];
-  const gun = t('genel.gun');
-  if (d.agacBasinaOdun) return t('menu.agacBasina', { n: d.agacBasinaOdun });
-  if (!d.uretim) return null;
-  const girdi = malListesi(d.uretim.girdi);
-  const cikti = malListesi(d.uretim.cikti);
-  return girdi ? `${girdi} → ${cikti} ${gun}` : `${cikti} ${gun}`;
 }
 
 type MenuKey = BuildingType | RoadType;
@@ -122,67 +113,29 @@ export function createBuildMenu(
   const kategoriler = el('div', 'satir');
   menu.append(bar, kategoriler);
 
-  const ipucu = el('div', 'kagit');
-  ipucu.id = 'ipucu';
-  root.appendChild(ipucu);
-
   let secili: Tool = null;
   let kilitli = new Set<MenuKey>();
   const kartlar = new Map<MenuKey, Kart>();
+  const detay = createBuildingCard(root, () => {
+    detay.hide();
+    if (secili !== null) onSelect(null);
+  });
+  const resimOf = (k: MenuKey): string | null => (isRoadTool(k) ? yolResmi(k) : binaResmi(k));
 
-  function ipucuGoster(b: HTMLElement, tur: MenuKey | 'yikim'): void {
-    ipucu.replaceChildren();
-    const tablo = el('table');
-    const satir = (a: string, v: string): void => {
-      const tr = el('tr');
-      tr.append(el('td', '', a), el('td', '', v));
-      tablo.appendChild(tr);
-    };
-    const yok = t('genel.yok');
-    const acilma = t('menu.acilma');
-    const nufusMetni = (n: number): string => t('genel.nufusSayisi', { n });
-    if (tur === 'yikim') {
-      ipucu.append(el('h4', '', t('menu.yikimBaslik')), el('p', '', t('menu.yikimMetin')));
-    } else if (isRoadTool(tur)) {
-      const d = ROADS[tur];
-      ipucu.append(el('h4', '', yolAd(tur)), el('p', '', yolAciklama(tur) + t('menu.yolCiz')));
-      satir(t('menu.maliyet'), `${d.birimMaliyet} ${t('genel.birimBasi')}`);
-      satir(t('menu.gider'), d.birimGider > 0 ? `${d.birimGider} ${t('genel.birimGun')}` : yok);
-      satir(t('menu.mutluluk'), d.mutluluk !== 0
-        ? `${d.mutluluk > 0 ? '+' : ''}${d.mutluluk} ${t('menu.kenarEvler')}` : yok);
-      if (kilitli.has(tur)) satir(acilma, nufusMetni(d.acilmaNufus));
-      ipucu.appendChild(tablo);
-    } else {
-      const d = BUILDINGS[tur];
-      ipucu.append(el('h4', '', binaAd(tur)), el('p', '', binaAciklama(tur)));
-      satir(t('menu.maliyet'), String(d.maliyet));
-      satir(t('menu.gider'), d.gider > 0 ? `${d.gider} ${t('genel.gun')}` : yok);
-      if (d.isci > 0) satir(t('menu.isci'), String(d.isci));
-      if (d.etki > 0) satir(t('menu.etki'), String(d.etki));
-      if (d.mutluluk !== 0) satir(t('menu.mutluluk'), (d.mutluluk > 0 ? '+' : '') + d.mutluluk);
-      const u = uretimMetni(tur);
-      if (u) satir(t('menu.uretimSatir'), u);
-      if (d.yer === 'gol') satir(t('menu.yer'), t('menu.golKiyisi'));
-      if (d.yer === 'taslik') satir(t('menu.yer'), t('menu.taslik'));
-      if (d.depo) satir(t('menu.stokSiniri'), `+${d.depo}`);
-      if (kilitli.has(tur)) satir(acilma, nufusMetni(d.acilmaNufus));
-      ipucu.appendChild(tablo);
+  /** Karta tıklama: açık kart aracı seçer/bırakır (detay setSelected'da açılır); kilitli kart yalnızca detayı gösterir. */
+  function kartTikla(k: MenuKey): void {
+    if (kilitli.has(k)) {
+      if (secili !== null) onSelect(null);
+      detay.show(k, true, resimOf(k));
+      return;
     }
-    ipucu.style.display = 'block';
-    const r = b.getBoundingClientRect();
-    const w = 220;
-    const left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
-    ipucu.style.left = `${left}px`;
-    ipucu.style.top = '0px';
-    const h = ipucu.offsetHeight;
-    ipucu.style.top = `${r.top - h - 26}px`;
+    onSelect(secili === k ? null : k);
   }
-  const ipucuGizle = (): void => { ipucu.style.display = 'none'; };
 
   function kartEkle(t: MenuKey, ad: string, maliyetMetni: string, ekSinif = ''): void {
     const b = el('button', `kagit bina-kart ${ekSinif}`);
     b.style.setProperty('--kat', KATEGORILER[kategoriOf(t)].renk);
-    const url = isRoadTool(t) ? yolResmi(t) : binaResmi(t);
+    const url = resimOf(t);
     let resim: HTMLElement;
     if (url) {
       const img = document.createElement('img');
@@ -197,12 +150,7 @@ export function createBuildMenu(
     const maliyet = el('div', 'maliyet', maliyetMetni);
     const kilit = el('div', 'kilit');
     b.append(resim, el('div', 'ad', ad), maliyet, kilit);
-    b.addEventListener('click', () => {
-      if (kilitli.has(t)) return;
-      onSelect(secili === t ? null : t);
-    });
-    b.addEventListener('mouseenter', () => ipucuGoster(b, t));
-    b.addEventListener('mouseleave', ipucuGizle);
+    b.addEventListener('click', () => kartTikla(t));
     bar.appendChild(b);
     kartlar.set(t, { b, maliyet, kilit });
   }
@@ -216,7 +164,6 @@ export function createBuildMenu(
 
   function kategoriAc(k: Kategori | null): void {
     acikKategori = k;
-    ipucuGizle();
     for (const [kk, b] of kategoriButonlari) b.classList.toggle('acik', kk === k);
     bar.classList.toggle('acik', k !== null);
     if (k !== null) bar.style.setProperty('--kat', KATEGORILER[k].renk);
@@ -246,8 +193,6 @@ export function createBuildMenu(
   yikB.style.setProperty('--kat', YIKIM_RENK);
   yikB.append(el('div', 'ad', t('menu.yik')), el('div', 'sayi', t('menu.xTusu')));
   yikB.addEventListener('click', () => onSelect(secili === 'yikim' ? null : 'yikim'));
-  yikB.addEventListener('mouseenter', () => ipucuGoster(yikB, 'yikim'));
-  yikB.addEventListener('mouseleave', ipucuGizle);
   kategoriler.appendChild(yikB);
   kategoriAc(null);
 
@@ -292,6 +237,11 @@ export function createBuildMenu(
       secili = tool;
       for (const [t, k] of kartlar) k.b.classList.toggle('secili', t === tool);
       yikB.classList.toggle('acik', tool === 'yikim');
+      if (tool === null) detay.hide();
+      else detay.show(tool, false, tool === 'yikim' ? null : resimOf(tool));
+    },
+    hideDetail() {
+      detay.hide();
     },
   };
 }

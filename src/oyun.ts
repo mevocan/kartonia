@@ -279,6 +279,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
 
   function select(sel: Selection | null): void {
     if (sel && (sel.kind !== secili?.kind || sel.id !== secili?.id)) ses.play('secim');
+    if (sel) menu.hideDetail(); // bilgi paneli bina kartıyla aynı yerde açılır
     secili = sel;
     bilgiYenile();
     input.refresh();

@@ -108,6 +108,7 @@ Tanımlar `src/data/buildings.ts` içindedir; denge değerleri orada ayarlanır.
 - Sol tık: seçili binayı koy / binayı seç (bilgi paneli).
 - Sol sürükle (boş alanda) / WASD / ok tuşları: haritada kaydır. Sağ sürükle: kamerayı döndür. Tekerlek: yakınlaş. Yol aracında sol sürükleme yol çizer.
 - Alttaki menü kategorilidir (Yollar, Konut, Üretim, Hizmet + Yık), her kategorinin kendi rengi vardır: kategoriye tıklayınca üstünde binaları açılır. Bina kartları renk değil binanın kendi modelinden üretilmiş resmini gösterir (`src/render/thumbnails.ts`); yol kartlarında kağıt yol çizimi vardır.
+- Karta tıklamak aracı seçer ve sağda **bina kartını** açar (`ui/buildingCard.ts`): açıklama, maliyet, gider, işçi, etki alanı, üretim, yer şartı, evde seviye ihtiyaçları, yükseltilebilirlik ve **yerleşim bonusu** düz cümleyle ("Sulama: kenarı göle en fazla 4 birim → +%25 buğday"). Araç seçili kaldıkça açık durur; aynı karta yeniden tıklamak ya da × aracı bırakır. Kilitli karta tıklamak yalnızca kartı açar (açılma eşiğiyle), araç seçmez. Haritada bir bina seçilince bina kartı kapanır, bilgi paneli aynı yerde açılır. Fareyle üstüne gelme ipucu yoktur (dokunmatikte de aynı davranış).
 - Sağ tık (sürüklemeden): seçili aracı bırakır, araç yoksa seçimi kapatır (Esc ile aynı).
 - Q / E: yerleştirilecek binayı döndür. Esc: seçimi bırak. X: yıkma aracı. Boşluk ya da ⏸/▶ düğmesi: duraklat / devam. 1/2/3: hız.
 
