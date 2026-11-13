@@ -1,18 +1,18 @@
 // Mantık API'si: types.ts'deki sözleşmenin tek giriş noktası.
-import { BALANCE, BUILDINGS } from '../data/buildings';
+import { BALANCE, BUILDINGS, dogaTuru } from '../data/buildings';
 import { HARITA, OYUN_YARI_GENISLIK, haritayiAyarla, makeRng } from '../data/map';
-import type { BuildingInfo, DayReport, GameState } from './types';
+import type { BuildingInfo, DayReport, GameState, Good } from './types';
 import {
-  buildingUpkeep, checkSite, demolishRefund, effectRadius, monumentStage, naturalCut, nextMonumentCost, upgradeCost, upgradeStone,
+  buildingUpkeep, demolishRefund, effectRadius, stockLimit, monumentStage, naturalCut, nextMonumentCost, upgradeCost, upgradeStone,
 } from './placement';
-import { fillMeadows } from './doga';
+import { fillForests, fillMeadows } from './doga';
 import { resample } from './geometry';
 import { bestRoadNear } from './roads';
 import { adjacencyBonus } from './adjacency';
 import { mevsim } from './season';
 import { ayar } from './cards';
 import {
-  emptyGoods, endDay, evaluateNeeds, houseHappiness, housePopulation, houseTax, isProducer, treesInRange, workerRatio,
+  emptyGoods, endDay, evaluateNeeds, houseHappiness, housePopulation, houseTax, housesInRange, isProducer, treesInRange, workerRatio,
 } from './economy';
 
 export {
@@ -24,7 +24,7 @@ export {
   isRoadUnlocked, planRoad, placeRoad, demolishRoad, getRoadInfo, nearestRoad,
 } from './roads';
 export { heightAt, isLand, isLake } from './terrain';
-export { adjacencyBonus, bonusText } from './adjacency';
+export { adjacencyBonus, adjacencySources, bonusText } from './adjacency';
 export { mevsim, mevsimGunu, kisaKalanGun, MEVSIMLER, type Mevsim } from './season';
 export {
   tuccarVarMi, tuccarGeldiMi, tuccarKalisGunu, tuccaraKalanGun, kalanKota, tuccarKonumu, canBuy, canSell, buyGood, sellGood,
@@ -42,25 +42,6 @@ export const BOSLUK = BALANCE.bosluk;
 export const STOK_SINIR = BALANCE.stokSinir;
 
 export { makeRng };
-
-/** Ormanları etkin haritanın ağaç tohumuyla doğal ağaçlarla doldurur. */
-function fillForests(s: GameState): void {
-  const rng = makeRng(HARITA.agacTohum);
-  for (const o of HARITA.ormanlar) {
-    // Karar: hedef `agac` kadar ağaç; uygun yer bulunamazsa en fazla agac × 4 deneme.
-    let konan = 0;
-    for (let deneme = 0; deneme < o.agac * 4 && konan < o.agac; deneme++) {
-      const aci = rng() * Math.PI * 2;
-      const r = Math.sqrt(rng()) * o.r; // disk içinde düzgün dağılım
-      const rot = rng() * Math.PI * 2;
-      const x = o.x + Math.cos(aci) * r;
-      const z = o.z + Math.sin(aci) * r;
-      if (checkSite(s, 'agac', x, z) !== null) continue;
-      s.binalar.push({ id: s.sonrakiId++, type: 'agac', dogal: true, x, z, rot, seviye: 1, iyiGun: 0, kotuGun: 0 });
-      konan++;
-    }
-  }
-}
 
 /**
  * Yeni oyun. `haritaTohum` verilirse harita o tohumdan rastgele üretilir; verilmezse klasik harita.
@@ -134,8 +115,31 @@ export function getBuildingInfo(s: GameState, id: number): BuildingInfo | null {
     info.tahminiVergi = houseTax(info.nufus, m, b.seviye, ayar(s, 'vergiCarpani'));
     info.ihtiyaclar = st;
     info.yol = bestRoadNear(s, b)?.tur ?? null;
+    info.evGun = { iyi: b.iyiGun, kotu: b.kotuGun, buyumeEsik: ayar(s, 'seviyeAtlamaGun'), kuculmeEsik: BALANCE.seviyeGunEsigi };
   }
-  if (isProducer(b.type)) info.isciOrani = workerRatio(s);
+  if (isProducer(b.type)) {
+    const oran = workerRatio(s);
+    info.isciOrani = oran;
+    const d = BUILDINGS[b.type];
+    const kis = !!d.kisinUretmez && mevsim(s.gun) === 'kis';
+    if (d.uretim) {
+      const carpan = 1 + (d.komsuluk ? adjacencyBonus(s, b.type, b.x, b.z, b.id).oran : 0);
+      const sinir = stockLimit(s);
+      const cikti = (Object.keys(d.uretim.cikti) as Good[]).map((mal): [Good, number] => [mal, ayar(s, `uretim.${b.type}.${mal}`)]);
+      // runProduction ile aynı sınır: çıktı deposu dolarsa üretim (ve girdi) o oranda düşer. Girdi stoğu ayrıca
+      // gösterilir (aynı gün başka bir binanın üreteceği girdi henüz stokta olmayabilir).
+      let k = kis ? 0 : oran;
+      for (const [mal, n] of cikti) if (n > 0) k = Math.min(k, Math.max(0, (sinir - s.stok[mal]) / (n * carpan)));
+      info.uretimTahmini = {
+        girdi: (Object.entries(d.uretim.girdi) as [Good, number][]).map(([mal, n]) => ({ mal, miktar: n * k, stok: s.stok[mal] })),
+        cikti: cikti.map(([mal, n]) => ({ mal, miktar: n * carpan * k })),
+      };
+    } else if (d.agacBasinaOdun !== undefined) {
+      const miktar = Math.max(0, Math.min(treesInRange(s, b) * d.agacBasinaOdun * ayar(s, 'oduncuCarpani') * oran, stockLimit(s) - s.stok.odun));
+      info.uretimTahmini = { girdi: [], cikti: [{ mal: 'odun', miktar }] };
+    }
+  }
+  if (info.etki > 0 && b.type !== 'ev' && !dogaTuru(b.type)) info.kapsananEv = housesInRange(s, b.id).length;
   if (BUILDINGS[b.type].kisinUretmez && mevsim(s.gun) === 'kis') info.kisinDurdu = true;
   if (BUILDINGS[b.type].anit) {
     const m = nextMonumentCost(b);

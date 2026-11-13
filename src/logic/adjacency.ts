@@ -2,9 +2,9 @@
 // Kurallar BUILDINGS[t].komsuluk içindedir. Bonus saklanmaz, her seferinde konumdan hesaplanır;
 // böylece kaynak bina yıkılınca ya da yeni kurulunca bonus kendiliğinden güncellenir.
 import { BUILDINGS } from '../data/buildings';
-import type { BuildingType, GameState, KomsulukDef, KomsulukDurum } from './types';
+import type { BuildingType, GameState, KomsulukDef, KomsulukDurum, Vec2 } from './types';
 import { dist } from './geometry';
-import { heightAt, lakeDistance } from './terrain';
+import { heightAt, lakeDistance, nearestLakePoint } from './terrain';
 
 export interface AdjacencyResult {
   /** Binanın bütün kuralları, şartı tutsun tutmasın. */
@@ -50,4 +50,29 @@ export function bonusText(d: KomsulukDurum): string {
   if (d.oran) parca.push(`+%${Math.round(d.oran * 100)} ${d.etiket}`);
   if (d.mutluluk) parca.push(`+${d.mutluluk} mutluluk (${d.etiket})`);
   return parca.join(', ');
+}
+
+/**
+ * Aktif komşuluk bonuslarının kaynak noktaları (haritada bağ çizgisi için): bina kaynaklı kuralda mesafe içindeki
+ * en yakın kaynak bina, göl kuralında en yakın kıyı noktası. Tepe kuralının ayrı bir kaynağı yoktur.
+ */
+export function adjacencySources(s: GameState, t: BuildingType, x: number, z: number, haricId?: number): Vec2[] {
+  const out: Vec2[] = [];
+  for (const k of BUILDINGS[t].komsuluk ?? []) {
+    if (!sartTutuyor(s, t, k, x, z, haricId)) continue;
+    if (k.kaynak === 'gol') {
+      const p = nearestLakePoint(x, z);
+      if (p) out.push(p);
+      continue;
+    }
+    if (k.kaynak === 'tepe') continue;
+    let en: { x: number; z: number; d: number } | null = null;
+    for (const b of s.binalar) {
+      if (b.type !== k.kaynak || b.id === haricId) continue;
+      const d = dist(b.x, b.z, x, z);
+      if (d <= (k.mesafe ?? 0) && (!en || d < en.d)) en = { x: b.x, z: b.z, d };
+    }
+    if (en) out.push({ x: en.x, z: en.z });
+  }
+  return out;
 }

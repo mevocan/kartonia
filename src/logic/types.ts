@@ -264,8 +264,27 @@ export interface DayReport {
   tamamlananIstek?: IstekSonuc;
   /** Bu gün açılan bina türleri. */
   yeniAcilanlar: BuildingType[];
+  /** Günü yarıdan az verimle geçiren üretim binaları ve nedeni (harita iğneleri için). */
+  uretimSorunlari: UretimSorunu[];
+  /**
+   * Gün sonundaki gerçek dağıtımda mevcut seviyesinin bir stok ihtiyacı (yemek, odun, mobilya, kumaş, bal)
+   * karşılanmayan evler ve ilk eksik mal (harita iğneleri için; ortak stok id sırasıyla paylaşılır).
+   */
+  evStokEksikleri: { id: number; neden: Need }[];
   oyunBitti: boolean;
 }
+
+/** Bir üretim binasının verimsiz gün nedeni: eksik girdi malı, dolu depo ya da ağaçsız oduncu. */
+export interface UretimSorunu {
+  id: number;
+  neden: Good | 'depo' | 'agac';
+}
+
+/**
+ * Haritada bina üstünde gösterilecek iğne. 'ihtiyac': evin mevcut seviyesinin karşılanmayan ihtiyacı
+ * (sürerse ev küçülür). 'uretim': son gün sonundaki üretim sorunu.
+ */
+export type BinaIgnesi = { id: number; tur: 'ihtiyac'; neden: Need } | { id: number; tur: 'uretim'; neden: UretimSorunu['neden'] };
 
 export interface NeedStatus {
   ihtiyac: Need;
@@ -304,6 +323,15 @@ export interface BuildingInfo {
   anit?: { asama: number; toplam: number; sonraki: { para: number; mal: Partial<Record<Good, number>> } | null };
   /** Kışın üretmeyen bina şu an kışta: üretim durdu. */
   kisinDurdu?: boolean;
+  /**
+   * Üretim binaları: bugünkü işçi oranı ve komşuluk bonusuyla beklenen günlük girdi ve çıktı (girdi stoğu
+   * yetmezse gerçek üretim düşer; `stok` o malın şu anki stoğu). Oduncu: girdi yok, çıktı ağaç sayısından.
+   */
+  uretimTahmini?: { girdi: { mal: Good; miktar: number; stok: number }[]; cikti: { mal: Good; miktar: number }[] };
+  /** Etki alanı olan bina (ev ve doğa hariç): alanındaki ev sayısı. */
+  kapsananEv?: number;
+  /** Ev: üst seviye ihtiyaçlarının üst üste karşılandığı / mevcut seviyeninkilerin karşılanmadığı gün ve eşikleri. */
+  evGun?: { iyi: number; kotu: number; buyumeEsik: number; kuculmeEsik: number };
 }
 
 export interface GoalDef {

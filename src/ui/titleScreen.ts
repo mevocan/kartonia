@@ -84,7 +84,7 @@ export function createTitleScreen(ui: HTMLElement, deps: TitleDeps): TitleScreen
   kapak.append(binalar, baslik, el('p', 'kapak-alt', t('giris.altBaslik')));
 
   // ---- Ana kart ----
-  const ana = el('div', 'kagit bant giris-kart ana');
+  const ana = el('div', 'kagit giris-kart ana');
   const devamDugme = el('button', 'giris-dugme birincil');
   const devamAlt = el('span', 'alt');
   const devamUst = el('span', 'ust');
@@ -95,14 +95,14 @@ export function createTitleScreen(ui: HTMLElement, deps: TitleDeps): TitleScreen
   ana.append(devamDugme, yeniDugme, nasilDugme, sesDugme);
 
   // ---- Yeni kasaba onayı ----
-  const onay = el('div', 'kagit bant giris-kart onay');
+  const onay = el('div', 'kagit giris-kart onay');
   onay.append(el('h3', '', t('giris.onayBaslik')), el('p', '', t('giris.onayMetin')));
   const onayEvet = el('button', 'giris-dugme tehlike', t('giris.onayEvet'));
   const onayHayir = el('button', 'giris-dugme kucuk', t('giris.vazgec'));
   onay.append(onayEvet, onayHayir);
 
   // ---- Nasıl oynanır ----
-  const nasil = el('div', 'kagit raptiye giris-kart nasil');
+  const nasil = el('div', 'kagit giris-kart nasil');
   nasil.appendChild(el('h3', '', t('giris.nasilBaslik')));
   const ol = el('ol');
   for (const a of ADIMLAR) ol.appendChild(el('li', '', t(a)));

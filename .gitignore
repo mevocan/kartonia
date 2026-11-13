@@ -11,3 +11,6 @@ kontrol-gecici.*
 # Yerel ortam dosyaları
 *.local
 .env*
+
+# Yerel tasarım notları ve referans görseller (yayınlanmaz)
+chatgpt/

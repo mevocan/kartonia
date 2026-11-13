@@ -5,6 +5,12 @@ import type { Mevsim } from '../logic/season';
 // Dünya: X-Z düzlemi, Y yukarı. Arazi data/map.ts'deki ada; yükseklik logic/terrain.ts heightAt(x,z).
 // Binalar ve yollar arazi yüksekliğine oturur. Doğal ağaçlar normal 'agac' binası olarak addBuilding ile gelir.
 
+/** Harita iğnesinin türü: 'uyari' ev ihtiyacı karşılanmıyor, 'bilgi' üretim duruyor. */
+export type PinTur = 'uyari' | 'bilgi';
+
+/** Taban halkasının türü. */
+export type AyakTur = 'gecerli' | 'gecersiz' | 'secim';
+
 export interface GameRenderer {
   /** Sağ sürükle döndür, orta / Shift+sağ sürükle kaydır, tekerlek yakınlaş. Kendi dinleyicilerini canvas'a takar. */
   readonly canvas: HTMLCanvasElement;
@@ -52,10 +58,20 @@ export interface GameRenderer {
   setGhost(type: BuildingType | null, x: number, z: number, rot: number, valid: boolean): void;
   /** Zeminde kesikli kağıt halka (etki yarıçapı). r null ise gizler. */
   showRange(x: number, z: number, r: number | null): void;
-  /** Bir binayı vurgular (seçim/yıkma hover). mode: 'secim' sarı, 'yikim' kırmızı. id null ise kaldırır. */
+  /**
+   * Taban halkası: araziye yapışık disk + kenar. 'gecerli' / 'gecersiz' yerleştirme önizlemesinin altında (yeşil /
+   * kırmızı), 'secim' seçili binanın altında yavaşça nabız atar (altın). tur null gizler.
+   */
+  setFootprint(x: number, z: number, r: number, tur: AyakTur | null): void;
+  /** Komşuluk bağları: `to` noktalarından `from`a uçuşan noktalı yaylar (bonus kaynağı → bina). from null siler. */
+  setLinks(from: Vec2 | null, to: Vec2[]): void;
+  /** Bir binayı vurgular (seçim/yıkma hover). mode: 'secim' sarı (bina hafifçe yükselir), 'yikim' kırmızı. id null ise kaldırır. */
   highlight(id: number | null, mode?: 'secim' | 'yikim'): void;
-  /** Bu bina üstünde küçük bir uyarı işareti (ihtiyaç karşılanmadı). */
-  setWarning(id: number, on: boolean): void;
+  /**
+   * Bina üstünde hafifçe sallanan iğne: kağıt beyazı damla, ortada simge. 'uyari' (toprak kırmızısı halka):
+   * evin ihtiyacı karşılanmıyor; 'bilgi' (arduvaz halka): üretim duruyor. null kaldırır.
+   */
+  setPin(id: number, pin: { ikon: string; tur: PinTur } | null): void;
 
   /** Yol ekler; anim=true (varsayılan) kağıt şerit gibi açılarak serilir, false anında görünür. Arazi yüksekliğini izler. */
   addRoad(id: number, tur: RoadType, noktalar: Vec2[], anim?: boolean): void;

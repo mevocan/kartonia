@@ -2,7 +2,7 @@
 import type { BuildingType, GameState, RoadType, Vec2 } from '../logic/types';
 import type { GameRenderer } from '../render/api';
 import { BUILDINGS, dogaTuru } from '../data/buildings';
-import { adjacencyBonus, canPlace, effectRadius, nearestRoad, planRoad } from '../logic/game';
+import { adjacencyBonus, adjacencySources, canPlace, effectRadius, nearestRoad, planRoad } from '../logic/game';
 import { isBuildingTool, isRoadTool, type Tool } from './buildMenu';
 import { yerlestirmeSebebi } from './toast';
 import { el } from './dom';
@@ -105,6 +105,17 @@ export function createInput(deps: InputDeps): Input {
     etiket.style.display = 'block';
   }
 
+  /** Geçersiz yerleşimde imlecin yanında nedeni (ör. "Yol kenarına kur"). */
+  function sebepEtiketi(sebep: string): void {
+    if (!fare) return;
+    etiket.textContent = sebep;
+    etiket.classList.add('kotu');
+    etiket.classList.remove('soluk', 'iyi');
+    etiket.style.left = `${fare.x + 16}px`;
+    etiket.style.top = `${fare.y - 40}px`;
+    etiket.style.display = 'block';
+  }
+
   function fircaIptal(): void {
     firca = null;
     renderer.setRoadGhost(null, [], false);
@@ -124,13 +135,19 @@ export function createInput(deps: InputDeps): Input {
       if (!p) {
         renderer.setGhost(null, 0, 0, 0, false);
         renderer.showRange(0, 0, null);
+        renderer.setFootprint(0, 0, 0, null);
+        renderer.setLinks(null, []);
         etiketGizle();
       } else {
-        const ok = canPlace(s, tool, p.x, p.z).ok;
-        renderer.setGhost(tool, p.x, p.z, donus(tool, p.x, p.z), ok);
+        const sonuc = canPlace(s, tool, p.x, p.z);
+        renderer.setGhost(tool, p.x, p.z, donus(tool, p.x, p.z), sonuc.ok);
+        renderer.setFootprint(p.x, p.z, BUILDINGS[tool].taban, sonuc.ok ? 'gecerli' : 'gecersiz');
         const etki = BUILDINGS[tool].etki;
         renderer.showRange(p.x, p.z, etki > 0 ? etki : null);
-        bonusEtiketi(tool, p.x, p.z);
+        // Geçerliyse bonus etiketi ve bonus kaynağına bağ; geçersizse yalnızca nedeni.
+        renderer.setLinks(p, sonuc.ok ? adjacencySources(s, tool, p.x, p.z) : []);
+        if (sonuc.ok || !sonuc.sebep) bonusEtiketi(tool, p.x, p.z);
+        else sebepEtiketi(yerlestirmeSebebi(sonuc.sebep));
       }
       renderer.highlight(null);
       renderer.highlightRoad(null);
@@ -139,6 +156,8 @@ export function createInput(deps: InputDeps): Input {
     }
 
     renderer.setGhost(null, 0, 0, 0, false);
+    renderer.setFootprint(0, 0, 0, null);
+    renderer.setLinks(null, []);
     if (!firca) etiketGizle(); // bina aracından çıkınca komşuluk etiketi kalmasın
 
     if (isRoadTool(tool)) {
@@ -167,6 +186,8 @@ export function createInput(deps: InputDeps): Input {
       renderer.highlight(b.id, 'secim');
       const etki = effectRadius(b);
       renderer.showRange(b.x, b.z, etki > 0 ? etki : null);
+      renderer.setFootprint(b.x, b.z, BUILDINGS[b.type].taban + 0.12, 'secim');
+      renderer.setLinks(b, adjacencySources(s, b.type, b.x, b.z, b.id));
     } else {
       renderer.highlight(null);
       renderer.showRange(0, 0, null);

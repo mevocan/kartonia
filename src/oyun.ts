@@ -1,5 +1,7 @@
 // Oyun: kayıt, oyun döngüsü ve katmanların birbirine bağlanması. main.ts dil dosyasını yükledikten sonra açar.
 import type { BuildingType, DayReport, GameState, Good, RoadType, Vec2 } from './logic/types';
+import { buildingPins, type SonGun } from './logic/pins';
+import { igneGorunumu } from './ui/ikonlar';
 import {
   canPlace, canUpgrade, createGame, upgradeBuilding, demolish, demolishRoad, deserialize, getBuildingInfo, getRoadInfo, GOALS, KASABA_TAMAM_HEDEFI, placeBuilding,
   placeRoad, planRoad, serialize, tick, mevsim, monumentStage, canAdvanceMonument, advanceMonument,
@@ -14,8 +16,9 @@ import { createTitleScreen } from './ui/titleScreen';
 import { createBuildMenu, type Tool } from './ui/buildMenu';
 import { createInfoPanel } from './ui/infoPanel';
 import {
-  createGoalCard, createRequestCard, createToasts, istekAd, type ToastKind, istekTamamMetni, mevsimBildirimi, yerlestirmeSebebi,
+  createToasts, istekAd, type ToastKind, istekTamamMetni, mevsimBildirimi, yerlestirmeSebebi,
 } from './ui/toast';
+import { createAlertList, createGoalCard, createLeftColumn, createRequestCard } from './ui/solPanel';
 import { createTradePanel } from './ui/tradePanel';
 import { createCardPicker } from './ui/cardPicker';
 import { createCardList } from './ui/cardList';
@@ -81,6 +84,8 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   let duraklamadanOnce = 1;
   let arac: Tool = null;
   let secili: Selection | null = null;
+  /** Son gün sonunun üretim sorunları ve evlerin stok eksikleri (harita iğneleri, bilgi paneli). Yeni oyunda ve kayıt yüklenince yok. */
+  let sonGun: SonGun | null = null;
 
   // ---- Arayüz parçaları ----
   // Ses: dosya yok, Web Audio ile üretilir. İlk tıklama / tuşta başlar (tarayıcı kuralı). Ayar ayrı anahtarda.
@@ -94,13 +99,17 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     () => sesAyarla(!ses.isEnabled()),
     (kanal, v) => sesDuzeyi(kanal, v),
   );
-  const goal = createGoalCard(ui);
-  const istekKarti = createRequestCard(ui, () => senlik(), (id) => {
+  /** Binayı seçer ve kamerayı ona götürür (istek kartı, uyarılar). */
+  function binayaGit(id: number): void {
     setTool(null);
     select({ kind: 'bina', id });
     const b = s.binalar.find((x) => x.id === id);
     if (b) renderer.focusOn(b.x, b.z); // ev ekran dışındaysa kamera oraya kayar
-  });
+  }
+  const solSutun = createLeftColumn(ui);
+  const goal = createGoalCard(solSutun);
+  const istekKarti = createRequestCard(solSutun, () => senlik(), (id) => binayaGit(id));
+  const uyariListesi = createAlertList(solSutun, (id) => binayaGit(id));
   const tuccar = createTradePanel(ui, (g, n) => ticaret(g, n, true), (g, n) => ticaret(g, n, false));
   const secici = createCardPicker(ui, (id) => kartSecildi(id));
   const kasabaYolu = createCardList(ui);
@@ -139,6 +148,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
       else renderer.showRange(b.x, b.z, r);
     },
     (id) => anitIlerlet(id),
+    (tur) => renderer.buildingThumbnail(tur),
   );
 
   // Sağ üst: giriş ekranını (menü) açar; yeni kasaba oradan başlatılır.
@@ -209,7 +219,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
 
   const son = el('div');
   son.id = 'sonEkran';
-  const sonKart = el('div', 'kagit bant');
+  const sonKart = el('div', 'kagit');
   son.appendChild(sonKart);
   ui.appendChild(son);
 
@@ -296,7 +306,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     }
     const bi = secili?.kind === 'bina' ? getBuildingInfo(s, secili.id) : null;
     if (!bi) secili = null;
-    info.show(bi, s.para, s.stok);
+    info.show(bi, s.para, s.stok, bi ? sonGun?.uretimSorunlari.find((p) => p.id === bi.id)?.neden : undefined);
   }
 
   function yukselt(id: number): void {
@@ -483,19 +493,28 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     input.refresh();
   }
 
+  /** Şu an iğnesi olan binalar: artık sorunu olmayanın iğnesi kalkar. */
+  let ignesiOlanlar = new Set<number>();
+
+  /** Harita iğneleri: evde karşılanmayan ihtiyaç (anlık), üretim binasında son günün sorunu. */
   function uyarilariGuncelle(): void {
-    for (const b of s.binalar) {
-      if (b.type !== 'ev') continue;
-      // kotuGun > 0: son gün sonunda mevcut seviyenin ihtiyaçları gerçekten karşılanmadı.
-      renderer.setWarning(b.id, b.kotuGun > 0);
+    const yeni = new Set<number>();
+    for (const p of buildingPins(s, sonGun)) {
+      if (yeni.has(p.id)) continue;
+      yeni.add(p.id);
+      renderer.setPin(p.id, igneGorunumu(p));
     }
+    for (const id of ignesiOlanlar) if (!yeni.has(id)) renderer.setPin(id, null);
+    ignesiOlanlar = yeni;
   }
 
   function arayuzYenile(): void {
+    uyarilariGuncelle();
     hud.update(s);
     menu.update(s);
     goal.update(s);
     istekKarti.update(s);
+    uyariListesi.update(s);
     kasabaYolu.update(s);
     tuccar.update(s);
   }
@@ -510,6 +529,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
       if (b.insaat) renderer.setMonumentStage(b.id, monumentStage(b), false); // yarım anıt
     }
     renderer.setPopulation(s.nufus);
+    ignesiOlanlar = new Set(); // sahne yeniden kuruldu: eski iğneler binalarla gitti
     uyarilariGuncelle();
   }
 
@@ -517,6 +537,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     if (r.vergi > 0) ses.play('vergi');
     ogretici.olay('gunSonu');
     hud.setReport(r);
+    sonGun = { uretimSorunlari: r.uretimSorunlari, evStokEksikleri: r.evStokEksikleri };
     renderer.setPopulation(s.nufus);
     for (const v of r.binaVergileri) {
       const b = s.binalar.find((x) => x.id === v.id);
@@ -540,8 +561,10 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     else if (kuculen > 1) toasts.show(t('bildirim.evlerKuculdu', { n: kuculen }), 'kotu');
 
     if (r.yeniHedefler.length > 0) ses.play('hedef');
+    // Tamamlanan hedefi kart kutlar (aynı gün birden çoksa sonuncusu); büyük dönüm noktaları ayrıca bildirilir.
+    const sonHedef = r.yeniHedefler[r.yeniHedefler.length - 1];
+    if (sonHedef !== undefined && GOALS[sonHedef]) goal.kutla(hedefMetni(sonHedef).ad);
     for (const i of r.yeniHedefler) {
-      if (GOALS[i]) toasts.show(t('bildirim.hedefTamam', { ad: hedefMetni(i).ad }), 'iyi');
       if (i === KASABA_TAMAM_HEDEFI) toasts.show(t('bildirim.kasabaTamam'), 'iyi');
       if (i === GOALS.length - 1) toasts.show(t('bildirim.efsane'), 'iyi');
     }
@@ -557,7 +580,6 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
       toasts.show(t('bildirim.borc', { sinir: BALANCE.borcSiniri, gun: s.borcGunu, toplam: BALANCE.borcGunSiniri }), 'kotu');
     }
 
-    uyarilariGuncelle();
     bilgiYenile();
     arayuzYenile();
     input.refresh();
@@ -571,20 +593,19 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     const evler = s.binalar.filter((b) => b.type === 'ev');
     const enYuksek = evler.reduce((m, b) => Math.max(m, b.seviye), 0);
     sonKart.replaceChildren();
-    sonKart.appendChild(el('h2', '', t('son.baslik')));
-    sonKart.appendChild(el('p', '', t('son.metin')));
-    const tablo = el('table');
-    for (const [a, v] of [
-      [t('son.gun'), String(s.gun)],
-      [t('son.nufus'), String(s.nufus)],
-      [t('son.enYuksekEv'), enYuksek > 0 ? t('son.seviye', { n: enYuksek }) : '—'],
+    sonKart.append(el('div', 'son-ikon', '🏚️'), el('h2', '', t('son.baslik')), el('p', '', t('son.metin')));
+    const kutular = el('div', 'son-kutular');
+    for (const [ikon, v, a] of [
+      ['📅', String(s.gun), t('son.gun')],
+      ['👥', String(s.nufus), t('son.nufus')],
+      ['🏠', enYuksek > 0 ? evSeviyeAd(enYuksek) : '—', t('son.enYuksekEv')],
     ]) {
-      const tr = el('tr');
-      tr.append(el('td', '', a), el('td', '', v));
-      tablo.appendChild(tr);
+      const k = el('div', 'kutu');
+      k.append(el('div', 'deger', `${ikon} ${v}`), el('div', 'etiket', a));
+      kutular.appendChild(k);
     }
-    sonKart.appendChild(tablo);
-    const b = el('button', 'dugme', t('son.yeni'));
+    sonKart.appendChild(kutular);
+    const b = el('button', 'dugme birincil', t('son.yeni'));
     b.addEventListener('click', sifirla);
     sonKart.appendChild(b);
     son.style.display = 'flex';
@@ -597,6 +618,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
       /* yok say */
     }
     s = createGame(rastgeleTohum());
+    sonGun = null;
     hud.setReport(null);
     renderer.rebuildTerrain();
     secili = null;
