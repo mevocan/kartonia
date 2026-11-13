@@ -62,10 +62,10 @@ Para (başlangıç 150), Nüfus, Mutluluk (0–100, nüfusa göre ağırlıklı 
 
 **Üst bar** (`ui/hud.ts`) dört adadır: Zaman (gün, mevsim, "kışa X gün", gün ilerleme çubuğu) · Kasaba (para, nüfus, mutluluk) · Stok (evlerin her gün tükettiği yemek ve odun hep görünür; 📦 düğmesi bütün stokları sınırla birlikte gösteren paneli açar) · Kontrol (tüccar, ses, hız). Evlerin tükettiği bir mal bitince değeri kırmızı ve hafifçe yanıp söner; bardaki olmayan bir mal bitmişse 📦 kırmızılaşır. Yün, kumaş ve bal stok panelinde üretici binaları açılana (ya da stokta olana) kadar görünmez. Sayılar 250 ms'lik geçişle değişir (arayüz zamanı, oyun hızından bağımsız). Dar pencerede (≤1400 px) etiketler gizlenir.
 
-**Haritada geri bildirim** (yalnızca çizim,  sürer):
-- **Taban halkası** (): yerleştirme önizlemesinin altında binanın taban izi; geçerliyse yeşil, geçersizse kırmızı. Geçersiz yerleşimde imlecin yanında nedeni yazar (). Seçili binanın altında yavaşça nabız atan altın halka; bina da hafifçe yükselir (yalnızca seçimde, instanced ağaç/çiçek hariç).
-- **Komşuluk bağları** (, kaynak  ): aktif bonusun kaynağından (mesafe içindeki en yakın kaynak bina ya da en yakın göl kıyısı) binaya doğru yay boyunca akan altın noktalar. Önizlemede ve seçili binada görünür; tepe kuralının kaynağı çizilmez.
-- Paneller (bilgi, bina kartı) 140 ms solarak kapanır ( ).
+**Haritada geri bildirim** (yalnızca çizim, `ui/input.ts` sürer):
+- **Taban halkası** (`GameRenderer.setFootprint`): yerleştirme önizlemesinin altında binanın taban izi; geçerliyse yeşil, geçersizse kırmızı. Geçersiz yerleşimde imlecin yanında nedeni yazar (`yerlestirmeSebebi`). Seçili binanın altında yavaşça nabız atan altın halka; bina da hafifçe yükselir (yalnızca seçimde, instanced ağaç/çiçek hariç).
+- **Komşuluk bağları** (`GameRenderer.setLinks`, kaynak `logic/adjacency.ts` `adjacencySources`): aktif bonusun kaynağından (mesafe içindeki en yakın kaynak bina ya da en yakın göl kıyısı) binaya doğru yay boyunca akan altın noktalar. Önizlemede ve seçili binada görünür; tepe kuralının kaynağı çizilmez.
+- Paneller (bilgi, bina kartı) 140 ms solarak kapanır (`ui/dom.ts` `panelKapat`).
 
 **Harita iğneleri** (`logic/pins.ts` `buildingPins`, çizim `GameRenderer.setPin`): binanın üstünde hafifçe sallanan, ortasında simge olan damla. Toprak kırmızısı halka: evin mevcut seviyesinin karşılanmayan ilk ihtiyacı (anlık; sürerse ev küçülür). Arduvaz halka: üretim binası son gün sonunda yarıdan az verimle çalıştı (`DayReport.uretimSorunlari`: eksik girdi malının simgesi, 📦 dolu depo, 🌳 ağaçsız oduncu). Üretim sorunları gün sonundan alınır, çünkü gün içinde stok aynı gün üretilecek girdiyi henüz içermez. İşçi eksikliği bütün kasabanındır, iğne çıkarmaz. Simgeler `ui/ikonlar.ts`.
 
