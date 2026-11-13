@@ -315,7 +315,7 @@
   "bildirim.tuccarGidiyor": "🛒 The merchant leaves tomorrow: last day to trade.",
   "bildirim.borc": "Treasury below {sinir}! ({gun}/{toplam} days) — bankruptcy is near.",
   "uyari.borc": "Treasury below {sinir} · day {gun}/{toplam}",
-  "uyari.kuculen": "About to shrink: {n} houses",
+  "uyari.kuculen": "Houses about to shrink: {n}",
   "uyari.kuculenIpucu": "Click: go to the next house",
   "uyari.isci": "Not enough workers · production {n}%",
   "bildirim.kisGeliyor": "🍂 Winter comes in {n} days. Stock up on food and wood.",

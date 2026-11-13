@@ -62,8 +62,43 @@ export function treesInRange(s: GameState, b: Building): number {
   return s.binalar.filter((t) => t.type === 'agac' && inRange(b, t)).length;
 }
 
-function hasService(s: GameState, h: Building, need: Need): boolean {
-  return s.binalar.some((b) => BUILDINGS[b.type].saglar === need && inRange(b, h));
+/** Etki alanı olan bir sağlayıcı: merkez ve yarıçap (o anki seviyesine göre). */
+interface Saglayici {
+  x: number;
+  z: number;
+  r: number;
+}
+
+/**
+ * İhtiyaç sağlayan binaların listesi: hizmetler (`saglar`) ihtiyaca göre, yemek satış yerleri (`yemekSatar`) ayrı.
+ * Bir kez kurulur, bütün evlerin ihtiyaç denetiminde paylaşılır (her ev için bütün binaları taramak yerine).
+ * Bina eklenince, yıkılınca ya da yükseltilince yeniden kurulmalıdır; bu yüzden saklanmaz, çağıran kurar.
+ */
+export interface HizmetIndeksi {
+  saglar: Map<Need, Saglayici[]>;
+  yemek: Saglayici[];
+}
+
+export function hizmetIndeksi(s: GameState): HizmetIndeksi {
+  const ix: HizmetIndeksi = { saglar: new Map(), yemek: [] };
+  for (const b of s.binalar) {
+    const d = BUILDINGS[b.type];
+    if (!d.saglar && !d.yemekSatar) continue;
+    const r = effectRadius(b);
+    if (r <= 0) continue;
+    const p = { x: b.x, z: b.z, r };
+    if (d.saglar) {
+      const l = ix.saglar.get(d.saglar);
+      if (l) l.push(p);
+      else ix.saglar.set(d.saglar, [p]);
+    }
+    if (d.yemekSatar) ix.yemek.push(p);
+  }
+  return ix;
+}
+
+function kapsar(l: readonly Saglayici[] | undefined, h: Building): boolean {
+  return !!l && l.some((p) => dist(p.x, p.z, h.x, h.z) <= p.r);
 }
 
 type StokIhtiyaci = 'yemek' | 'odun' | 'mobilya' | 'kumas' | 'bal';
@@ -83,16 +118,12 @@ function perCapita(s: GameState, n: StokIhtiyaci): number {
   }
 }
 
-/** Evin etki alanında bir yemek satış yeri (fırın, pazar) var mı. */
-function hasFoodSeller(s: GameState, h: Building): boolean {
-  return s.binalar.some((b) => BUILDINGS[b.type].yemekSatar && inRange(b, h));
-}
-
 /**
  * Evin mevcut + bir üst seviyesinin ihtiyaçları (tekrarsız) ve durumu.
  * `tuketim` verilirse mevcut seviyenin stok ihtiyaçları (yemek, odun, mobilya, kumaş, bal) stoktan düşülür ve oraya eklenir.
+ * `ix`: birçok ev art arda değerlendirilirken bir kez kurulmuş sağlayıcı listesi (verilmezse burada kurulur).
  */
-export function evaluateNeeds(s: GameState, h: Building, tuketim?: Record<Good, number>): NeedStatus[] {
+export function evaluateNeeds(s: GameState, h: Building, tuketim?: Record<Good, number>, ix: HizmetIndeksi = hizmetIndeksi(s)): NeedStatus[] {
   const cur = houseLevel(h.seviye);
   const next = h.seviye < HOUSE_LEVELS.length ? houseLevel(h.seviye + 1) : null;
   const list: Need[] = [];
@@ -105,7 +136,7 @@ export function evaluateNeeds(s: GameState, h: Building, tuketim?: Record<Good, 
       const nufus = mevcut || !next ? cur.nufus : next.nufus;
       const miktar = nufus * perCapita(s, n);
       // Yemek yalnızca bir satış yerinden alınır (fırın, pazar).
-      const ulasir = n !== 'yemek' || hasFoodSeller(s, h);
+      const ulasir = n !== 'yemek' || kapsar(ix.yemek, h);
       const ok = ulasir && s.stok[n] >= miktar - 1e-9;
       if (ok && mevcut && tuketim) {
         s.stok[n] = Math.max(0, s.stok[n] - miktar);
@@ -113,7 +144,7 @@ export function evaluateNeeds(s: GameState, h: Building, tuketim?: Record<Good, 
       }
       return { ihtiyac: n, karsilandi: ok };
     }
-    return { ihtiyac: n, karsilandi: hasService(s, h, n) };
+    return { ihtiyac: n, karsilandi: kapsar(ix.saglar.get(n), h) };
   });
 }
 
@@ -242,8 +273,9 @@ export function endDay(s: GameState): DayReport {
   const evler = s.binalar.filter((b) => b.type === 'ev').sort((a, b) => a.id - b.id);
   const mutluluklar = new Map<number, number>();
   const durumlar = new Map<number, NeedStatus[]>();
+  const ix = hizmetIndeksi(s); // bu döngüde bina eklenmez, yıkılmaz, yükseltilmez
   for (const h of evler) {
-    const st = evaluateNeeds(s, h, rapor.tuketilen);
+    const st = evaluateNeeds(s, h, rapor.tuketilen, ix);
     durumlar.set(h.id, st);
     const m = houseHappiness(s, h, st);
     mutluluklar.set(h.id, m);

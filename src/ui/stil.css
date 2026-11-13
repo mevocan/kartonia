@@ -493,6 +493,11 @@ kbd {
 #kasabaYolu .liste, #kasabaYolu .alt { display: none; padding: 0 8px; }
 #kasabaYolu.acik .liste { display: block; }
 #kasabaYolu.acik .alt { display: block; padding-bottom: 8px; }
+/* Dar ekranda açık inşa menüsü bu kartın üstüne biner: menü açıkken kart geçici olarak çekilir. */
+@media (max-width: 1500px) {
+  #kasabaYolu { transition: opacity var(--sure), transform var(--sure) var(--egri); }
+  #arayuz:has(#altMenu.acik) #kasabaYolu { opacity: 0; transform: translateY(12px); pointer-events: none; }
+}
 #kasabaYolu .kart { padding: 5px 0 6px; border-bottom: 1px solid var(--cizgi); }
 #kasabaYolu .kart:last-child { border-bottom: none; }
 #kasabaYolu .ad { font-weight: 800; margin-bottom: 1px; }

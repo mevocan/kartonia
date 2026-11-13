@@ -1,6 +1,6 @@
 // Harita iğneleri: oyuncunun panel açmadan görmesi gereken sorunlar.
 import type { BinaIgnesi, GameState, UretimSorunu } from './types';
-import { evaluateNeeds, houseLevel, workerRatio } from './economy';
+import { evaluateNeeds, hizmetIndeksi, houseLevel, workerRatio } from './economy';
 
 /**
  * Evler anlık değerlendirilir: mevcut seviyenin karşılanmayan ilk ihtiyacı (ihtiyaç sırası `HOUSE_LEVELS`).
@@ -9,11 +9,12 @@ import { evaluateNeeds, houseLevel, workerRatio } from './economy';
  */
 export function buildingPins(s: GameState, uretimSorunlari: readonly UretimSorunu[] = []): BinaIgnesi[] {
   const out: BinaIgnesi[] = [];
+  const ix = hizmetIndeksi(s);
   for (const b of s.binalar) {
     if (b.type !== 'ev') continue;
     const cur = houseLevel(b.seviye).ihtiyaclar;
     if (!cur.length) continue;
-    const st = evaluateNeeds(s, b);
+    const st = evaluateNeeds(s, b, undefined, ix);
     const eksik = cur.find((n) => !st.some((x) => x.ihtiyac === n && x.karsilandi));
     if (eksik) out.push({ id: b.id, tur: 'ihtiyac', neden: eksik });
   }
