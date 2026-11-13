@@ -62,3 +62,14 @@ export function lakeDistance(x: number, z: number): number {
   }
   return best;
 }
+
+/** Göl kıyısındaki en yakın nokta (göl yoksa null). Komşuluk bağı çizimi için. */
+export function nearestLakePoint(x: number, z: number): Vec2 | null {
+  let best: { x: number; z: number; mesafe: number } | null = null;
+  for (const g of HARITA.golKenarlari) {
+    if (g.length === 0) continue;
+    const p = closestOnPolyline(x, z, [...g, g[0]]);
+    if (p && (!best || p.mesafe < best.mesafe)) best = p;
+  }
+  return best ? { x: best.x, z: best.z } : null;
+}

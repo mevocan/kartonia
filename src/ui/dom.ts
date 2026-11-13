@@ -21,6 +21,27 @@ export function flash(e: HTMLElement, extra?: string): void {
   window.setTimeout(() => e.classList.remove('vurgu', 'vurgu-arti', 'vurgu-eksi'), 700);
 }
 
+/** Kapanış süresi (ms); stil.css'teki .kapaniyor geçişiyle aynı. */
+const KAPANIS = 140;
+
+/** Paneli kısa bir solmayla gizler. Bu sırada `panelAc` çağrılırsa kapanış iptal olur. */
+export function panelKapat(e: HTMLElement): void {
+  if (e.style.display === 'none') return;
+  e.classList.add('kapaniyor');
+  window.setTimeout(() => {
+    if (e.classList.contains('kapaniyor')) {
+      e.style.display = 'none';
+      e.classList.remove('kapaniyor');
+    }
+  }, KAPANIS);
+}
+
+/** Paneli gösterir (süren bir kapanışı iptal eder). */
+export function panelAc(e: HTMLElement): void {
+  e.classList.remove('kapaniyor');
+  e.style.display = 'block';
+}
+
 export function tr(n: number): string {
   return sayi(n);
 }

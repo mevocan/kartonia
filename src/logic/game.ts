@@ -24,7 +24,7 @@ export {
   isRoadUnlocked, planRoad, placeRoad, demolishRoad, getRoadInfo, nearestRoad,
 } from './roads';
 export { heightAt, isLand, isLake } from './terrain';
-export { adjacencyBonus, bonusText } from './adjacency';
+export { adjacencyBonus, adjacencySources, bonusText } from './adjacency';
 export { mevsim, mevsimGunu, kisaKalanGun, MEVSIMLER, type Mevsim } from './season';
 export {
   tuccarVarMi, tuccarGeldiMi, tuccarKalisGunu, tuccaraKalanGun, kalanKota, tuccarKonumu, canBuy, canSell, buyGood, sellGood,

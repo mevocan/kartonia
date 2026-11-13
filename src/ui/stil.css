@@ -453,6 +453,12 @@ kbd {
 .dugme.birincil:hover { background: #e2ac46; }
 .dugme.birincil:disabled { background: var(--yuzey-dolu); border-color: var(--cizgi-guclu); color: var(--metin-soluk); }
 
+/* Panel kapanışı (ui/dom.ts panelKapat): kısa solma ve hafif kayma. */
+.kapaniyor {
+  opacity: 0 !important; transform: translateX(8px); pointer-events: none !important;
+  transition: opacity 140ms ease-in, transform 140ms ease-in;
+}
+
 /* ---------- Öğretici ---------- */
 
 #ogretici { position: absolute; right: 12px; bottom: 120px; width: 270px; padding: 16px; display: none; font-size: 13px; z-index: 5; border-left: 4px solid var(--altin); }

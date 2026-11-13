@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BALANCE } from '../src/data/buildings';
-import { getBuildingInfo } from '../src/logic/game';
+import { adjacencySources, getBuildingInfo } from '../src/logic/game';
 import { add, blank } from './helpers';
 
 // Bilgi paneli için türetilen alanlar: üretim tahmini, kapsanan evler, ev gün sayaçları.
@@ -54,5 +54,24 @@ describe('kapsanan evler ve ev sayaçları', () => {
     const h = add(s, 'ev', 0, 0, 2);
     h.kotuGun = 1;
     expect(getBuildingInfo(s, h.id)!.evGun).toEqual({ iyi: 0, kotu: 1, buyumeEsik: BALANCE.seviyeGunEsigi, kuculmeEsik: BALANCE.seviyeGunEsigi });
+  });
+});
+
+describe('komşuluk bağı kaynakları', () => {
+  it('mesafe içindeki en yakın kaynak bina; şart tutmuyorsa boş; kendisi sayılmaz', () => {
+    const s = blank();
+    const a = add(s, 'arilik', 20, 20);
+    expect(adjacencySources(s, 'arilik', a.x, a.z, a.id)).toEqual([]);
+    add(s, 'cicek', 23.5, 20);
+    add(s, 'cicek', 22, 20);
+    add(s, 'cicek', 30, 20); // 4 birimden uzak
+    expect(adjacencySources(s, 'arilik', a.x, a.z, a.id)).toEqual([{ x: 22, z: 20 }]);
+  });
+
+  it('göl kuralında en yakın kıyı noktası', () => {
+    const s = blank(); // klasik harita: göl (-22, 14), r 7
+    const p = adjacencySources(s, 'ev', -22, 4.5);
+    expect(p).toHaveLength(1);
+    expect(Math.hypot(p[0].x + 22, p[0].z - 14)).toBeLessThan(9);
   });
 });

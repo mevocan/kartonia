@@ -3,7 +3,7 @@
 // gezdirip denemesi gerekmez. Araç seçili kaldıkça açık durur. Kilitli kart da açılır (yalnızca önizleme).
 import type { BuildingType, Good, RoadType } from '../logic/types';
 import { BUILDINGS, HOUSE_LEVELS, ROADS } from '../data/buildings';
-import { el } from './dom';
+import { el, panelAc, panelKapat } from './dom';
 import {
   binaAciklama, binaAd, evSeviyeAd, ihtiyacAd, komsulukEtiket, komsulukSart, malAdKucuk, t, yolAciklama, yolAd,
 } from './i18n';
@@ -138,10 +138,10 @@ export function createBuildingCard(root: HTMLElement, onClose: () => void): Buil
         bina(tur, kilitli, resim);
       }
       box.classList.toggle('kilitli', kilitli);
-      box.style.display = 'block';
+      panelAc(box);
     },
     hide() {
-      box.style.display = 'none';
+      panelKapat(box);
     },
   };
 }

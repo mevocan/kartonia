@@ -3,7 +3,7 @@ import type { BuildingType, RoadType, Vec2 } from '../logic/types';
 import { BUILDINGS, BUILDING_ORDER, HOUSE_LEVELS, dogaTuru } from '../data/buildings';
 import { heightAt } from '../logic/terrain';
 import { DIS_SINIR } from '../data/map';
-import type { GameRenderer, PinTur } from './api';
+import type { AyakTur, GameRenderer, PinTur } from './api';
 import { PALETTE, EV_DUVAR } from './palette';
 import {
   modelMaterial, lineMaterial, paperMaterial, canvasTexture, disposeMaterials, roadMaterial, treeMaterial, treeGhostMaterial, ruzgar, gece,
@@ -499,6 +499,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
 
   function dropEntry(e: Entry): void {
     tweens.kill(e);
+    kalkis.delete(e);
     entries.delete(e.id);
     if (highlighted?.id === e.id) highlighted = null;
     pickDirty = true;
@@ -641,6 +642,108 @@ export function createRenderer(container: HTMLElement): GameRenderer {
     ringDash.geometry = dg;
     ringFill.geometry = fg;
   }
+
+  // ---------- Taban halkası: yerleştirme önizlemesinin ve seçili binanın altında ----------
+  const ayakRenk: Record<AyakTur, THREE.Color> = {
+    gecerli: new THREE.Color(PALETTE.ayakGecerli),
+    gecersiz: new THREE.Color(PALETTE.ayakGecersiz),
+    secim: new THREE.Color(PALETTE.ayakSecim),
+  };
+  const ayakDolguMat = new THREE.MeshBasicMaterial({
+    color: ayakRenk.gecerli, transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide,
+    polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -8,
+  });
+  const ayakKenarMat = new THREE.MeshBasicMaterial({
+    color: ayakRenk.gecerli, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide,
+    polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -10,
+  });
+  const ayakDolgu = new THREE.Mesh(new THREE.BufferGeometry(), ayakDolguMat);
+  const ayakKenar = new THREE.Mesh(new THREE.BufferGeometry(), ayakKenarMat);
+  ayakDolgu.renderOrder = 3;
+  ayakKenar.renderOrder = 3;
+  ayakDolgu.raycast = () => {};
+  ayakKenar.raycast = () => {};
+  const ayak = new THREE.Group();
+  ayak.add(ayakDolgu, ayakKenar);
+  ayak.visible = false;
+  world.root.add(ayak);
+  let ayakKey = '';
+  let ayakTur: AyakTur = 'gecerli';
+
+  /** Araziye yapışık disk (dolgu) ve kenar şeridi. */
+  function buildFoot(x: number, z: number, r: number): void {
+    const gy = (px: number, pz: number) => heightAt(px, pz) + 0.06;
+    const segs = 40;
+    const pt = (rr: number, a: number): number[] => {
+      const px = x + Math.cos(a) * rr;
+      const pz = z + Math.sin(a) * rr;
+      return [px, gy(px, pz), pz];
+    };
+    const dolgu: number[] = [];
+    const kenar: number[] = [];
+    const halkalar = 3;
+    for (let i = 0; i < segs; i++) {
+      const a0 = (i / segs) * Math.PI * 2;
+      const a1 = ((i + 1) / segs) * Math.PI * 2;
+      for (let j = 0; j < halkalar; j++) {
+        const ra = (j / halkalar) * r;
+        const rb = ((j + 1) / halkalar) * r;
+        const A = pt(ra, a0), B = pt(rb, a0), C = pt(rb, a1), D = pt(ra, a1);
+        dolgu.push(...A, ...C, ...B, ...A, ...D, ...C);
+      }
+      const ic = r - 0.07;
+      const dis = r + 0.05;
+      const A = pt(ic, a0), B = pt(dis, a0), C = pt(dis, a1), D = pt(ic, a1);
+      kenar.push(...A, ...C, ...B, ...A, ...D, ...C);
+    }
+    for (const [m, arr] of [[ayakDolgu, dolgu], [ayakKenar, kenar]] as const) {
+      m.geometry.dispose();
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
+      m.geometry = g;
+    }
+  }
+
+  // ---------- Komşuluk bağları: bonus kaynağına uçuşan noktalı yay ----------
+  const BAG_NOKTA = 240;
+  const bagGeo = new THREE.SphereGeometry(0.1, 8, 6);
+  const bagMat = new THREE.MeshBasicMaterial({ color: PALETTE.bag, transparent: true, opacity: 0.95, depthWrite: false });
+  const bagNoktalar = new THREE.InstancedMesh(bagGeo, bagMat, BAG_NOKTA);
+  bagNoktalar.count = 0;
+  bagNoktalar.renderOrder = 6;
+  bagNoktalar.raycast = () => {};
+  bagNoktalar.frustumCulled = false;
+  world.root.add(bagNoktalar);
+  let baglar: { a: THREE.Vector3; b: THREE.Vector3; h: number; n: number }[] = [];
+  const bagM = new THREE.Matrix4();
+  const bagP = new THREE.Vector3();
+  const bagQ = new THREE.Quaternion();
+  const bagS = new THREE.Vector3();
+
+  /** Noktaları yay boyunca kaydırır (zamana bağlı akış: kaynaktan binaya). */
+  function bagCiz(): void {
+    let i = 0;
+    const faz = (time * 0.9) % 1;
+    for (const l of baglar) {
+      for (let k = 0; k < l.n && i < BAG_NOKTA; k++) {
+        const u = (k + faz) / l.n;
+        bagP.lerpVectors(l.a, l.b, u);
+        bagP.y += l.h * 4 * u * (1 - u);
+        // Uçlarda küçülür: yay yerden doğup yere iner gibi.
+        const sc = 0.45 + 0.55 * Math.sin(Math.PI * u);
+        bagS.setScalar(sc);
+        bagM.compose(bagP, bagQ, bagS);
+        bagNoktalar.setMatrixAt(i++, bagM);
+      }
+    }
+    bagNoktalar.count = i;
+    bagNoktalar.instanceMatrix.needsUpdate = true;
+  }
+
+  // ---------- Seçili binanın hafifçe yükselmesi ----------
+  /** Binanın iç tutucusunun hedef yüksekliği; hedefe varan ve 0'a dönen kayıttan çıkar. */
+  const kalkis = new Map<Entry, number>();
+  const KALKIS = 0.1;
 
   // ---------- Yol hayaleti ----------
   const roadGhost = new THREE.Mesh(new THREE.BufferGeometry(), roadMaterial('ghost'));
@@ -921,9 +1024,45 @@ export function createRenderer(container: HTMLElement): GameRenderer {
       ring.visible = true;
     },
 
+    setFootprint(x, z, r, tur) {
+      if (tur === null || r <= 0) {
+        ayak.visible = false;
+        return;
+      }
+      const key = `${x.toFixed(2)},${z.toFixed(2)},${r.toFixed(2)}`;
+      if (key !== ayakKey) {
+        buildFoot(x, z, r);
+        ayakKey = key;
+      }
+      ayakTur = tur;
+      ayakDolguMat.color.copy(ayakRenk[tur]);
+      ayakKenarMat.color.copy(ayakRenk[tur]);
+      ayak.visible = true;
+    },
+
+    setLinks(from, to) {
+      baglar = [];
+      if (from) {
+        const a0 = new THREE.Vector3(from.x, heightAt(from.x, from.z) + 0.35, from.z);
+        for (const p of to) {
+          const b = new THREE.Vector3(p.x, heightAt(p.x, p.z) + 0.35, p.z);
+          const len = a0.distanceTo(b);
+          if (len < 0.3) continue;
+          // Akış kaynaktan binaya: a = kaynak, b = bina.
+          baglar.push({ a: b, b: a0.clone(), h: 0.5 + len * 0.14, n: Math.max(6, Math.round(len / 0.42)) });
+        }
+      }
+      bagCiz();
+    },
+
     highlight(id, mode = 'secim') {
       const prev = highlighted ? entries.get(highlighted.id) : undefined;
+      if (prev && (prev.id !== id || mode !== 'secim')) kalkis.set(prev, 0);
       highlighted = id === null ? null : { id, mode };
+      if (id !== null && mode === 'secim') {
+        const e = entries.get(id);
+        if (e && !e.pooled) kalkis.set(e, KALKIS);
+      }
       if (prev) {
         applyLook(prev.model, lookFor(prev));
         poolTint(prev);
@@ -1097,6 +1236,20 @@ export function createRenderer(container: HTMLElement): GameRenderer {
       time += d;
       cam.update(d);
       tweens.update(d);
+      // Seçili binanın yükselmesi / inişi (arayüz hızında, oyun hızından bağımsız)
+      for (const [e, hedef] of kalkis) {
+        const y = e.holder.position.y;
+        const yeni = y + (hedef - y) * Math.min(1, d * 14);
+        e.holder.position.y = Math.abs(yeni - hedef) < 0.002 ? hedef : yeni;
+        if (e.holder.position.y === hedef && hedef === 0) kalkis.delete(e);
+      }
+      // Seçim halkası yavaşça nabız atar; önizleme halkası sabit.
+      if (ayak.visible) {
+        const k = ayakTur === 'secim' ? 0.5 + 0.5 * Math.sin(time * 3.2) : 1;
+        ayakDolguMat.opacity = ayakTur === 'secim' ? 0.14 + 0.12 * k : 0.28;
+        ayakKenarMat.opacity = ayakTur === 'secim' ? 0.6 + 0.35 * k : 0.9;
+      }
+      if (baglar.length) bagCiz();
       // Kağıt maket katlanmaları
       for (const f of [...folds]) {
         f.t += d * f.speed;
@@ -1267,6 +1420,12 @@ export function createRenderer(container: HTMLElement): GameRenderer {
         m.dispose();
       }
       pinMats.clear();
+      for (const m of [ayakDolgu, ayakKenar]) m.geometry.dispose();
+      ayakDolguMat.dispose();
+      ayakKenarMat.dispose();
+      bagGeo.dispose();
+      bagMat.dispose();
+      bagNoktalar.dispose();
       world.dispose();
       disposeTemplates();
       disposeMaterials();

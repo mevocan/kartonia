@@ -5,7 +5,7 @@
 //   anıt    → inşaat aşaması ve malzeme gönderme;  doğa → kesme / sökme
 import type { BuildingInfo, BuildingType, Good, Need, RoadInfo, UretimSorunu } from '../logic/types';
 import { BUILDINGS, HOUSE_LEVELS, ROADS } from '../data/buildings';
-import { el, tr } from './dom';
+import { el, panelAc, panelKapat, tr } from './dom';
 import { IHTIYAC_IKON, MAL_IKON } from './ikonlar';
 import {
   binaAciklama, binaAd, bonusMetni, bonusSarti, evSeviyeAd, ihtiyacAd, malAdKucuk, t, yolAciklama, yolAd, type Anahtar,
@@ -67,7 +67,7 @@ export function createInfoPanel(
       c.append(el('span', 'ikon', durum.ikon), el('span', '', durum.metin));
       box.appendChild(c);
     }
-    box.style.display = 'block';
+    panelAc(box);
   }
 
   function bolum(baslik: string): void {
@@ -256,7 +256,7 @@ export function createInfoPanel(
   return {
     show(info, para = Infinity, stok = {}, sorun) {
       if (!info) {
-        box.style.display = 'none';
+        panelKapat(box);
         return;
       }
       const d = BUILDINGS[info.type];

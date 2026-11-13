@@ -85,6 +85,12 @@ export const PALETTE = {
   /** Harita iğnesi halkaları (arayüz paletindeki toprak kırmızısı ve arduvaz). */
   pinUyari: '#c97858',
   pinBilgi: '#536f80',
+  /** Taban halkası: geçerli / geçersiz yerleşim, seçili bina. */
+  ayakGecerli: '#78966b',
+  ayakGecersiz: '#c4614a',
+  ayakSecim: '#d9a13b',
+  /** Komşuluk bağı noktaları. */
+  bag: '#f1bf4a',
   etiketKagit: '#fffaf0',
   etiketKenar: '#d8c4a6',
 
