@@ -1,6 +1,6 @@
 import { BALANCE, BUILDING_ORDER, BUILDINGS, HOUSE_LEVELS, ROADS, dogaTuru } from '../data/buildings';
 import type {
-  Building, BuildingType, DayReport, GameState, Good, HouseLevelDef, Need, NeedStatus,
+  Building, BuildingType, DayReport, GameState, Good, HouseLevelDef, Need, NeedStatus, UretimSorunu,
 } from './types';
 import { dist } from './geometry';
 import { buildingUpkeep, effectRadius, isUnlockedAt, stockLimit } from './placement';
@@ -165,7 +165,13 @@ export function totalUpkeep(s: GameState): number {
   return buildingsUpkeep(s) + roadsUpkeep(s);
 }
 
-export function runProduction(s: GameState, uretilen: Record<Good, number>, tuketilen: Record<Good, number>): void {
+/**
+ * Üretim. `sorunlar` verilirse günü yarıdan az verimle geçiren binalar oraya yazılır: eksik girdi malı,
+ * dolu depo ('depo') ya da etki alanında ağaç olmaması ('agac'). İşçi eksikliği bütün kasabanındır, yazılmaz.
+ */
+export function runProduction(
+  s: GameState, uretilen: Record<Good, number>, tuketilen: Record<Good, number>, sorunlar?: UretimSorunu[],
+): void {
   const oran = workerRatio(s);
   const sinir = stockLimit(s);
   const kis = mevsim(s.gun) === 'kis';
@@ -181,10 +187,22 @@ export function runProduction(s: GameState, uretilen: Record<Good, number>, tuke
         const cikti = (Object.keys(d.uretim.cikti) as Good[]).map((g): [Good, number] => [g, ayar(s, `uretim.${t}.${g}`)]);
         // Komşuluk bonusu yalnızca çıktıyı artırır; girdi tüketimi değişmez (gereken × f).
         const carpan = 1 + (d.komsuluk ? adjacencyBonus(s, t, b.x, b.z, b.id).oran : 0);
-        for (const [g, n] of girdi) if (n > 0) f = Math.min(f, s.stok[g] / n);
+        let neden: UretimSorunu['neden'] | null = null;
+        for (const [g, n] of girdi) {
+          if (n > 0 && s.stok[g] / n < f) {
+            f = s.stok[g] / n;
+            if (f < oran * 0.5) neden = g;
+          }
+        }
         // Karar: çıktı stok sınırına dayanırsa üretim (ve girdi tüketimi) de o oranda düşer, girdi boşa gitmez.
         // Sınır denetimi bonuslu çıktıyla yapılır.
-        for (const [g, n] of cikti) if (n > 0) f = Math.min(f, (sinir - s.stok[g]) / (n * carpan));
+        for (const [g, n] of cikti) {
+          if (n > 0 && (sinir - s.stok[g]) / (n * carpan) < f) {
+            f = (sinir - s.stok[g]) / (n * carpan);
+            if (f < oran * 0.5) neden = 'depo';
+          }
+        }
+        if (neden && sorunlar) sorunlar.push({ id: b.id, neden });
         if (f <= 0) continue;
         for (const [g, n] of girdi) {
           s.stok[g] = Math.max(0, s.stok[g] - n * f);
@@ -195,7 +213,10 @@ export function runProduction(s: GameState, uretilen: Record<Good, number>, tuke
           uretilen[g] += n * f * carpan;
         }
       } else if (d.agacBasinaOdun !== undefined) {
-        const miktar = Math.min(treesInRange(s, b) * d.agacBasinaOdun * ayar(s, 'oduncuCarpani') * oran, sinir - s.stok.odun);
+        const agac = treesInRange(s, b);
+        if (sorunlar && agac === 0) sorunlar.push({ id: b.id, neden: 'agac' });
+        else if (sorunlar && s.stok.odun >= sinir) sorunlar.push({ id: b.id, neden: 'depo' });
+        const miktar = Math.min(agac * d.agacBasinaOdun * ayar(s, 'oduncuCarpani') * oran, sinir - s.stok.odun);
         if (miktar <= 0) continue;
         s.stok.odun += miktar;
         uretilen.odun += miktar;
@@ -208,14 +229,14 @@ export function runProduction(s: GameState, uretilen: Record<Good, number>, tuke
 export function endDay(s: GameState): DayReport {
   const rapor: DayReport = {
     gun: s.gun, vergi: 0, gider: 0, binaGider: 0, yolGider: 0, net: 0, binaVergileri: [], uretilen: emptyGoods(), tuketilen: emptyGoods(),
-    seviyeDegisimleri: [], yeniHedefler: [], yeniAcilanlar: [], oyunBitti: s.bitti,
+    seviyeDegisimleri: [], yeniHedefler: [], yeniAcilanlar: [], oyunBitti: s.bitti, uretimSorunlari: [],
   };
   if (s.bitti) return rapor;
 
   const oncekiNufus = s.nufus;
 
   // 1. Üretim (işçi oranı önceki gün nüfusuyla).
-  runProduction(s, rapor.uretilen, rapor.tuketilen);
+  runProduction(s, rapor.uretilen, rapor.tuketilen, rapor.uretimSorunlari);
 
   // 2. Ev ihtiyaçları, mutluluk, vergi (id'si küçük ev önce beslenir).
   const evler = s.binalar.filter((b) => b.type === 'ev').sort((a, b) => a.id - b.id);

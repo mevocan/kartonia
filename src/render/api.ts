@@ -5,6 +5,9 @@ import type { Mevsim } from '../logic/season';
 // Dünya: X-Z düzlemi, Y yukarı. Arazi data/map.ts'deki ada; yükseklik logic/terrain.ts heightAt(x,z).
 // Binalar ve yollar arazi yüksekliğine oturur. Doğal ağaçlar normal 'agac' binası olarak addBuilding ile gelir.
 
+/** Harita iğnesinin türü: 'uyari' ev ihtiyacı karşılanmıyor, 'bilgi' üretim duruyor. */
+export type PinTur = 'uyari' | 'bilgi';
+
 export interface GameRenderer {
   /** Sağ sürükle döndür, orta / Shift+sağ sürükle kaydır, tekerlek yakınlaş. Kendi dinleyicilerini canvas'a takar. */
   readonly canvas: HTMLCanvasElement;
@@ -54,8 +57,11 @@ export interface GameRenderer {
   showRange(x: number, z: number, r: number | null): void;
   /** Bir binayı vurgular (seçim/yıkma hover). mode: 'secim' sarı, 'yikim' kırmızı. id null ise kaldırır. */
   highlight(id: number | null, mode?: 'secim' | 'yikim'): void;
-  /** Bu bina üstünde küçük bir uyarı işareti (ihtiyaç karşılanmadı). */
-  setWarning(id: number, on: boolean): void;
+  /**
+   * Bina üstünde hafifçe sallanan iğne: kağıt beyazı damla, ortada simge. 'uyari' (toprak kırmızısı halka):
+   * evin ihtiyacı karşılanmıyor; 'bilgi' (arduvaz halka): üretim duruyor. null kaldırır.
+   */
+  setPin(id: number, pin: { ikon: string; tur: PinTur } | null): void;
 
   /** Yol ekler; anim=true (varsayılan) kağıt şerit gibi açılarak serilir, false anında görünür. Arazi yüksekliğini izler. */
   addRoad(id: number, tur: RoadType, noktalar: Vec2[], anim?: boolean): void;

@@ -1,5 +1,7 @@
 // Oyun: kayıt, oyun döngüsü ve katmanların birbirine bağlanması. main.ts dil dosyasını yükledikten sonra açar.
-import type { BuildingType, DayReport, GameState, Good, RoadType, Vec2 } from './logic/types';
+import type { BuildingType, DayReport, GameState, Good, RoadType, UretimSorunu, Vec2 } from './logic/types';
+import { buildingPins } from './logic/pins';
+import { igneGorunumu } from './ui/ikonlar';
 import {
   canPlace, canUpgrade, createGame, upgradeBuilding, demolish, demolishRoad, deserialize, getBuildingInfo, getRoadInfo, GOALS, KASABA_TAMAM_HEDEFI, placeBuilding,
   placeRoad, planRoad, serialize, tick, mevsim, monumentStage, canAdvanceMonument, advanceMonument,
@@ -483,15 +485,25 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     input.refresh();
   }
 
+  /** Son gün sonunun üretim sorunları (harita iğneleri). Yeni oyunda ve kayıt yüklenince boş. */
+  let uretimSorunlari: UretimSorunu[] = [];
+  /** Şu an iğnesi olan binalar: artık sorunu olmayanın iğnesi kalkar. */
+  let ignesiOlanlar = new Set<number>();
+
+  /** Harita iğneleri: evde karşılanmayan ihtiyaç (anlık), üretim binasında son günün sorunu. */
   function uyarilariGuncelle(): void {
-    for (const b of s.binalar) {
-      if (b.type !== 'ev') continue;
-      // kotuGun > 0: son gün sonunda mevcut seviyenin ihtiyaçları gerçekten karşılanmadı.
-      renderer.setWarning(b.id, b.kotuGun > 0);
+    const yeni = new Set<number>();
+    for (const p of buildingPins(s, uretimSorunlari)) {
+      if (yeni.has(p.id)) continue;
+      yeni.add(p.id);
+      renderer.setPin(p.id, igneGorunumu(p));
     }
+    for (const id of ignesiOlanlar) if (!yeni.has(id)) renderer.setPin(id, null);
+    ignesiOlanlar = yeni;
   }
 
   function arayuzYenile(): void {
+    uyarilariGuncelle();
     hud.update(s);
     menu.update(s);
     goal.update(s);
@@ -510,6 +522,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
       if (b.insaat) renderer.setMonumentStage(b.id, monumentStage(b), false); // yarım anıt
     }
     renderer.setPopulation(s.nufus);
+    ignesiOlanlar = new Set(); // sahne yeniden kuruldu: eski iğneler binalarla gitti
     uyarilariGuncelle();
   }
 
@@ -517,6 +530,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     if (r.vergi > 0) ses.play('vergi');
     ogretici.olay('gunSonu');
     hud.setReport(r);
+    uretimSorunlari = r.uretimSorunlari;
     renderer.setPopulation(s.nufus);
     for (const v of r.binaVergileri) {
       const b = s.binalar.find((x) => x.id === v.id);
@@ -557,7 +571,6 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
       toasts.show(t('bildirim.borc', { sinir: BALANCE.borcSiniri, gun: s.borcGunu, toplam: BALANCE.borcGunSiniri }), 'kotu');
     }
 
-    uyarilariGuncelle();
     bilgiYenile();
     arayuzYenile();
     input.refresh();
@@ -597,6 +610,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
       /* yok say */
     }
     s = createGame(rastgeleTohum());
+    uretimSorunlari = [];
     hud.setReport(null);
     renderer.rebuildTerrain();
     secili = null;

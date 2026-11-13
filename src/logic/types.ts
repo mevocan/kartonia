@@ -264,8 +264,22 @@ export interface DayReport {
   tamamlananIstek?: IstekSonuc;
   /** Bu gün açılan bina türleri. */
   yeniAcilanlar: BuildingType[];
+  /** Günü yarıdan az verimle geçiren üretim binaları ve nedeni (harita iğneleri için). */
+  uretimSorunlari: UretimSorunu[];
   oyunBitti: boolean;
 }
+
+/** Bir üretim binasının verimsiz gün nedeni: eksik girdi malı, dolu depo ya da ağaçsız oduncu. */
+export interface UretimSorunu {
+  id: number;
+  neden: Good | 'depo' | 'agac';
+}
+
+/**
+ * Haritada bina üstünde gösterilecek iğne. 'ihtiyac': evin mevcut seviyesinin karşılanmayan ihtiyacı
+ * (sürerse ev küçülür). 'uretim': son gün sonundaki üretim sorunu.
+ */
+export type BinaIgnesi = { id: number; tur: 'ihtiyac'; neden: Need } | { id: number; tur: 'uretim'; neden: UretimSorunu['neden'] };
 
 export interface NeedStatus {
   ihtiyac: Need;

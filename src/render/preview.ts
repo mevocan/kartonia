@@ -100,7 +100,7 @@ export function runPreview(container: HTMLElement): GameRenderer {
         r.addBuilding(tid, 'saatKulesi', -5.6 + i * 2.8, 9.5, 0.35, 1, false);
         r.setMonumentStage(tid, i, false);
       }
-      r.setWarning(9001, true);
+      r.setPin(9001, { ikon: '💧', tur: 'uyari' });
       r.highlight(9002, 'secim');
     }
     let last0 = performance.now();
@@ -227,7 +227,7 @@ export function runPreview(container: HTMLElement): GameRenderer {
     const l = t === 'agac' ? null : link(x, z);
     setTimeout(() => r.addBuilding(myId, t, x, z, l ? l.rot : rot, lv, true, l ? l.p : null), 2600 + 450 * i);
   });
-  setTimeout(() => r.setWarning(3, true), 9000);
+  setTimeout(() => r.setPin(3, { ikon: '🌾', tur: 'bilgi' }), 9000);
 
   // Sürekli yeniden kurulan ev (katlanmayı izlemek için)
   let demo = 5000;

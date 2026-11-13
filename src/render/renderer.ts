@@ -3,7 +3,7 @@ import type { BuildingType, RoadType, Vec2 } from '../logic/types';
 import { BUILDINGS, BUILDING_ORDER, HOUSE_LEVELS, dogaTuru } from '../data/buildings';
 import { heightAt } from '../logic/terrain';
 import { DIS_SINIR } from '../data/map';
-import type { GameRenderer } from './api';
+import type { GameRenderer, PinTur } from './api';
 import { PALETTE, EV_DUVAR } from './palette';
 import {
   modelMaterial, lineMaterial, paperMaterial, canvasTexture, disposeMaterials, roadMaterial, treeMaterial, treeGhostMaterial, ruzgar, gece,
@@ -113,24 +113,29 @@ function findSpinners(model: THREE.Object3D): THREE.Object3D[] {
   return out;
 }
 
-function warnTexture(): THREE.CanvasTexture {
-  return canvasTexture(128, 128, (ctx) => {
+/** İğne dokusu: kağıt beyazı damla, türün renginde halka, ortada simge (emoji). */
+function pinTexture(ikon: string, tur: PinTur): THREE.CanvasTexture {
+  return canvasTexture(128, 160, (ctx) => {
+    const damla = (ox: number, oy: number): void => {
+      ctx.beginPath();
+      ctx.arc(64 + ox, 60 + oy, 50, Math.PI * 0.78, Math.PI * 2.22);
+      ctx.lineTo(64 + ox, 150 + oy);
+      ctx.closePath();
+    };
     ctx.fillStyle = 'rgba(60,40,20,0.22)';
-    ctx.beginPath();
-    ctx.arc(68, 70, 50, 0, Math.PI * 2);
+    damla(3, 5);
     ctx.fill();
-    ctx.fillStyle = PALETTE.uyari;
-    ctx.beginPath();
-    ctx.arc(62, 62, 50, 0, Math.PI * 2);
+    ctx.fillStyle = tur === 'uyari' ? PALETTE.pinUyari : PALETTE.pinBilgi;
+    damla(0, 0);
     ctx.fill();
-    ctx.strokeStyle = PALETTE.kagit;
-    ctx.lineWidth = 7;
-    ctx.stroke();
-    ctx.fillStyle = PALETTE.uyariYazi;
-    ctx.font = 'bold 76px "Trebuchet MS", sans-serif';
+    ctx.fillStyle = PALETTE.kagit;
+    ctx.beginPath();
+    ctx.arc(64, 60, 40, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = '50px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('!', 62, 66);
+    ctx.fillText(ikon, 64, 64);
   });
 }
 
@@ -354,8 +359,18 @@ export function createRenderer(container: HTMLElement): GameRenderer {
     if (at.pool.mesh.instanceColor) at.pool.mesh.instanceColor.needsUpdate = true;
   }
 
-  const warnTex = warnTexture();
-  const warnMat = new THREE.SpriteMaterial({ map: warnTex, depthWrite: false });
+  /** İğne malzemeleri (tür + simge başına bir tane, paylaşılır). */
+  const pinMats = new Map<string, THREE.SpriteMaterial>();
+  function pinMaterial(ikon: string, tur: PinTur): THREE.SpriteMaterial {
+    const key = `${tur}:${ikon}`;
+    let m = pinMats.get(key);
+    if (!m) {
+      // depthTest kapalı: iğne binanın ya da tepenin arkasında kalsa da görünür.
+      m = new THREE.SpriteMaterial({ map: pinTexture(ikon, tur), depthWrite: false, depthTest: false });
+      pinMats.set(key, m);
+    }
+    return m;
+  }
   const foundGeo = new THREE.BoxGeometry(1, 1, 1).translate(0, -0.5, 0);
 
   // ---------- Canlılık (yürüyen insanlar vb., src/render/life.ts) ----------
@@ -479,7 +494,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
   }
 
   function placeWarn(e: Entry): void {
-    if (e.warn) e.warn.userData.baseY = e.tpl.height + 0.5;
+    if (e.warn) e.warn.userData.baseY = e.tpl.height + 0.6;
   }
 
   function dropEntry(e: Entry): void {
@@ -922,22 +937,34 @@ export function createRenderer(container: HTMLElement): GameRenderer {
       }
     },
 
-    setWarning(id, on) {
+    setPin(id, pin) {
       const e = entries.get(id);
       if (!e) return;
-      if (on && !e.warn) {
-        const s = new THREE.Sprite(warnMat);
-        s.scale.set(0.62, 0.62, 1);
-        s.raycast = () => {};
-        s.userData.phase = (id * 0.731) % 6.28;
-        e.warn = s;
-        placeWarn(e);
-        s.position.y = s.userData.baseY;
-        e.root.add(s);
-      } else if (!on && e.warn) {
-        e.root.remove(e.warn);
-        e.warn = null;
+      if (!pin) {
+        if (e.warn) {
+          e.root.remove(e.warn);
+          e.warn = null;
+        }
+        return;
       }
+      const mat = pinMaterial(pin.ikon, pin.tur);
+      if (e.warn) {
+        e.warn.material = mat;
+        return;
+      }
+      const s = new THREE.Sprite(mat);
+      s.scale.set(0.64, 0.8, 1);
+      s.center.set(0.5, 0.05); // damlanın ucu binanın üstüne değer
+      s.renderOrder = 10;
+      s.raycast = () => {};
+      s.userData.phase = (id * 0.731) % 6.28;
+      // Kökün ölçeği (ağaç/çiçek boyu) iğneyi büyütmesin.
+      const k = e.root.scale.x || 1;
+      s.scale.divideScalar(k);
+      e.warn = s;
+      placeWarn(e);
+      s.position.y = s.userData.baseY;
+      e.root.add(s);
     },
 
     addRoad(id, tur, noktalar, anim = true) {
@@ -1235,8 +1262,11 @@ export function createRenderer(container: HTMLElement): GameRenderer {
       merchant.dispose();
       world.scene.remove(snow.mesh);
       snow.dispose();
-      warnTex.dispose();
-      warnMat.dispose();
+      for (const m of pinMats.values()) {
+        m.map?.dispose();
+        m.dispose();
+      }
+      pinMats.clear();
       world.dispose();
       disposeTemplates();
       disposeMaterials();

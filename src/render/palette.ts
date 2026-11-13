@@ -82,6 +82,9 @@ export const PALETTE = {
   halka: '#fff6e2',
   uyari: '#ffd166',
   uyariYazi: '#c0392b',
+  /** Harita iğnesi halkaları (arayüz paletindeki toprak kırmızısı ve arduvaz). */
+  pinUyari: '#c97858',
+  pinBilgi: '#536f80',
   etiketKagit: '#fffaf0',
   etiketKenar: '#d8c4a6',
 

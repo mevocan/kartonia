@@ -2,6 +2,7 @@
 import type { BuildingInfo, Good, Need, RoadInfo } from '../logic/types';
 import { BUILDINGS, HOUSE_LEVELS, ROADS } from '../data/buildings';
 import { el } from './dom';
+import { MAL_IKON } from './ikonlar';
 import {
   binaAciklama, binaAd, bonusMetni, bonusSarti, evSeviyeAd, ihtiyacAd, malAdKucuk, t, yolAciklama, yolAd, type Anahtar,
 } from './i18n';
@@ -16,9 +17,6 @@ export interface InfoPanel {
   showRoad(info: RoadInfo): void;
 }
 
-const MAL_IKON: Record<Good, string> = {
-  bugday: '🌾', un: '🥣', yemek: '🍽️', odun: '🪵', tas: '🪨', mobilya: '🪑', yun: '🧶', kumas: '🧵', bal: '🍯',
-};
 
 export function createInfoPanel(
   root: HTMLElement,

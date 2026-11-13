@@ -58,7 +58,11 @@ Bina kağıt maket gibi kurulur: önce düz bir kağıt açınım (taban izi) ye
 
 ## Göstergeler
 
-Para (başlangıç 150), Nüfus, Mutluluk (0–100, nüfusa göre ağırlıklı ortalama), ve 9 mal stoğu: Buğday, Un, Yemek, Odun, Taş, Mobilya, Yün, Kumaş, Bal. Yün, kumaş ve bal HUD'da üretici binaları açılana (ya da stokta olana) kadar görünmez. Her malın sınırı 200, her Ambar +100 ekler (`stockLimit`).
+Para (başlangıç 150), Nüfus, Mutluluk (0–100, nüfusa göre ağırlıklı ortalama), ve 9 mal stoğu: Buğday, Un, Yemek, Odun, Taş, Mobilya, Yün, Kumaş, Bal. Her malın sınırı 200, her Ambar +100 ekler (`stockLimit`).
+
+**Üst bar** (`ui/hud.ts`) dört adadır: Zaman (gün, mevsim, "kışa X gün", gün ilerleme çubuğu) · Kasaba (para, nüfus, mutluluk) · Stok (evlerin her gün tükettiği yemek ve odun hep görünür; 📦 düğmesi bütün stokları sınırla birlikte gösteren paneli açar) · Kontrol (tüccar, ses, hız). Evlerin tükettiği bir mal bitince değeri kırmızı ve hafifçe yanıp söner; bardaki olmayan bir mal bitmişse 📦 kırmızılaşır. Yün, kumaş ve bal stok panelinde üretici binaları açılana (ya da stokta olana) kadar görünmez. Sayılar 250 ms'lik geçişle değişir (arayüz zamanı, oyun hızından bağımsız). Dar pencerede (≤1400 px) etiketler gizlenir.
+
+**Harita iğneleri** (`logic/pins.ts` `buildingPins`, çizim `GameRenderer.setPin`): binanın üstünde hafifçe sallanan, ortasında simge olan damla. Toprak kırmızısı halka: evin mevcut seviyesinin karşılanmayan ilk ihtiyacı (anlık; sürerse ev küçülür). Arduvaz halka: üretim binası son gün sonunda yarıdan az verimle çalıştı (`DayReport.uretimSorunlari`: eksik girdi malının simgesi, 📦 dolu depo, 🌳 ağaçsız oduncu). Üretim sorunları gün sonundan alınır, çünkü gün içinde stok aynı gün üretilecek girdiyi henüz içermez. İşçi eksikliği bütün kasabanındır, iğne çıkarmaz. Simgeler `ui/ikonlar.ts`.
 
 ## Binalar
 
@@ -108,7 +112,7 @@ Tanımlar `src/data/buildings.ts` içindedir; denge değerleri orada ayarlanır.
   - Bir üst seviyenin bütün ihtiyaçları 2 gün üst üste karşılanırsa ev 1 seviye atlar. Mevcut seviyenin ihtiyaçları 2 gün üst üste karşılanmazsa 1 seviye düşer.
 - **Mutluluk (ev başına):** 45 + etki alanında evi kapsayan binaların `mutluluk` değerleri toplamı (ağaç ve çiçekler birlikte en fazla +9 sayılır) + en iyi yakın yol (asfalt +5) + karşılanan ihtiyaç başına +2, 0–100 sınırlı. Sabitler `BALANCE` içinde (`mutlulukTaban`, `agacMutlulukSinir`, `ihtiyacMutluluk`, `mutlulukMin/Max`). Saat Kulesi olmadan hiçbir ev 100 olmaz.
 - **Komşuluk bonusu** (`logic/adjacency.ts`, kurallar `BUILDINGS[t].komsuluk`): Tarla kenarı göle ≤ 4 → buğday +%25; Değirmen merkezde yükseklik ≥ 1 → un +%25; Fırın 6 birim içinde Değirmen → yemek +%25; Marangoz 6 birim içinde Oduncu → mobilya +%25; Ağıl 6 birim içinde Tarla → yün +%25; Dokumacı 6 birim içinde Ağıl → kumaş +%25; Arılık 4 birim içinde çiçek (çayır ya da dikilen) → bal +%25; Ev merkezi göle ≤ 5 → +3 mutluluk. Bonus saklanmaz, her seferinde hesaplanır; yalnızca çıktıyı artırır, girdi aynı. Yerleştirirken hayalet üstünde canlı etiket, bilgi panelinde Bonus satırı.
-- **Gelir-gider dökümü:** `DayReport` vergi, `binaGider`, `yolGider`, `net` taşır; HUD'da Para'nın üstüne gelince görünür.
+- **Gelir-gider dökümü:** `DayReport` vergi, `binaGider`, `yolGider`, `net` taşır; üst barda Para'nın üstüne gelince görünür.
 - **Vergi:** Her ev için `floor(nüfus × (0.5 + mutluluk/100) × seviye çarpanı)`; çarpan 1. ve 2. seviyede 1, 3. seviyede 0.6, konakta 0.55, köşkte 0.5 (`BALANCE.vergiSeviyeCarpani`). Pazar, Okul ve Hastane gideri 9, 12, 15.
 - **Gider:** Her binanın günlük gideri (yükseltilmiş binada seviyeye göre).
 - **Borç:** Para 3 gün üst üste −50'nin altında biterse oyun biter.
@@ -126,6 +130,7 @@ Tanımlar `src/data/buildings.ts` içindedir; denge değerleri orada ayarlanır.
 ## Teknik mimari
 
 - **Araçlar:** Vite + TypeScript (strict) + Three.js + Vitest. Başka bağımlılık yok. UI framework yok.
+- **Arayüz tasarım sistemi** (`src/ui/stil.css`, `main.ts` içe aktarır): "Minimal Cozy". Renk, köşe, gölge, yazı tipi ve animasyon süreleri `:root` token'larıdır; bileşenler yalnızca token kullanır. Paneller düz, yumuşak köşeli (14–20 px), hafif saydam ve bulanık arka planlı (`.kagit` sınıfı); eğik kağıt, bant, raptiye yok. Yazı tipleri Google Fonts'tan: Nunito (metin), Fredoka (başlık ve sayılar); yüklenemezse sistem fontu. Palet: kağıt #F5EBD3, kum #D6B987, çayır #78966B, toprak #C97858, arduvaz #536F80, metin #514A3F. Arayüz hareketleri 150–260 ms, opaklık + hafif kayma; zıplama yok; `prefers-reduced-motion` desteklenir. `index.html` yalnızca JS'ten önce görünen yükleme ekranının stilini taşır.
 - **Mantık** `src/logic/`: saf TypeScript. Three.js, DOM, `window` yok. Bütün kurallar burada ve birim testli. Durum düz veridir, fonksiyonlar durumu yerinde değiştirir.
 - **Çizim** `src/render/`: Three.js. Bütün modeller kodla üretilir; görsel varlık dosyası yok (kağıt dokusu canvas ile üretilir). Mantığa yalnızca `types.ts` ve `data/` üzerinden bağlıdır. Dışarıya `src/render/api.ts` içindeki `GameRenderer` arayüzünü verir.
 - **Arayüz** `src/ui/` + `src/oyun.ts` (`src/main.ts` yalnızca dili yükleyip oyunu açar): HUD, bina menüsü, bilgi paneli, hedefler, hız düğmeleri düz HTML/CSS. Sol tık ve klavye girişi, oyun döngüsü (`requestAnimationFrame`), kayıt (`localStorage`, her gün sonu otomatik).
