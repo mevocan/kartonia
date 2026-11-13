@@ -16,8 +16,9 @@ import { createTitleScreen } from './ui/titleScreen';
 import { createBuildMenu, type Tool } from './ui/buildMenu';
 import { createInfoPanel } from './ui/infoPanel';
 import {
-  createGoalCard, createRequestCard, createToasts, istekAd, type ToastKind, istekTamamMetni, mevsimBildirimi, yerlestirmeSebebi,
+  createToasts, istekAd, type ToastKind, istekTamamMetni, mevsimBildirimi, yerlestirmeSebebi,
 } from './ui/toast';
+import { createAlertList, createGoalCard, createLeftColumn, createRequestCard } from './ui/solPanel';
 import { createTradePanel } from './ui/tradePanel';
 import { createCardPicker } from './ui/cardPicker';
 import { createCardList } from './ui/cardList';
@@ -96,13 +97,17 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     () => sesAyarla(!ses.isEnabled()),
     (kanal, v) => sesDuzeyi(kanal, v),
   );
-  const goal = createGoalCard(ui);
-  const istekKarti = createRequestCard(ui, () => senlik(), (id) => {
+  /** Binayı seçer ve kamerayı ona götürür (istek kartı, uyarılar). */
+  function binayaGit(id: number): void {
     setTool(null);
     select({ kind: 'bina', id });
     const b = s.binalar.find((x) => x.id === id);
     if (b) renderer.focusOn(b.x, b.z); // ev ekran dışındaysa kamera oraya kayar
-  });
+  }
+  const solSutun = createLeftColumn(ui);
+  const goal = createGoalCard(solSutun);
+  const istekKarti = createRequestCard(solSutun, () => senlik(), (id) => binayaGit(id));
+  const uyariListesi = createAlertList(solSutun, (id) => binayaGit(id));
   const tuccar = createTradePanel(ui, (g, n) => ticaret(g, n, true), (g, n) => ticaret(g, n, false));
   const secici = createCardPicker(ui, (id) => kartSecildi(id));
   const kasabaYolu = createCardList(ui);
@@ -508,6 +513,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     menu.update(s);
     goal.update(s);
     istekKarti.update(s);
+    uyariListesi.update(s);
     kasabaYolu.update(s);
     tuccar.update(s);
   }
@@ -554,8 +560,10 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     else if (kuculen > 1) toasts.show(t('bildirim.evlerKuculdu', { n: kuculen }), 'kotu');
 
     if (r.yeniHedefler.length > 0) ses.play('hedef');
+    // Tamamlanan hedefi kart kutlar (aynı gün birden çoksa sonuncusu); büyük dönüm noktaları ayrıca bildirilir.
+    const sonHedef = r.yeniHedefler[r.yeniHedefler.length - 1];
+    if (sonHedef !== undefined && GOALS[sonHedef]) goal.kutla(hedefMetni(sonHedef).ad);
     for (const i of r.yeniHedefler) {
-      if (GOALS[i]) toasts.show(t('bildirim.hedefTamam', { ad: hedefMetni(i).ad }), 'iyi');
       if (i === KASABA_TAMAM_HEDEFI) toasts.show(t('bildirim.kasabaTamam'), 'iyi');
       if (i === GOALS.length - 1) toasts.show(t('bildirim.efsane'), 'iyi');
     }

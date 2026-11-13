@@ -164,6 +164,8 @@
   "bilgi.bonusYok": "bonus yok",
 
   "hedef.baslik": "Hedef",
+  "hedef.tamam": "Tamamlandı!",
+  "hedef.sonrakiAcilis": "Sıradaki bina: {bina} · {n} nüfusta",
   "hedef.efsane": "🏆 Kasaba efsanesi!",
   "hedef.efsaneMetin": "Bütün hedefler bitti. Kasabanı büyütmeye devam et.",
   "hedef.0.ad": "Küçük köy",
@@ -210,6 +212,7 @@
   "istek.stok": "Stok",
   "istek.kalanGun": "{n} gün kaldı",
   "istek.sonGun": "son gün",
+  "istek.baslik": "Sakinlerin isteği",
   "istek.senlikYapildi": "🎉 Şenlik yapıldı! {gun} gün boyunca bütün evlere +{mutluluk} mutluluk.",
   "istek.tamamlandi": "✅ İstek tamamlandı: {ad} (+{para} para)",
 
@@ -290,7 +293,6 @@
   "bildirim.evlerBuyudu": "{n} ev büyüdü!",
   "bildirim.evKuculdu": "Bir evin ihtiyaçları karşılanmadı, ev küçüldü.",
   "bildirim.evlerKuculdu": "{n} evin ihtiyaçları karşılanmadı, evler küçüldü.",
-  "bildirim.hedefTamam": "🎯 Hedef tamamlandı: {ad}",
   "bildirim.kasabaTamam": "🏆 Kasaba tamamlandı! Yeni hedefler açıldı.",
   "bildirim.efsane": "🏆 Bütün hedefler tamamlandı: kasaban bir efsane! Oyun devam ediyor.",
   "bildirim.yeniBina": "🔓 Yeni bina açıldı: {bina}",
@@ -298,6 +300,10 @@
   "bildirim.tuccarGeldi": "🛒 Gezgin tüccar geldi! {gun} gün kalacak; takas için üst şeritteki düğme.",
   "bildirim.tuccarGidiyor": "🛒 Tüccar yarın gidiyor: bugün son takas günü.",
   "bildirim.borc": "Kasa {sinir} altında! ({gun}/{toplam} gün) — iflas yaklaşıyor.",
+  "uyari.borc": "Kasa {sinir} altında · {gun}/{toplam} gün",
+  "uyari.kuculen": "Küçülmek üzere: {n} ev",
+  "uyari.kuculenIpucu": "Tıkla: sıradaki eve git",
+  "uyari.isci": "İşçi yetmiyor · üretim %{n}",
   "bildirim.kisGeliyor": "🍂 Kış {n} gün sonra. Yemek ve odun biriktir.",
 
   "son.baslik": "Kasaba iflas etti",

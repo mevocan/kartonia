@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { emptyGoods, endDay, runProduction } from '../src/logic/economy';
-import { buildingPins } from '../src/logic/pins';
+import { buildingPins, townAlerts } from '../src/logic/pins';
 import { stockLimit } from '../src/logic/placement';
 import type { UretimSorunu } from '../src/logic/types';
 import { add, blank } from './helpers';
@@ -77,5 +77,23 @@ describe('üretim sorunları', () => {
     s.stok.bugday = 100;
     add(s, 'degirmen', 0, 0);
     expect(sorunlar(s)).toEqual([]);
+  });
+});
+
+describe('kasaba uyarıları', () => {
+  it('sorun yoksa boş; borç, küçülen evler ve işçi eksikliği önem sırasıyla', () => {
+    const s = blank();
+    s.nufus = 100;
+    expect(townAlerts(s)).toEqual([]);
+    const h = add(s, 'ev', 0, 0, 2);
+    h.kotuGun = 1;
+    s.borcGunu = 2;
+    s.nufus = 1;
+    add(s, 'degirmen', 10, 0); // 2 işçi ister
+    expect(townAlerts(s)).toEqual([
+      { tur: 'borc', gun: 2 },
+      { tur: 'kuculen', evler: [h.id] },
+      { tur: 'isci', oran: 0.5 },
+    ]);
   });
 });

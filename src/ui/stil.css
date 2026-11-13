@@ -218,22 +218,98 @@ kbd {
   .hud-oge .etiket { display: none; }
   .hud-zaman { min-width: 140px; }
 }
-
-/* ---------- Sol: hedef ve sakin isteği ---------- */
-
-#hedef { position: absolute; top: 12px; left: 12px; width: 230px; padding: 12px 14px 12px; }
-#hedef .ilerleme {
-  order: -1; font-size: 10.5px; font-weight: 800; color: var(--metin-soluk); text-transform: uppercase; letter-spacing: 0.06em;
-  margin-bottom: 4px;
+/* Ortalanmış bar sol panele (12 + 240 px) değecekse panelin sağından başlar. */
+@media (max-width: 1500px) {
+  #hud { left: 264px; transform: none; }
 }
-#hedef { display: flex; flex-direction: column; }
-#hedef h3 { margin: 0 0 4px; font-size: 15px; }
-#hedef p { margin: 0; font-size: 12.5px; color: var(--metin-soluk); line-height: 1.35; }
-#istek { position: absolute; top: 120px; left: 12px; width: 230px; padding: 11px 14px 12px; display: none; font-size: 12.5px; border-left: 4px solid var(--toprak); }
-#istek h4 { margin: 0 0 3px; font-size: 13.5px; }
-#istek p { margin: 0 0 6px; color: var(--metin-soluk); line-height: 1.35; }
-#istek .ilerleme { font-weight: 700; }
-#istek .dugme { margin-top: 8px; width: 100%; font-size: 12px; }
+
+/* ---------- Sol panel: hedef, sakin isteği, uyarılar ---------- */
+
+#solPanel {
+  position: absolute; top: 12px; left: 12px; width: 240px;
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none !important;
+}
+#solPanel > * { pointer-events: auto; }
+.ilerleme-cubuk { height: 5px; border-radius: 3px; background: var(--yuzey-ic); overflow: hidden; }
+.ilerleme-cubuk > div { height: 100%; width: 0; border-radius: 3px; background: var(--cayir); transition: width var(--sure-yavas) var(--egri); }
+
+/* Hedef: küçük başlar (başlık, tek satır açıklama, ilerleme çubuğu); tıklayınca ayrıntılar açılır. */
+#hedef {
+  padding: 11px 14px 12px; cursor: pointer; overflow: hidden;
+  transition: box-shadow var(--sure-hizli), transform var(--sure-hizli) var(--egri);
+}
+#hedef:hover { box-shadow: var(--golge-buyuk); }
+#hedef:focus-visible { outline: 2px solid var(--altin); outline-offset: 1px; }
+#hedef .ust, #istek .ust { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
+#hedef .etiket, #istek .etiket {
+  font-size: 10.5px; font-weight: 800; color: var(--metin-soluk); text-transform: uppercase; letter-spacing: 0.06em;
+}
+#hedef .ok { font-size: 11px; color: var(--metin-soluk); transition: transform var(--sure) var(--egri); }
+#hedef.acik .ok { transform: rotate(180deg); }
+#hedef h3 { margin: 0 0 3px; font-size: 15px; line-height: 1.25; }
+#hedef .aciklama {
+  margin: 0; font-size: 12.5px; color: var(--metin-soluk); line-height: 1.35;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#hedef.acik .aciklama { white-space: normal; }
+#hedef .ilerleme-cubuk { margin-top: 8px; }
+#hedef .detay { display: none; }
+#hedef.acik .detay { display: block; margin-top: 7px; animation: panelGir var(--sure) var(--egri); }
+#hedef .detay .sayi { font-family: var(--font-baslik); font-size: 13px; font-weight: 600; }
+#hedef .detay .acilis { font-size: 11.5px; font-weight: 700; color: var(--metin-soluk); margin-top: 2px; }
+#hedef .detay .acilis:empty, #hedef .detay .sayi:empty { display: none; }
+#hedef.yeni { animation: panelGir var(--sure-yavas) var(--egri); }
+
+/* Hedef tamamlandı: yeşil vurgu, onay ve küçük parıltılar; ardından sıradaki hedef kayarak gelir. */
+#hedef.kutlama { box-shadow: 0 0 0 2px var(--cayir), var(--golge-buyuk); animation: kutlama 600ms var(--egri); }
+#hedef.kutlama h3 { color: var(--arti); }
+#hedef.kutlama .etiket { color: var(--arti); }
+#hedef.kutlama .ilerleme-cubuk > div { background: var(--arti); }
+@keyframes kutlama { 0% { transform: scale(1); } 35% { transform: scale(1.035); } 100% { transform: scale(1); } }
+#hedef .parilti { position: absolute; left: 50%; top: 45%; width: 0; height: 0; pointer-events: none; }
+#hedef .parilti span {
+  position: absolute; width: 7px; height: 7px; margin: -3.5px; border-radius: 50%; opacity: 0;
+  background: var(--altin);
+}
+#hedef .parilti span:nth-child(3n) { background: var(--cayir); }
+#hedef .parilti span:nth-child(3n + 1) { background: var(--toprak); width: 5px; height: 5px; }
+#hedef.kutlama .parilti span { animation: parilti 900ms var(--egri) calc(var(--g) * 60ms) both; }
+@keyframes parilti {
+  0% { opacity: 0; transform: rotate(var(--a)) translateX(0) scale(0.4); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateX(92px) scale(1); }
+}
+
+/* Sakinlerin isteği: toprak rengi kenar, kalan gün çipi, ilerleme çubuğu. */
+#istek { padding: 11px 14px 12px; display: none; font-size: 12.5px; box-shadow: inset 4px 0 0 var(--toprak), var(--golge); }
+#istek.yeni { animation: panelGir var(--sure-yavas) var(--egri); }
+#istek .gun-cip {
+  font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 999px;
+  background: var(--yuzey-ic); color: var(--metin-soluk);
+}
+#istek .gun-cip.acil { background: rgba(196, 97, 74, 0.14); color: var(--eksi); }
+#istek h4 { margin: 0 0 3px; font-size: 14px; }
+#istek p { margin: 0 0 8px; color: var(--metin-soluk); line-height: 1.35; }
+#istek .ilerleme-cubuk > div { background: var(--toprak); }
+#istek.hazir .ilerleme-cubuk > div { background: var(--arti); }
+#istek .ilerleme { margin-top: 4px; font-size: 11.5px; font-weight: 800; color: var(--metin-soluk); }
+#istek.hazir .ilerleme { color: var(--arti); }
+#istek .dugme { margin-top: 9px; width: 100%; font-size: 12px; }
+
+/* Kasaba uyarıları: küçük şeritler (yoksa görünmez). */
+#uyarilar { display: flex; flex-direction: column; gap: 6px; }
+#uyarilar:empty { display: none; }
+.uyari-cip {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 11px; border: none; border-radius: 11px;
+  font: inherit; font-size: 12px; font-weight: 800; text-align: left; color: var(--metin);
+  background: var(--yuzey); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  box-shadow: var(--golge); animation: panelGir var(--sure) var(--egri);
+}
+.uyari-cip .ikon { font-size: 15px; }
+.uyari-cip.borc { color: var(--eksi); box-shadow: inset 3px 0 0 var(--eksi), var(--golge); }
+.uyari-cip.kuculen { box-shadow: inset 3px 0 0 var(--toprak), var(--golge); cursor: pointer; transition: transform var(--sure-hizli) var(--egri); }
+.uyari-cip.kuculen:hover { transform: translateX(2px); }
+.uyari-cip.isci { box-shadow: inset 3px 0 0 var(--altin), var(--golge); }
 
 /* Menü düğmesi (sağ üst) */
 #yeniOyun { position: absolute; top: 12px; right: 12px; width: auto; margin: 0; padding: 10px 14px; font-size: 13px; border: none; }
@@ -356,8 +432,19 @@ kbd {
 
 /* ---------- Sol alt: kasabanın yolu ---------- */
 
-#kasabaYolu { position: absolute; left: 12px; bottom: 12px; width: 230px; padding: 12px 14px 10px; font-size: 12px; }
-#kasabaYolu h4 { margin: 0 0 6px; font-size: 13px; }
+#kasabaYolu { position: absolute; left: 12px; bottom: 12px; width: 240px; padding: 4px 6px; font-size: 12px; }
+#kasabaYolu .baslik {
+  display: flex; align-items: center; gap: 6px; width: 100%; padding: 6px 8px; border: none; border-radius: 10px;
+  background: none; font: inherit; text-align: left;
+}
+#kasabaYolu .baslik:hover { background: var(--yuzey-ic); }
+#kasabaYolu .baslik .ad { flex: 1; font-family: var(--font-baslik); font-size: 13px; font-weight: 600; }
+#kasabaYolu .baslik .ozet { font-size: 11px; font-weight: 800; color: var(--metin-soluk); }
+#kasabaYolu .baslik .ok { font-size: 11px; color: var(--metin-soluk); transition: transform var(--sure) var(--egri); }
+#kasabaYolu.acik .baslik .ok { transform: rotate(180deg); }
+#kasabaYolu .liste, #kasabaYolu .alt { display: none; padding: 0 8px; }
+#kasabaYolu.acik .liste { display: block; }
+#kasabaYolu.acik .alt { display: block; padding-bottom: 8px; }
 #kasabaYolu .kart { padding: 5px 0 6px; border-bottom: 1px solid var(--cizgi); }
 #kasabaYolu .kart:last-child { border-bottom: none; }
 #kasabaYolu .ad { font-weight: 800; margin-bottom: 1px; }
