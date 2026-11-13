@@ -6,6 +6,12 @@ import { groundPaperTexture, lineMaterial, modelMaterial, paperTexture, rng, tre
 import { ModelBuilder } from './models/builder';
 import { buildDecorTree } from './models/nature';
 import { MEVSIM_GLSL, bindMevsim, kisW } from './season';
+import { CIZGI, toonGradyan } from './tarz';
+
+/** Deneme (çizgi film): toon yüzey; tip uyumu için Standard gibi kullanılır. */
+function toonYuzey(p: THREE.MeshToonMaterialParameters): THREE.MeshStandardMaterial {
+  return new THREE.MeshToonMaterial({ gradientMap: toonGradyan(), ...p }) as unknown as THREE.MeshStandardMaterial;
+}
 
 // Ekranı dolduran kağıt arazi: ±DIS_SINIR karesi, sarsılmış ızgara üçgenleri (low-poly katlanmış kağıt),
 // parlak kağıt göller, oynanabilir alan sınırında kağıt şerit + kazıklar, dışarıda yoğun dekor ormanı.
@@ -186,15 +192,20 @@ export function createTerrain(): Terrain {
   topGeo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   topGeo.computeVertexNormals();
   const grassTex = groundPaperTexture(1);
-  const topMat = new THREE.MeshStandardMaterial({ vertexColors: true, map: grassTex, roughness: 0.95, flatShading: true });
+  const topMat = CIZGI
+    ? toonYuzey({ vertexColors: true })
+    : new THREE.MeshStandardMaterial({ vertexColors: true, map: grassTex, roughness: 0.95, flatShading: true });
   // Mevsim: tepe renkleri sabit kalır, shader sonbaharda sarartır, kışın karla örter (ucuz, her karede hesap yok).
   topMat.onBeforeCompile = (sh) => {
     bindMevsim(sh.uniforms);
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\n' + MEVSIM_GLSL)
-      .replace('#include <color_vertex>', '#include <color_vertex>\n#ifdef USE_COLOR\nvColor.rgb = mevsimZemin(color.rgb);\n#endif');
+      .replace(
+        '#include <color_vertex>',
+        '#include <color_vertex>\n#ifdef USE_COLOR\nvColor.rgb = mevsimZemin(color.rgb);\n#endif',
+      );
   };
-  topMat.customProgramCacheKey = () => 'zemin-mevsim';
+  topMat.customProgramCacheKey = () => (CIZGI ? 'zemin-mevsim-cizgi' : 'zemin-mevsim');
   const top = new THREE.Mesh(topGeo, topMat);
   top.receiveShadow = true;
   top.raycast = () => {};
@@ -205,20 +216,23 @@ export function createTerrain(): Terrain {
   const crease = new THREE.LineSegments(creaseGeo, creaseMat);
   crease.position.y = 0.004;
   crease.raycast = () => {};
+  crease.visible = !CIZGI; // çizgi filmde kağıt kırışıkları yok
   group.add(crease);
   disposables.push(creaseGeo, creaseMat);
 
   // ---------- Göller ----------
-  const waterMat = new THREE.MeshStandardMaterial({
-    color: PALETTE.su,
-    map: paperTexture(),
-    roughness: 0.28,
-    metalness: 0.05,
-    flatShading: true,
-    polygonOffset: true,
-    polygonOffsetFactor: -1,
-    polygonOffsetUnits: -1,
-  });
+  const waterMat = CIZGI
+    ? toonYuzey({ color: PALETTE.su, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })
+    : new THREE.MeshStandardMaterial({
+      color: PALETTE.su,
+      map: paperTexture(),
+      roughness: 0.28,
+      metalness: 0.05,
+      flatShading: true,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    });
   const waveMats = [0, 1, 2].map(
     () => new THREE.MeshBasicMaterial({ color: PALETTE.dalga, transparent: true, opacity: 0.6, depthWrite: false }),
   );
@@ -227,16 +241,18 @@ export function createTerrain(): Terrain {
   const waveGeo = new THREE.PlaneGeometry(1, 0.08);
   waveGeo.rotateX(-Math.PI / 2);
   disposables.push(waveGeo);
-  const sandMat = new THREE.MeshStandardMaterial({
-    color: PALETTE.kum,
-    map: paperTexture(),
-    roughness: 0.95,
-    flatShading: true,
-    side: THREE.DoubleSide,
-    polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -4,
-  });
+  const sandMat = CIZGI
+    ? toonYuzey({ color: PALETTE.kum, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 })
+    : new THREE.MeshStandardMaterial({
+      color: PALETTE.kum,
+      map: paperTexture(),
+      roughness: 0.95,
+      flatShading: true,
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -4,
+    });
   const sandEdgeMat = new THREE.LineBasicMaterial({ color: PALETTE.kenar, transparent: true, opacity: 0.18 });
   disposables.push(sandMat, sandEdgeMat);
   HARITA.goller.forEach((lake, gi) => {

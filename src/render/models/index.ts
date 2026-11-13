@@ -3,6 +3,8 @@ import type { BuildingType } from '../../logic/types';
 import { BUILDINGS, HOUSE_LEVELS } from '../../data/buildings';
 import { EV_DUVAR } from '../palette';
 import { modelMaterial, lineMaterial } from '../paper';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { CIZGI, hatMalzemesi } from '../tarz';
 import type { Baked, BakedModel, ModelBuilder } from './builder';
 import { buildHouse } from './house';
 import { buildTree, buildField, buildFlower, TREE_VARIANTS, FLOWER_VARIANTS } from './nature';
@@ -147,6 +149,20 @@ export function getTemplate(type: BuildingType, level: number, variant: number, 
   return tpl;
 }
 
+/** Dış hat için yumuşak normalli kopya (köşelerde kopmasın): yalnızca konum, birleşik tepeler. */
+const hatGeolari = new WeakMap<THREE.BufferGeometry, THREE.BufferGeometry>();
+export function hatGeo(geo: THREE.BufferGeometry): THREE.BufferGeometry {
+  let g = hatGeolari.get(geo);
+  if (g) return g;
+  const yalin = new THREE.BufferGeometry();
+  yalin.setAttribute('position', geo.getAttribute('position').clone());
+  g = mergeVertices(yalin, 1e-4);
+  g.computeVertexNormals();
+  yalin.dispose();
+  hatGeolari.set(geo, g);
+  return g;
+}
+
 function bakedObject(b: Baked): THREE.Group {
   const g = new THREE.Group();
   const mesh = new THREE.Mesh(b.geo, modelMaterial('base'));
@@ -157,6 +173,13 @@ function bakedObject(b: Baked): THREE.Group {
   lines.raycast = () => {};
   lines.name = 'kenar';
   g.add(mesh, lines);
+  if (CIZGI) {
+    // Çizgi film: kalın dış hat (ters kabuk).
+    const hat = new THREE.Mesh(hatGeo(b.geo), hatMalzemesi());
+    hat.name = 'hat';
+    hat.raycast = () => {};
+    g.add(hat);
+  }
   return g;
 }
 

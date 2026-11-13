@@ -1,3 +1,5 @@
+import { CIZGI } from './tarz';
+
 // Kağıt Kasaba paleti. Bütün renkler burada; başka dosyada renk kodu yazılmaz.
 // Pastel, sıcak, doygun: kağıt beyazı, krem, terrakota, adaçayı, gök mavisi, hardal, gül.
 
@@ -138,6 +140,22 @@ export const PALETTE = {
   kumasTuruncu: '#f2a55a',
   kumasMavi: '#79b8e0',
 } as const;
+
+// Deneme (çizgi film): daha parlak ve doygun arazi, açık gök. Türetilen diziler (EV_DUVAR…) aşağıda okunur.
+if (CIZGI) {
+  Object.assign(PALETTE as Record<string, string>, {
+    cimen: '#a9d283',
+    cimenAcik: '#cce6a0',
+    ormanZemin: '#8cbf72',
+    cimenDis: '#9bc77f',
+    ormanDis: '#7bae68',
+    sis: '#cfe9e4',
+    gokIsik: '#eef8ff',
+    yerIsik: '#a8cf86',
+    su: '#7fd0f0',
+    kum: '#f7e3a8',
+  });
+}
 
 /** Ev duvar / çatı çeşitleri (id'ye göre deterministik seçilir). */
 export const EV_DUVAR = [PALETTE.krem, PALETTE.pembe, PALETTE.gokAcik, PALETTE.adacayiAcik, PALETTE.seftali] as const;

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PALETTE } from './palette';
 import { MEVSIM_GLSL, bindMevsim } from './season';
+import { CIZGI, DOYGUNLUK_GLSL, HAT_RENGI, toonGradyan } from './tarz';
 
 // Kağıt dokusu (canvas ile üretilir) ve malzeme fabrikası. Bütün malzemeler önbelleklidir.
 
@@ -163,6 +164,13 @@ const colorMats = new Map<string, THREE.MeshStandardMaterial>();
 export function paperMaterial(color: string, doubleSide = false): THREE.MeshStandardMaterial {
   const key = color + (doubleSide ? '|2' : '');
   let m = colorMats.get(key);
+  if (!m && CIZGI) {
+    // Deneme: çizgi film tarzında doku yok, toon gölgeleme (tip uyumu için Standard gibi kullanılır).
+    m = new THREE.MeshToonMaterial({
+      color, gradientMap: toonGradyan(), side: doubleSide ? THREE.DoubleSide : THREE.FrontSide,
+    }) as unknown as THREE.MeshStandardMaterial;
+    colorMats.set(key, m);
+  }
   if (!m) {
     m = new THREE.MeshStandardMaterial({
       color,
@@ -190,7 +198,8 @@ function pencereYak(m: THREE.MeshStandardMaterial): void {
     sh.uniforms.uPencere = pencereIsik;
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', ['#include <common>', 'attribute float isik;', 'varying float vIsik;'].join('\n'))
-      .replace('#include <begin_vertex>', ['#include <begin_vertex>', 'vIsik = isik;'].join('\n'));
+      .replace('#include <begin_vertex>', ['#include <begin_vertex>', 'vIsik = isik;'].join('\n'))
+      .replace('#include <color_vertex>', CIZGI ? ['#include <color_vertex>', DOYGUNLUK_GLSL].join('\n') : '#include <color_vertex>');
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', ['#include <common>', 'uniform float uGece;', 'uniform vec3 uPencere;', 'varying float vIsik;'].join('\n'))
       .replace(
@@ -198,7 +207,7 @@ function pencereYak(m: THREE.MeshStandardMaterial): void {
         ['#include <emissivemap_fragment>', 'totalEmissiveRadiance += uPencere * (vIsik * uGece);'].join('\n'),
       );
   };
-  m.customProgramCacheKey = () => 'pencere';
+  m.customProgramCacheKey = () => (CIZGI ? 'pencere-cizgi' : 'pencere');
 }
 const modelMats = new Map<ModelMatKind, THREE.MeshStandardMaterial>();
 
@@ -206,13 +215,15 @@ const modelMats = new Map<ModelMatKind, THREE.MeshStandardMaterial>();
 export function modelMaterial(kind: ModelMatKind): THREE.MeshStandardMaterial {
   let m = modelMats.get(kind);
   if (m) return m;
-  m = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    map: paperTexture(),
-    roughness: 0.93,
-    metalness: 0,
-    flatShading: true,
-  });
+  m = CIZGI
+    ? (new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: toonGradyan() }) as unknown as THREE.MeshStandardMaterial)
+    : new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      map: paperTexture(),
+      roughness: 0.93,
+      metalness: 0,
+      flatShading: true,
+    });
   pencereYak(m);
   switch (kind) {
     case 'ghost':
@@ -356,7 +367,9 @@ export function lineMaterial(kind: LineMatKind = 'base'): THREE.LineBasicMateria
       m = new THREE.LineBasicMaterial({ color: PALETTE.yikimKenar });
       break;
     default:
-      m = new THREE.LineBasicMaterial({ color: PALETTE.kenar, transparent: true, opacity: 0.42 });
+      m = CIZGI
+        ? new THREE.LineBasicMaterial({ color: HAT_RENGI, transparent: true, opacity: 0.9 })
+        : new THREE.LineBasicMaterial({ color: PALETTE.kenar, transparent: true, opacity: 0.42 });
   }
   lineMats.set(kind, m);
   return m;
