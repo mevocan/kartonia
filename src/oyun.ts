@@ -219,7 +219,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
 
   const son = el('div');
   son.id = 'sonEkran';
-  const sonKart = el('div', 'kagit bant');
+  const sonKart = el('div', 'kagit');
   son.appendChild(sonKart);
   ui.appendChild(son);
 
@@ -593,20 +593,19 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     const evler = s.binalar.filter((b) => b.type === 'ev');
     const enYuksek = evler.reduce((m, b) => Math.max(m, b.seviye), 0);
     sonKart.replaceChildren();
-    sonKart.appendChild(el('h2', '', t('son.baslik')));
-    sonKart.appendChild(el('p', '', t('son.metin')));
-    const tablo = el('table');
-    for (const [a, v] of [
-      [t('son.gun'), String(s.gun)],
-      [t('son.nufus'), String(s.nufus)],
-      [t('son.enYuksekEv'), enYuksek > 0 ? t('son.seviye', { n: enYuksek }) : '—'],
+    sonKart.append(el('div', 'son-ikon', '🏚️'), el('h2', '', t('son.baslik')), el('p', '', t('son.metin')));
+    const kutular = el('div', 'son-kutular');
+    for (const [ikon, v, a] of [
+      ['📅', String(s.gun), t('son.gun')],
+      ['👥', String(s.nufus), t('son.nufus')],
+      ['🏠', enYuksek > 0 ? evSeviyeAd(enYuksek) : '—', t('son.enYuksekEv')],
     ]) {
-      const tr = el('tr');
-      tr.append(el('td', '', a), el('td', '', v));
-      tablo.appendChild(tr);
+      const k = el('div', 'kutu');
+      k.append(el('div', 'deger', `${ikon} ${v}`), el('div', 'etiket', a));
+      kutular.appendChild(k);
     }
-    sonKart.appendChild(tablo);
-    const b = el('button', 'dugme', t('son.yeni'));
+    sonKart.appendChild(kutular);
+    const b = el('button', 'dugme birincil', t('son.yeni'));
     b.addEventListener('click', sifirla);
     sonKart.appendChild(b);
     son.style.display = 'flex';

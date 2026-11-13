@@ -36,7 +36,7 @@ function uretimMetni(tur: BuildingType): string | null {
 }
 
 export function createBuildingCard(root: HTMLElement, onClose: () => void): BuildingCard {
-  const box = el('div', 'kagit raptiye');
+  const box = el('div', 'kagit');
   box.id = 'binaKarti';
   root.appendChild(box);
 

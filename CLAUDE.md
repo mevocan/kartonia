@@ -75,6 +75,8 @@ Para (başlangıç 150), Nüfus, Mutluluk (0–100, nüfusa göre ağırlıklı 
 - **Kasaba uyarıları** (`logic/pins.ts` `townAlerts`): borç, küçülmek üzere evler (tıklayınca sıradaki eve gider), işçi eksikliği. Uyarı yoksa görünmez.
 - Hedef kartının ve sol alttaki "Kasabanın yolu" kartının açık/kapalı tercihi `localStorage` `kagit-kasaba-panel` (`{hedef, yol}`).
 
+**Tam ekran pencereler** aynı tasarım dilindedir: giriş ekranında sade yazı logosu (Fredoka, harfler sırayla yükselir; "ia" toprak renginde), karar kartlarında simge kutusu ve yeşil artı / kırmızı eksi blokları (kartlar sırayla belirir), tüccar panelinde mal satırları ("Sat 5 · +10", "Al 5 · −30"), kalış çipi ve kota çubuğu, oyun sonunda kutucuklu özet. Öğretici sağ altta, ilerleme noktalarla gösterilir.
+
 **Bildirimler** (`ui/toast.ts`): üst ortada, en fazla üç; kötü haber 4,8 sn, diğerleri 3,2 sn kalır; aynı metin art arda gelmez.
 
 ## Binalar

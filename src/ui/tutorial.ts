@@ -1,5 +1,5 @@
 // Öğretici: yalnızca ilk oyunda, atlanabilir, beş adım. Her adım oyuncunun eylemiyle ilerler; oyunu durdurmaz.
-// Adımlar ekranın kenarında kağıt not olarak görünür. "Gösterildi" bilgisi localStorage'da ayrı anahtarda
+// Adımlar sağ altta küçük bir kart olarak görünür; ilerleme noktalarla gösterilir. "Gösterildi" bilgisi localStorage'da ayrı anahtarda
 // durur, oyun kaydına girmez.
 import { el } from './dom';
 import { t, type Anahtar } from './i18n';
@@ -49,9 +49,12 @@ function isaretle(): void {
 }
 
 export function createTutorial(root: HTMLElement): Tutorial {
-  const box = el('div', 'kagit bant');
+  const box = el('div', 'kagit');
   box.id = 'ogretici';
   const sayac = el('div', 'sayac');
+  const etiket = el('span', 'etiket', t('ogretici.etiket'));
+  const noktalar = el('span', 'noktalar');
+  sayac.append(etiket, noktalar);
   const baslik = el('h4');
   const metin = el('p');
   const dugmeler = el('div', 'dugmeler');
@@ -80,7 +83,7 @@ export function createTutorial(root: HTMLElement): Tutorial {
       return;
     }
     const a = ADIMLAR[adim];
-    sayac.textContent = t('ogretici.sayac', { adim: adim + 1, toplam: ADIMLAR.length });
+    noktalar.replaceChildren(...ADIMLAR.map((_, i) => el('span', i < adim ? 'bitti' : i === adim ? 'simdi' : '')));
     baslik.textContent = t(a.baslik);
     metin.textContent = t(a.metin);
     tamam.style.display = a.olay ? 'none' : 'inline-block';
