@@ -78,6 +78,13 @@ function colorAt(x: number, z: number, h: number, jitter: number, out: THREE.Col
       forest = Math.max(forest, 1 - Math.max(0, (d - o.r * 0.7) / (o.r * 0.6)));
     }
     if (forest > 0) out.lerp(cForest.set(PALETTE.ormanZemin), Math.min(1, forest) * 0.8);
+    // Çayırlar: açık, sarımsı çimen lekesi (çiçeklerin altı)
+    let cayir = 0;
+    for (const c of HARITA.cayirlar) {
+      const d = Math.hypot(x - c.x, z - c.z);
+      cayir = Math.max(cayir, 1 - Math.max(0, (d - c.r * 0.8) / (c.r * 0.5)));
+    }
+    if (cayir > 0) out.lerp(cForest.set(PALETTE.cimenAcik), Math.min(1, cayir) * 0.75);
     let tasli = 0;
     for (const t of HARITA.tasliklar) {
       const d = Math.hypot(x - t.x, z - t.z);

@@ -200,3 +200,34 @@ export function buildDecorTree(variant: number): ModelBuilder {
   b.withFrame(0, 0, Math.PI / 2, () => b.extrude(s, 0.04, col2, { edges: false, wob: 0 }));
   return b;
 }
+
+/** Çiçek renk takımları (çeşit başına bir takım). */
+export const FLOWER_VARIANTS = 4;
+
+/**
+ * Çiçek (taban 0.4): küçük karton ayak üstünde üç saplı kağıt çiçek ve iki yaprak.
+ * Taç: yassı silindir (5 dilim, kesik kağıt gibi) + ortada top.
+ */
+export function buildFlower(variant: number): ModelBuilder {
+  const b = new ModelBuilder(`cicek-${variant}`);
+  const takim = [
+    [P.gul, P.pembe, P.hardal],
+    [P.lavanta, P.kagit, P.hardal],
+    [P.hardal, P.bugday, P.terrakota],
+    [P.kagit, P.gul, P.hardal],
+  ][variant % FLOWER_VARIANTS];
+  b.as('taban', () => b.cyl(0.2, 0.22, 0.04, 8, P.mukavvaAcik, { wob: 0.02 }));
+  const saplar: [number, number, number][] = [[0, 0, 0.42], [0.11, 0.07, 0.3], [-0.09, 0.08, 0.34]];
+  saplar.forEach(([x, z, h], i) => {
+    b.piece('duvar', () => {
+      b.cyl(0.012, 0.014, h, 4, P.yesil, { x, z, y: 0.04, wob: 0, edges: false });
+      b.cyl(0.085, 0.07, 0.025, 5, takim[i === 0 ? 0 : i === 1 ? 1 : 0], { x, z, y: 0.04 + h, ry: i, wob: 0.06 });
+      b.ball(0.03, takim[2], { x, z, y: 0.07 + h });
+    }, { o: [x, 0.04, z], axis: [1, 0, 0], angle: Math.PI / 2 });
+  });
+  b.piece('detay', () => {
+    b.box(0.1, 0.012, 0.05, P.koyuYesil, { x: 0.05, y: 0.12, z: -0.03, rz: 0.5, ry: 0.4, wob: 0, edges: false });
+    b.box(0.1, 0.012, 0.05, P.koyuYesil, { x: -0.05, y: 0.16, z: 0.02, rz: -0.5, ry: -0.3, wob: 0, edges: false });
+  });
+  return b;
+}

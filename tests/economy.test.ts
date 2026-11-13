@@ -122,9 +122,9 @@ describe('ihtiyaçlar', () => {
     const ust = ['su', 'yemek', 'odun', 'pazar', 'okul', 'mobilya', 'saglik'];
     expect(evaluateNeeds(s, h1).map((x) => x.ihtiyac)).toEqual(['su', 'yemek']);
     expect(evaluateNeeds(s, h2).map((x) => x.ihtiyac)).toEqual(ust);
-    expect(evaluateNeeds(s, h3).map((x) => x.ihtiyac)).toEqual([...ust, 'kumas']);
-    expect(evaluateNeeds(s, h4).map((x) => x.ihtiyac)).toEqual([...ust, 'kumas', 'bal']);
-    expect(evaluateNeeds(s, h5).map((x) => x.ihtiyac)).toEqual([...ust, 'kumas', 'bal']);
+    expect(evaluateNeeds(s, h3).map((x) => x.ihtiyac)).toEqual([...ust, 'kumas', 'hamam']);
+    expect(evaluateNeeds(s, h4).map((x) => x.ihtiyac)).toEqual([...ust, 'kumas', 'hamam', 'bal', 'kultur']);
+    expect(evaluateNeeds(s, h5).map((x) => x.ihtiyac)).toEqual([...ust, 'kumas', 'hamam', 'bal', 'kultur']);
   });
 
   it('yemek: id küçük ev önce beslenir, yetmeyen karşılanmaz', () => {
@@ -281,8 +281,8 @@ describe('mutluluk', () => {
 
     it('3. seviye, tam hizmet + ağaç + asfalt: 87, vergi 8 (×0.6); Saat Kulesi olmadan 100\'e ulaşmaz', () => {
       const { s, h } = tamHizmet();
-      // Mevcut seviyenin bütün ihtiyaçları karşılanır (üst seviyenin kumaşı hariç).
-      expect(evaluateNeeds(s, h).every((n) => n.karsilandi || n.ihtiyac === 'kumas')).toBe(true);
+      // Mevcut seviyenin bütün ihtiyaçları karşılanır (üst seviyenin kumaşı ve hamamı hariç).
+      expect(evaluateNeeds(s, h).every((n) => n.karsilandi || n.ihtiyac === 'kumas' || n.ihtiyac === 'hamam')).toBe(true);
       expect(olc(s, h)).toEqual([87, 8]); // floor(10 × 1.37 × 0.6)
       expect(olc(s, h)[0]).toBeLessThan(100);
     });

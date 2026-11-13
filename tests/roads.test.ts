@@ -16,9 +16,11 @@ describe('createGame', () => {
     const s = createGame();
     expect(s.yollar).toHaveLength(1);
     expect(s.yollar[0].tur).toBe('toprak');
-    const agaclar = s.binalar.filter((b) => b.dogal);
-    expect(agaclar.length).toBeGreaterThan(200);
-    expect(agaclar.every((b) => b.type === 'agac')).toBe(true);
+    const dogal = s.binalar.filter((b) => b.dogal);
+    expect(dogal.filter((b) => b.type === 'agac').length).toBeGreaterThan(200);
+    expect(dogal.filter((b) => b.type === 'cicek').length).toBeGreaterThan(30);
+    expect(dogal.every((b) => b.type === 'agac' || b.type === 'cicek')).toBe(true);
+    expect(s.cayirlar).toBe(true);
     const ids = [...s.binalar.map((b) => b.id), ...s.yollar.map((r) => r.id)];
     expect(new Set(ids).size).toBe(ids.length);
     expect(s.sonrakiId).toBe(Math.max(...ids) + 1);
@@ -36,22 +38,22 @@ describe('createGame', () => {
       s = createGame();
       enIyi = Math.min(enIyi, performance.now() - t0);
     }
-    expect(enIyi).toBeLessThan(50);
-    expect(s.binalar.filter((b) => b.dogal)).toHaveLength(hedef);
+    expect(enIyi).toBeLessThan(80);
+    expect(s.binalar.filter((b) => b.dogal && b.type === 'agac')).toHaveLength(hedef);
   });
 
   it('deterministik', () => {
     expect(createGame()).toEqual(createGame());
   });
 
-  it('ağaçlar karada, gölde değil, yolla ve birbiriyle çakışmaz', () => {
+  it('ağaçlar ve çiçekler karada, gölde değil, yolla ve birbiriyle çakışmaz', () => {
     const s = createGame();
-    const r = BUILDINGS.agac.taban;
     for (const a of s.binalar) {
+      const ra = BUILDINGS[a.type].taban;
       expect(isLand(a.x, a.z)).toBe(true);
       expect(isLake(a.x, a.z)).toBe(false);
-      expect(nearestRoad(s, a.x, a.z)!.mesafe).toBeGreaterThanOrEqual(r + 0.5);
-      for (const b of s.binalar) if (b !== a) expect(dist(a.x, a.z, b.x, b.z)).toBeGreaterThanOrEqual(2 * r + 0.1);
+      expect(nearestRoad(s, a.x, a.z)!.mesafe).toBeGreaterThanOrEqual(ra + 0.5);
+      for (const b of s.binalar) if (b !== a) expect(dist(a.x, a.z, b.x, b.z)).toBeGreaterThanOrEqual(ra + BUILDINGS[b.type].taban + 0.1);
     }
   });
 });

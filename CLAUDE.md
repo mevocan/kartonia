@@ -21,13 +21,14 @@ Bilgisayar tarayıcısında oynanan, 3D, kağıttan maket görünümlü bir kasa
 - Kamera hedefi oynanabilir alanda kalır; yakınlaşma ve açı sınırları ekranda hiçbir zaman çizilen arazinin dışı görünmeyecek şekilde ayarlıdır.
 - Göle bina ve yol konmaz. Bina tabanındaki yükseklik farkı `egimSiniri`'ni aşamaz.
 - Ormanlar oyun başında doğal ağaçlarla dolar (`dogal: true` ağaç binaları, deterministik tohum). Doğal ağaç kesilebilir: para öder, odun verir. Oduncu doğal ağaçları da sayar.
+- **Çayırlar** (`cayirlariUret`, `HARITA.cayirlar`, `logic/doga.ts` `fillMeadows`): her haritada 5–7 küçük açıklık, içleri doğal çiçeklerle dolu (`dogal: true` çiçek binaları). Ağaç tohumundan türetilen ayrı bir tohumla en son yerleşir, eski tohumların göl/orman/taşlıkları değişmez. Zeminde açık çimen lekesi. Doğal çiçek bedava sökülür, odun vermez (`naturalCut`). Çiçek öncesi kayıtta (`GameState.cayirlar` yok) yüklenirken boş yerlere ekilir.
 
 ## Yollar
 
 - İki tür: Toprak (ucuz, baştan açık) ve Asfalt (pahalı, günlük gider, 35 nüfusta açılır, kenarındaki evlere +mutluluk). Tanımlar `ROADS` (`src/data/buildings.ts`).
 - Serbest fırça: sol tuşla sürükleyerek çizilir. Noktalar yeniden örneklenir, uçlar yakın yollara kenetlenir. En az bir ucu mevcut bir yola kenetlenmeli. Maliyet uzunlukla orantılı.
 - Yol ada dışına, göle ya da bir binanın/ağacın üstüne geçemez. Yollar birbirini kesebilir.
-- Ağaç dışındaki her bina bir yolun kenarında olmalı (`yolYakinlik`). Bina yol kenarına konurken önü otomatik yola döner (Q/E ile ince ayar).
+- Ağaç ve çiçek (`dogaTuru`) dışındaki her bina bir yolun kenarında olmalı (`yolYakinlik`). Bina yol kenarına konurken önü otomatik yola döner (Q/E ile ince ayar).
 - Bina konunca kapısından en yakın yol noktasına kısa bir kağıt patika kendiliğinden çizilir (`Building.baglanti`, ücretsiz, yalnızca görsel). Bağlı yol yıkılırsa patika kalan en yakın yola taşınır.
 - Yol yıkılabilir (%50 iade), ama bir bina yakınlığını yalnızca o yoldan alıyorsa yıkılamaz.
 
@@ -67,6 +68,7 @@ Tanımlar `src/data/buildings.ts` içindedir; denge değerleri orada ayarlanır.
 |---|---|
 | Ev | Sakin barındırır, vergi öder. Seviye 1–5 (kulübe → ev → iki katlı ev → konak → köşk). Konak ve köşk de iki katlıdır: konakta cumba ve sütunlu giriş, köşkte yan kanat, teras ve balkon. |
 | Ağaç | Yakındaki evlere mutluluk. Oduncunun hammaddesi. |
+| Çiçek | Ucuz (3), yol istemez; yakındaki evlere +2 mutluluk (ağaçla ortak +9 sınırı). Arılık bonusunun kaynağı. Ağaç gibi instanced havuzda çizilir, rüzgârda sallanır. |
 | Tarla | Buğday üretir. |
 | Çeşme | Etki alanındaki evlere su sağlar. |
 | Değirmen | Buğday → un. Yakın evlere gürültü (−mutluluk). |
@@ -76,6 +78,9 @@ Tanımlar `src/data/buildings.ts` içindedir; denge değerleri orada ayarlanır.
 | Okul | Etki alanındaki evlere okul erişimi, mutluluk. |
 | Saat Kulesi | Anıt: 100 paraya iskele, sonra bilgi panelindeki "Malzeme gönder" ile 4 aşama (100+20 taş, 100+30 odun, 150+20 mobilya, 200+30 taş+20 mobilya; `BALANCE.anit`). `Building.insaat` = kalan aşama; alan yoksa tamam (eski kayıtlar). Aura, gider ve hedef 5 yalnızca tamamlanınca. Yıkımda harcanan paranın yarısı, mallar dönmez. |
 | Hastane | Etki alanındaki evlere sağlık, mutluluk. Yükseltilebilir. |
+| Park | Çimen, havuz, banklar: etki alanındaki evlere +6 mutluluk. İhtiyaç değildir. 25 nüfusta açılır. |
+| Hamam | Kubbeli taş hamam: etki alanındaki evlere hamam (konak ihtiyacı). Yükseltilebilir. 90 nüfusta açılır. |
+| Tiyatro | Sütunlu cephe: etki alanındaki evlere kültür (köşk ihtiyacı). Yükseltilebilir. 140 nüfusta açılır. |
 | Ambar | Bütün mal stoklarının sınırını 100 artırır. |
 | Balıkçı | Göl kıyısına kurulur (`golKiyisi`), 3 yemek (balık) üretir: fırından az ama zincirsiz. |
 | Taş Ocağı | Yalnızca haritadaki taşlık alanlara kurulur, taş çıkarır. Gürültü. |
@@ -88,7 +93,7 @@ Tanımlar `src/data/buildings.ts` içindedir; denge değerleri orada ayarlanır.
 
 - **Yerleştirme:** Her binanın dairesel bir taban yarıçapı var. Bina tamamen adanın içinde olmalı ve başka binayla çakışmamalı (aralarında en az 0.1 boşluk). Döndürme serbesttir, çakışmayı etkilemez. Para yetmeli ve bina açılmış olmalı.
 - **Yıkma:** Maliyetin (yükseltmelere harcanan dahil) %50'si geri gelir.
-- **Yükseltme:** Çeşme, Pazar, Okul ve Hastane bilgi panelinden yerinde 3. seviyeye kadar yükseltilir. Taban değişmez; etki yarıçapı ×1 / ×1.4 / ×1.8, gider ×1 / ×1.5 / ×2 (yuvarlanır). Seviye 2 maliyeti kurulumun %60'ı + 10 taş, seviye 3 maliyeti kurulumun %100'ü + 25 taş (`BALANCE.yukseltme`). Her seviyede modele küçük bir ek gelir (kat eklenmez).
+- **Yükseltme:** Çeşme, Pazar, Okul, Hastane, Hamam ve Tiyatro bilgi panelinden yerinde 3. seviyeye kadar yükseltilir. Taban değişmez; etki yarıçapı ×1 / ×1.4 / ×1.8, gider ×1 / ×1.5 / ×2 (yuvarlanır). Seviye 2 maliyeti kurulumun %60'ı + 10 taş, seviye 3 maliyeti kurulumun %100'ü + 25 taş (`BALANCE.yukseltme`). Her seviyede modele küçük bir ek gelir (kat eklenmez).
 - **Açılma:** Binalar nüfus eşiğine göre açılır (`acilmaNufus`).
 - **İşçi:** Üretim binaları işçi ister. Toplam işçi ihtiyacı nüfustan fazlaysa bütün üretim `nüfus / ihtiyaç` oranında düşer.
 - **Üretim sırası:** Tarla → Değirmen → Fırın → Oduncu → Balıkçı → Taş Ocağı → Marangoz → Ağıl → Dokumacı → Arılık (ağıl buğdayı değirmenden sonra alır). Girdi stokta yoksa üretim girdiyle orantılı düşer. Çıktı stok sınırına dayanırsa üretim de o oranda düşer.
@@ -96,18 +101,18 @@ Tanımlar `src/data/buildings.ts` içindedir; denge değerleri orada ayarlanır.
   - Seviye 1 (3 kişi): ihtiyaç yok.
   - Seviye 2 (6 kişi): su + yemek.
   - Seviye 3 (10 kişi): su + yemek + odun + pazar + okul + mobilya + sağlık.
-  - Seviye 4, Konak (14 kişi): seviye 3 + kumaş (kişi başı 0.1).
-  - Seviye 5, Köşk (18 kişi): seviye 4 + bal (kişi başı 0.1).
-  - Su/pazar/okul: evin merkezi o binanın etki yarıçapı içindeyse karşılanır.
+  - Seviye 4, Konak (14 kişi): seviye 3 + kumaş (kişi başı 0.1) + hamam.
+  - Seviye 5, Köşk (18 kişi): seviye 4 + bal (kişi başı 0.1) + kültür (tiyatro).
+  - Su/pazar/okul/sağlık/hamam/kültür: evin merkezi o binanın etki yarıçapı içindeyse karşılanır.
   - **Yemek** tek bir ortak stoktur. Yemek binaları (Fırın, Balıkçı) aynı `yemek` malını farklı miktarlarda üretir; yeni bir yemek türü eklemek için `yemek` üreten yeni bir bina eklemek yeter. Ev kişi başı günlük 0.25 yemek yer, ama yalnızca bir satış yerinin (Fırın, Pazar; `yemekSatar`) etki alanındaysa. Odun/mobilya global stoktan tüketilir (seviye 3 için kişi başı odun 0.2, mobilya 0.1). Eski kayıtlardaki ekmek ve balık stokları yemeğe aktarılır.
   - Bir üst seviyenin bütün ihtiyaçları 2 gün üst üste karşılanırsa ev 1 seviye atlar. Mevcut seviyenin ihtiyaçları 2 gün üst üste karşılanmazsa 1 seviye düşer.
-- **Mutluluk (ev başına):** 45 + etki alanında evi kapsayan binaların `mutluluk` değerleri toplamı (ağaçlar en fazla +9 sayılır) + en iyi yakın yol (asfalt +5) + karşılanan ihtiyaç başına +2, 0–100 sınırlı. Sabitler `BALANCE` içinde (`mutlulukTaban`, `agacMutlulukSinir`, `ihtiyacMutluluk`, `mutlulukMin/Max`). Saat Kulesi olmadan hiçbir ev 100 olmaz.
-- **Komşuluk bonusu** (`logic/adjacency.ts`, kurallar `BUILDINGS[t].komsuluk`): Tarla kenarı göle ≤ 4 → buğday +%25; Değirmen merkezde yükseklik ≥ 1 → un +%25; Fırın 6 birim içinde Değirmen → yemek +%25; Marangoz 6 birim içinde Oduncu → mobilya +%25; Ağıl 6 birim içinde Tarla → yün +%25; Dokumacı 6 birim içinde Ağıl → kumaş +%25; Arılık 4 birim içinde ağaç → bal +%25; Ev merkezi göle ≤ 5 → +3 mutluluk. Bonus saklanmaz, her seferinde hesaplanır; yalnızca çıktıyı artırır, girdi aynı. Yerleştirirken hayalet üstünde canlı etiket, bilgi panelinde Bonus satırı.
+- **Mutluluk (ev başına):** 45 + etki alanında evi kapsayan binaların `mutluluk` değerleri toplamı (ağaç ve çiçekler birlikte en fazla +9 sayılır) + en iyi yakın yol (asfalt +5) + karşılanan ihtiyaç başına +2, 0–100 sınırlı. Sabitler `BALANCE` içinde (`mutlulukTaban`, `agacMutlulukSinir`, `ihtiyacMutluluk`, `mutlulukMin/Max`). Saat Kulesi olmadan hiçbir ev 100 olmaz.
+- **Komşuluk bonusu** (`logic/adjacency.ts`, kurallar `BUILDINGS[t].komsuluk`): Tarla kenarı göle ≤ 4 → buğday +%25; Değirmen merkezde yükseklik ≥ 1 → un +%25; Fırın 6 birim içinde Değirmen → yemek +%25; Marangoz 6 birim içinde Oduncu → mobilya +%25; Ağıl 6 birim içinde Tarla → yün +%25; Dokumacı 6 birim içinde Ağıl → kumaş +%25; Arılık 4 birim içinde çiçek (çayır ya da dikilen) → bal +%25; Ev merkezi göle ≤ 5 → +3 mutluluk. Bonus saklanmaz, her seferinde hesaplanır; yalnızca çıktıyı artırır, girdi aynı. Yerleştirirken hayalet üstünde canlı etiket, bilgi panelinde Bonus satırı.
 - **Gelir-gider dökümü:** `DayReport` vergi, `binaGider`, `yolGider`, `net` taşır; HUD'da Para'nın üstüne gelince görünür.
 - **Vergi:** Her ev için `floor(nüfus × (0.5 + mutluluk/100) × seviye çarpanı)`; çarpan 1. ve 2. seviyede 1, 3. seviyede 0.6, konakta 0.55, köşkte 0.5 (`BALANCE.vergiSeviyeCarpani`). Pazar, Okul ve Hastane gideri 9, 12, 15.
 - **Gider:** Her binanın günlük gideri (yükseltilmiş binada seviyeye göre).
 - **Borç:** Para 3 gün üst üste −50'nin altında biterse oyun biter.
-- **Hedefler** (sırayla, tamamlanınca bildirim; sayılabilenlerde kartta ilerleme görünür): 10 nüfus → ilk yemek → 50 nüfus → ilk 3. seviye ev → 150 nüfus ve Saat Kulesi ("Kasaba tamamlandı", yeni hedefler açılır) → bir Çeşme 3. seviye → 200 nüfus ve mutluluk ≥ 70 → 10 tane 3. seviye ev → bir Pazar ve bir Okul 3. seviye → aynı anda 150 yemek ve 100 odun → kasada 1000 para → 300 nüfus → 3 konak → 1 köşk → 400 nüfus ve mutluluk ≥ 75 ("Kasaba efsanesi", oyun devam eder). Konak ve köşk hedefleri sonradan araya girdi: yün/kumaş/bal öncesi bir kayıt bütün eski hedefleri bitirmişse (`ESKI_HEDEF_SAYISI`) yine hepsi bitmiş sayılır (`save.ts`).
+- **Hedefler** (sırayla, tamamlanınca bildirim; sayılabilenlerde kartta ilerleme görünür): 10 nüfus → ilk yemek → 50 nüfus → ilk 3. seviye ev → 150 nüfus ve Saat Kulesi ("Kasaba tamamlandı", yeni hedefler açılır) → bir Çeşme 3. seviye → 200 nüfus ve mutluluk ≥ 70 → 10 tane 3. seviye ev → bir Pazar ve bir Okul 3. seviye → aynı anda 150 yemek ve 100 odun → kasada 1000 para → 300 nüfus → 3 konak → 1 köşk → 400 nüfus ve mutluluk ≥ 75 ("Kasaba efsanesi", oyun devam eder). Hedef kartı toplam hedef sayısını ve kaçıncı hedefte olunduğunu göstermez (oyuncu isteği): yalnızca sıradaki hedef ve sayılabiliyorsa ilerlemesi. Konak ve köşk hedefleri sonradan araya girdi: yün/kumaş/bal öncesi bir kayıt bütün eski hedefleri bitirmişse (`ESKI_HEDEF_SAYISI`) yine hepsi bitmiş sayılır (`save.ts`).
 
 ## Kontroller (masaüstü)
 

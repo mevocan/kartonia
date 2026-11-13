@@ -309,10 +309,57 @@ export function haritaUret(tohum: number): HaritaVeri {
   return { goller, tepeler, ormanlar, tasliklar, baslangicYolu, agacTohum };
 }
 
+/** Çayır: içi doğal çiçeklerle dolu küçük açıklık. Arılık yanında bal bonusu verir. */
+export interface Cayir {
+  x: number;
+  z: number;
+  r: number;
+  cicek: number;
+}
+
+/**
+ * Haritanın çayırları. Ayrı bir tohumla (ağaç tohumundan türetilir) en son yerleşir; böylece
+ * eski tohumların göl, orman ve taşlıkları değişmez. Merkeze ormanlardan daha yakın olabilir.
+ */
+export function cayirlariUret(h: HaritaVeri): Cayir[] {
+  const C = CAYIR_URETIM;
+  const rnd = makeRng((h.agacTohum ^ 0x5bd1e995) >>> 0);
+  const ara = (a: number, b: number): number => a + rnd() * (b - a);
+  const sinir = OYUN_YARI_GENISLIK - C.kenarPayi;
+  const hedef = Math.floor(ara(C.sayi[0], C.sayi[1] + 1));
+  const cayirlar: Cayir[] = [];
+  for (let deneme = 0; deneme < 800 && cayirlar.length < hedef; deneme++) {
+    const r = ara(C.yaricap[0], C.yaricap[1]);
+    const x = ara(-sinir, sinir);
+    const z = ara(-sinir, sinir);
+    if (Math.abs(x) + r > sinir || Math.abs(z) + r > sinir) continue;
+    if (Math.hypot(x, z) < C.merkezBosluk + r) continue;
+    if (polylineDist(x, z, h.baslangicYolu) < r + 2) continue;
+    if (h.goller.some((g) => Math.hypot(x - g.x, z - g.z) < r + g.r * 1.25 + 1.5)) continue;
+    if (h.ormanlar.some((o) => Math.hypot(x - o.x, z - o.z) < r + o.r + 1.5)) continue;
+    if (h.tasliklar.some((t) => Math.hypot(x - t.x, z - t.z) < r + t.r + 1.5)) continue;
+    if (cayirlar.some((c) => Math.hypot(x - c.x, z - c.z) < r + c.r + 8)) continue;
+    cayirlar.push({ x, z, r, cicek: Math.round(r * r * C.yogunluk) });
+  }
+  return cayirlar;
+}
+
+export const CAYIR_URETIM = {
+  sayi: [5, 7],
+  yaricap: [2.5, 3.8],
+  /** Merkezin bu yarıçapı çayırsız kalır. */
+  merkezBosluk: 9,
+  kenarPayi: 4,
+  /** Yarıçapın karesi başına çiçek. */
+  yogunluk: 1.3,
+} as const;
+
 /** Etkin harita: veri + türetilmiş alanlar. */
 export interface AktifHarita extends HaritaVeri {
   /** null: klasik harita. */
   tohum: number | null;
+  /** Çiçek çayırları (her haritada tohumdan türetilir). */
+  cayirlar: Cayir[];
   golKenarlari: Vec2[][];
   /** İç ve dış tepeler birlikte (heightAt sıcak yolu için önceden birleştirilmiş). */
   tumTepeler: Hill[];
@@ -322,6 +369,7 @@ function aktiflestir(h: HaritaVeri, tohum: number | null): AktifHarita {
   return {
     ...h,
     tohum,
+    cayirlar: cayirlariUret(h),
     golKenarlari: h.goller.map((g) => blobPolygon(g, 56)),
     tumTepeler: h.tepeler.concat(DIS_TEPELER),
   };

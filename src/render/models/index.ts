@@ -5,7 +5,8 @@ import { EV_DUVAR } from '../palette';
 import { modelMaterial, lineMaterial } from '../paper';
 import type { Baked, BakedModel, ModelBuilder } from './builder';
 import { buildHouse } from './house';
-import { buildTree, buildField, TREE_VARIANTS } from './nature';
+import { buildTree, buildField, buildFlower, TREE_VARIANTS, FLOWER_VARIANTS } from './nature';
+import { buildPark, buildBathhouse, buildTheater } from './leisure';
 import { buildMill, buildBakery, buildWoodcutter } from './production';
 import { buildFountain, buildFountainWater, buildMarket, buildSchool, buildClockTower, ANIT_ASAMA } from './civic';
 import { buildHospital, buildBarn, buildFishery, buildQuarry, buildCarpenter } from './extra';
@@ -38,14 +39,16 @@ export function variantFor(type: BuildingType, id: number): number {
   const h = Math.imul(id + 1, 2654435761) >>> 0;
   if (type === 'ev') return h % EV_DUVAR.length;
   if (type === 'agac') return h % TREE_VARIANTS;
+  if (type === 'cicek') return h % FLOWER_VARIANTS;
   return 0;
 }
 
-/** Ağaç boyu çeşitliliği (id'ye göre 0.8–1.3). */
+/** Ağaç boyu çeşitliliği (id'ye göre 0.8–1.3), çiçekte 0.85–1.15. */
 export function sizeFor(type: BuildingType, id: number): number {
-  if (type !== 'agac') return 1;
+  if (type !== 'agac' && type !== 'cicek') return 1;
   const h = Math.imul(id + 7, 2246822519) >>> 0;
-  return 0.8 + ((h >>> 8) % 1000) / 2000;
+  const k = ((h >>> 8) % 1000) / 1000;
+  return type === 'agac' ? 0.8 + k * 0.5 : 0.85 + k * 0.3;
 }
 
 function fromBuilder(b: ModelBuilder): ModelTemplate {
@@ -126,6 +129,18 @@ export function getTemplate(type: BuildingType, level: number, variant: number, 
       break;
     case 'arilik':
       tpl = fromBuilder(buildApiary());
+      break;
+    case 'cicek':
+      tpl = fromBuilder(buildFlower(variant));
+      break;
+    case 'park':
+      tpl = fromBuilder(buildPark());
+      break;
+    case 'hamam':
+      tpl = fromBuilder(buildBathhouse(lv));
+      break;
+    case 'tiyatro':
+      tpl = fromBuilder(buildTheater(lv));
       break;
   }
   cache.set(key, tpl);

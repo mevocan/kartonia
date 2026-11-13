@@ -1,5 +1,5 @@
 // Yollar: fırçayla çizilen çoklu çizgiler.
-import { BALANCE, BUILDINGS, ROADS } from '../data/buildings';
+import { BALANCE, BUILDINGS, ROADS, dogaTuru } from '../data/buildings';
 import type { Building, GameState, Road, RoadInfo, RoadPlan, RoadType, Vec2 } from './types';
 import { closestOnPolyline, polylineLength, resample } from './geometry';
 import { isLake, isLand } from './terrain';
@@ -105,7 +105,7 @@ export function placeRoad(s: GameState, tur: RoadType, ham: Vec2[]): Road | null
 /** Ağaç dışında bir bina yol yakınlığını yalnızca bu yoldan alıyorsa false. */
 export function isRoadRemovable(s: GameState, r: Road): boolean {
   for (const b of s.binalar) {
-    if (b.type === 'agac' || !isNearRoad(r, b)) continue;
+    if (dogaTuru(b.type) || !isNearRoad(r, b)) continue;
     if (!s.yollar.some((o) => o.id !== r.id && isNearRoad(o, b))) return false;
   }
   return true;

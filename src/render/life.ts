@@ -50,7 +50,7 @@ export const LIFE = {
   /** Gidilebilecek ev dışı hedefler. */
   hedefTurleri: [
     'firin', 'pazar', 'okul', 'degirmen', 'tarla', 'oduncu', 'saatKulesi', 'cesme',
-    'hastane', 'ambar', 'balikci', 'tasOcagi', 'marangoz', 'agil', 'dokumaci', 'arilik',
+    'hastane', 'ambar', 'balikci', 'tasOcagi', 'marangoz', 'agil', 'dokumaci', 'arilik', 'park', 'hamam', 'tiyatro',
   ] as BuildingType[],
   /** Figürlerin zeminden yüksekliği (yol şeridi kalınlığı). */
   zeminPay: 0.07,

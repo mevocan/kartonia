@@ -436,7 +436,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     renderer.removeBuilding(id);
     if (iade < 0) renderer.floatText(x, z, `−${-iade} 💰  +${odun} 🪵`, KIRMIZI);
     else if (odun > 0) renderer.floatText(x, z, `+${odun} 🪵`, ALTIN);
-    else renderer.floatText(x, z, `+${iade}`, ALTIN);
+    else if (iade > 0) renderer.floatText(x, z, `+${iade}`, ALTIN);
     if (secili?.kind === 'bina' && secili.id === id) secili = null;
     istekKontrol(); // ör. susuz ev yıkıldıysa istek kalkar
     bilgiYenile();

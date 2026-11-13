@@ -81,12 +81,12 @@ const KATEGORI_SIRASI: Kategori[] = ['yol', 'konut', 'uretim', 'hizmet'];
 
 const KATEGORILER: Record<Kategori, { ad: string; renk: string; ogeler: MenuKey[] }> = {
   yol: { ad: t('menu.yollar'), renk: '#e3c08f', ogeler: ['toprak', 'asfalt'] },
-  konut: { ad: t('menu.konut'), renk: '#f4b7a3', ogeler: ['ev', 'agac'] },
+  konut: { ad: t('menu.konut'), renk: '#f4b7a3', ogeler: ['ev', 'agac', 'cicek'] },
   uretim: {
     ad: t('menu.uretim'), renk: '#f2d272',
     ogeler: ['tarla', 'degirmen', 'firin', 'oduncu', 'balikci', 'tasOcagi', 'marangoz', 'agil', 'dokumaci', 'arilik', 'ambar'],
   },
-  hizmet: { ad: t('menu.hizmet'), renk: '#a9d5e8', ogeler: ['cesme', 'pazar', 'okul', 'hastane', 'saatKulesi'] },
+  hizmet: { ad: t('menu.hizmet'), renk: '#a9d5e8', ogeler: ['cesme', 'pazar', 'okul', 'hastane', 'park', 'hamam', 'tiyatro', 'saatKulesi'] },
 };
 const YIKIM_RENK = '#f0a399';
 /** Kilitli kartın altındaki "🔒 35 nüfus". */

@@ -1,4 +1,4 @@
-import { BALANCE, BUILDINGS } from '../data/buildings';
+import { BALANCE, BUILDINGS, dogaTuru } from '../data/buildings';
 import type { Building, BuildingType, GameState, Good, PlaceCheck, PlaceFailReason } from './types';
 import { circleSamples, circlesOverlap } from './geometry';
 import { heightAt, isLake, isLand, lakeDistance } from './terrain';
@@ -43,7 +43,7 @@ export function checkSite(s: GameState, t: BuildingType, x: number, z: number): 
     if (g < 0) return 'yol';
     enYakin = Math.min(enYakin, g);
   }
-  if (t !== 'agac' && enYakin > BALANCE.yolYakinlik) return 'yolYok';
+  if (!dogaTuru(t) && enYakin > BALANCE.yolYakinlik) return 'yolYok';
   return null;
 }
 
@@ -61,7 +61,7 @@ export function placeBuilding(s: GameState, t: BuildingType, x: number, z: numbe
   const b: Building = { id: s.sonrakiId++, type: t, x, z, rot, seviye: 1, iyiGun: 0, kotuGun: 0 };
   if (BUILDINGS[t].anit) b.insaat = BALANCE.anit.asamalar.length; // iskeleyle başlar
   if (t === 'agac' && s.istek?.tur === 'agaclandirma') s.istek.ilerleme++; // ağaçlandırma isteği
-  if (t !== 'agac') b.baglanti = linkFor(s, x, z);
+  if (!dogaTuru(t)) b.baglanti = linkFor(s, x, z);
   s.binalar.push(b);
   return b;
 }
@@ -145,6 +145,12 @@ export function demolishRefund(b: Building): number {
   return Math.floor(harcanan * BALANCE.yikimIadeOrani);
 }
 
+/** Doğal parçayı kaldırmanın bedeli: orman ağacı para ister ve odun verir, çayır çiçeği bedavadır. */
+export function naturalCut(b: Building): { maliyet: number; odun: number } {
+  if (b.type !== 'agac') return { maliyet: 0, odun: 0 };
+  return { maliyet: BALANCE.dogalAgacKesimMaliyeti, odun: BALANCE.dogalAgacKesimOdun };
+}
+
 /**
  * İade miktarını döndürür. Doğal ağaç: kesim parası düşülür, odun eklenir, −kesimMaliyeti döner.
  * Bina yoksa, oyun bittiyse ya da kesime para yetmiyorsa null.
@@ -155,11 +161,11 @@ export function demolish(s: GameState, id: number): number | null {
   if (i < 0) return null;
   const b = s.binalar[i];
   if (b.dogal) {
-    const m = BALANCE.dogalAgacKesimMaliyeti;
+    const { maliyet: m, odun } = naturalCut(b);
     if (s.para < m) return null;
     s.binalar.splice(i, 1);
     s.para -= m;
-    s.stok.odun = Math.max(s.stok.odun, Math.min(stockLimit(s), s.stok.odun + BALANCE.dogalAgacKesimOdun));
+    s.stok.odun = Math.max(s.stok.odun, Math.min(stockLimit(s), s.stok.odun + odun));
     return -m;
   }
   const iade = demolishRefund(b);

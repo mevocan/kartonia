@@ -2,6 +2,7 @@ import type { GameState, Good } from './types';
 import { emptyGoods } from './economy';
 import { haritayiAyarla } from '../data/map';
 import { ESKI_HEDEF_SAYISI, GOALS } from './goals';
+import { fillMeadows } from './doga';
 
 export const SAVE_SURUM = 2; // 1: yolsuz eski sürüm, reddedilir
 
@@ -54,5 +55,7 @@ export function deserialize(json: string): GameState {
   }
   // Kayıttaki oyunun haritası etkin harita olur (tohumsuz eski kayıt: klasik harita).
   haritayiAyarla(s.haritaTohum);
+  // Çiçek öncesi kayıt: haritanın çayırları boş yerlere ekilir (binalara, yollara dokunmaz).
+  if (!s.cayirlar) fillMeadows(s);
   return s;
 }

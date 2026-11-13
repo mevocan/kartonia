@@ -115,6 +115,8 @@
 
   "bilgi.ormanAgaci": "Forest tree",
   "bilgi.ormanAgaciMetin": "A natural forest tree. Gives wood when cut down.",
+  "bilgi.kirCicegi": "Wildflower",
+  "bilgi.kirCicegiMetin": "A natural meadow flower. Bees love it; an Apiary built next to it makes more honey.",
   "bilgi.seviyeAlt": "Level {n} / {max}",
   "bilgi.nufus": "Population",
   "bilgi.mutluluk": "Happiness",
@@ -148,6 +150,7 @@
   "bilgi.sonrakiSeviye": "Next level: range {etki}, upkeep {gider} /day",
   "bilgi.tasYetmiyor": "Not enough stone: build a Quarry.",
   "bilgi.agacKes": "Cut tree (−{para} coins, +{odun} wood)",
+  "bilgi.cicekSok": "Pull up flower (free)",
   "bilgi.yik": "Demolish (+{iade})",
   "bilgi.uzunluk": "Length",
   "bilgi.kenardakiEvler": "Houses alongside",
@@ -324,6 +327,8 @@
   "bina.ev.aciklama": "Residents live here and pay taxes. Grows when its needs are met.",
   "bina.agac.ad": "Tree",
   "bina.agac.aciklama": "Makes nearby houses happy. Woodcutters need trees.",
+  "bina.cicek.ad": "Flower",
+  "bina.cicek.aciklama": "Makes nearby houses a little happier. Bees love flowers: an Apiary next to them makes more honey.",
   "bina.tarla.ad": "Field",
   "bina.tarla.aciklama": "Grows wheat.",
   "bina.cesme.ad": "Fountain",
@@ -342,6 +347,12 @@
   "bina.saatKulesi.aciklama": "The town landmark. Starts as scaffolding and rises in four stages as you send materials; once finished it spreads happiness over a wide area.",
   "bina.hastane.ad": "Hospital",
   "bina.hastane.aciklama": "Brings healthcare and happiness to houses in its range.",
+  "bina.park.ad": "Park",
+  "bina.park.aciklama": "Lawns, a pond and benches. Makes houses in range much happier.",
+  "bina.hamam.ad": "Bathhouse",
+  "bina.hamam.aciklama": "Gives houses in range a bathhouse. Mansions need one.",
+  "bina.tiyatro.ad": "Theatre",
+  "bina.tiyatro.aciklama": "Gives houses in range culture and entertainment. Manors need a theatre.",
   "bina.ambar.ad": "Warehouse",
   "bina.ambar.aciklama": "Raises the storage limit of every good by 100.",
   "bina.balikci.ad": "Fishery",
@@ -387,6 +398,8 @@
   "ihtiyac.saglik": "Health",
   "ihtiyac.kumas": "Cloth",
   "ihtiyac.bal": "Honey",
+  "ihtiyac.hamam": "Bathhouse",
+  "ihtiyac.kultur": "Theatre",
 
   "mevsim.ilkbahar": "Spring",
   "mevsim.yaz": "Summer",
@@ -408,5 +421,5 @@
   "komsuluk.dokumaci.etiket": "fresh wool",
   "komsuluk.dokumaci.sart": "a Sheepfold within 6 units",
   "komsuluk.arilik.etiket": "blossoms",
-  "komsuluk.arilik.sart": "a tree within 4 units"
+  "komsuluk.arilik.sart": "a flower within 4 units"
 }

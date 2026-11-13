@@ -55,13 +55,11 @@ export function createGoalCard(root: HTMLElement): GoalCard {
 
   return {
     update(s) {
-      const tamam = Math.min(s.hedef, GOALS.length);
-      ilerleme.textContent = `${t('hedef.baslik')} ${Math.min(tamam + 1, GOALS.length)} / ${GOALS.length}  ` +
-        '●'.repeat(tamam) + '○'.repeat(GOALS.length - tamam);
+      // Toplam hedef sayısı bilerek gösterilmez: oyuncu sıradakini görür, kaç tane kaldığını değil.
+      ilerleme.textContent = t('hedef.baslik');
       if (s.hedef >= GOALS.length) {
         baslik.textContent = t('hedef.efsane');
         aciklama.textContent = t('hedef.efsaneMetin');
-        ilerleme.textContent = '●'.repeat(GOALS.length);
         return;
       }
       const g = hedefMetni(s.hedef);

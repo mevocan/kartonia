@@ -64,8 +64,9 @@ export function createInfoPanel(
       }
       const d = BUILDINGS[info.type];
       const ev = info.type === 'ev';
+      const cicek = info.type === 'cicek';
       const tablo = info.dogal
-        ? bas(t('bilgi.ormanAgaci'), t('bilgi.ormanAgaciMetin'))
+        ? cicek ? bas(t('bilgi.kirCicegi'), t('bilgi.kirCicegiMetin')) : bas(t('bilgi.ormanAgaci'), t('bilgi.ormanAgaciMetin'))
         : bas(
           ev ? evSeviyeAd(info.seviye) || binaAd(info.type) : binaAd(info.type),
           ev ? t('bilgi.seviyeAlt', { n: info.seviye, max: HOUSE_LEVELS.length }) : binaAciklama(info.type),
@@ -142,7 +143,7 @@ export function createInfoPanel(
       }
 
       const yik = info.dogal
-        ? el('button', 'dugme tehlike', t('bilgi.agacKes', { para: info.kesimMaliyeti ?? 0, odun: info.kesimOdun ?? 0 }))
+        ? el('button', 'dugme tehlike', cicek ? t('bilgi.cicekSok') : t('bilgi.agacKes', { para: info.kesimMaliyeti ?? 0, odun: info.kesimOdun ?? 0 }))
         : el('button', 'dugme tehlike', t('bilgi.yik', { iade: info.yikimIadesi }));
       yik.addEventListener('click', () => onDemolish(info.id));
       box.appendChild(yik);

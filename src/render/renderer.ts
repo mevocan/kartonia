@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { BuildingType, RoadType, Vec2 } from '../logic/types';
-import { BUILDINGS, BUILDING_ORDER, HOUSE_LEVELS } from '../data/buildings';
+import { BUILDINGS, BUILDING_ORDER, HOUSE_LEVELS, dogaTuru } from '../data/buildings';
 import { heightAt } from '../logic/terrain';
 import { DIS_SINIR } from '../data/map';
 import type { GameRenderer } from './api';
@@ -16,7 +16,7 @@ import { Tweens, Confetti, FloatLabels, ease } from './anim';
 import { createFold, type FoldRun, type FoldOpts } from './fold';
 import { buildRoad, revealRoad, roadPointAt, type RoadGeo } from './roads';
 import { getTemplate, instantiate, variantFor, sizeFor, forEachPart, disposeTemplates, type ModelTemplate } from './models/index';
-import { TREE_VARIANTS } from './models/nature';
+import { TREE_VARIANTS, FLOWER_VARIANTS } from './models/nature';
 import { ANIT_ASAMA, ISKELE_GRUP } from './models/civic';
 import type { PieceBaked } from './models/builder';
 import { TownLife, type LifeBuilding, type LifeRoad } from './life';
@@ -192,7 +192,12 @@ function wallColor(type: BuildingType, variant: number): string {
     case 'dokumaci':
       return PALETTE.lavanta;
     case 'arilik':
+    case 'park':
       return PALETTE.cimenAcik;
+    case 'hamam':
+      return PALETTE.tas;
+    case 'tiyatro':
+      return PALETTE.seftali;
     default:
       return PALETTE.mukavva;
   }
@@ -260,21 +265,24 @@ export function createRenderer(container: HTMLElement): GameRenderer {
 
   // Bütün şablonları baştan üret (oyun sırasında takılma olmasın).
   for (const t of BUILDING_ORDER) {
-    const vars = t === 'ev' ? EV_DUVAR.length : t === 'agac' ? TREE_VARIANTS : 1;
+    const vars = t === 'ev' ? EV_DUVAR.length : t === 'agac' ? TREE_VARIANTS : t === 'cicek' ? FLOWER_VARIANTS : 1;
     const levels = t === 'ev' ? HOUSE_LEVELS.length : BUILDINGS[t].yukseltilebilir ? 3 : 1;
     for (let l = 1; l <= levels; l++) for (let v = 0; v < vars; v++) getTemplate(t, l, v);
   }
   for (let a = 0; a < ANIT_ASAMA; a++) getTemplate('saatKulesi', 1, 0, a);
 
-  // ---------- Ağaç havuzları (çeşit başına tek InstancedMesh) ----------
+  // ---------- Doğa havuzları (ağaç ve çiçek; tür + çeşit başına tek InstancedMesh) ----------
+  /** Havuz anahtarı: ağaç çeşitleri 0.., çiçek çeşitleri CICEK_HAVUZ + çeşit. */
+  const CICEK_HAVUZ = 100;
+  const poolKey = (e: Entry): number => (e.type === 'cicek' ? CICEK_HAVUZ + e.variant : e.variant);
   const pools = new Map<number, TreePool>();
   const slotOf = new Map<number, { pool: TreePool; slot: number }>();
   const mtx = new THREE.Matrix4();
 
-  function poolFor(variant: number, need: number): TreePool {
-    let p = pools.get(variant);
+  function poolFor(key: number, need: number): TreePool {
+    let p = pools.get(key);
     if (p && p.mesh.instanceMatrix.count >= need) return p;
-    const geo = getTemplate('agac', 1, variant).body.geo;
+    const geo = (key >= CICEK_HAVUZ ? getTemplate('cicek', 1, key - CICEK_HAVUZ) : getTemplate('agac', 1, key)).body.geo;
     const cap = Math.max(64, need * 2);
     const mesh = new THREE.InstancedMesh(geo, treeMaterial(), cap);
     mesh.castShadow = true;
@@ -290,7 +298,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
       p.mesh = mesh;
     } else {
       p = { mesh, geo, ids: [], dirty: true };
-      pools.set(variant, p);
+      pools.set(key, p);
     }
     mesh.userData.pool = p;
     world.root.add(mesh);
@@ -300,7 +308,8 @@ export function createRenderer(container: HTMLElement): GameRenderer {
 
   function poolAdd(e: Entry): void {
     if (e.pooled) return;
-    const p = poolFor(e.variant, (pools.get(e.variant)?.ids.length ?? 0) + 1);
+    const k = poolKey(e);
+    const p = poolFor(k, (pools.get(k)?.ids.length ?? 0) + 1);
     const slot = p.ids.length;
     p.ids.push(e.id);
     e.root.updateMatrixWorld(true);
@@ -370,7 +379,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
     if (lifeBuildingsDirty) {
       const list: LifeBuilding[] = [];
       for (const e of entries.values()) {
-        if (e.type === 'agac' || (e.fold && e.fold.kind !== 'asama')) continue;
+        if (dogaTuru(e.type) || (e.fold && e.fold.kind !== 'asama')) continue;
         list.push({ id: e.id, type: e.type, x: e.x, z: e.z, rot: e.rot, seviye: e.level, kapi: doorOf(e), baglanti: e.link });
       }
       life.setBuildings(list);
@@ -422,7 +431,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
 
   function makePath(e: Entry, animate: boolean): void {
     removePath(e, false);
-    if (!e.link || e.type === 'agac') return;
+    if (!e.link || dogaTuru(e.type)) return;
     const rg = buildRoad('patika', pathPoints(e, e.link), e.id);
     if (!rg) return;
     const mesh = new THREE.Mesh(rg.geo, roadMaterial('base'));
@@ -492,7 +501,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
     e: Entry, tpl: ModelTemplate, reverse: boolean, speed: number, done: () => void, startT = 0,
     kind: FoldPlay['kind'] = reverse ? 'yik' : 'kur', opts?: FoldOpts,
   ): FoldPlay {
-    const run = createFold(tpl, e.type === 'agac' ? treeMaterial() : undefined, opts);
+    const run = createFold(tpl, dogaTuru(e.type) ? treeMaterial() : undefined, opts);
     e.holder.add(run.obj);
     const fp: FoldPlay = { run, t: startT, speed, reverse, done, kind };
     run.set(reverse ? run.dur - startT : startT);
@@ -508,7 +517,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
       // Patika en son, kapıdan yola doğru serilir.
       if (!e.path) makePath(e, true);
       lifeBuildingsDirty = true;
-      if (e.type === 'agac') poolAdd(e);
+      if (dogaTuru(e.type)) poolAdd(e);
       else e.model.visible = true;
       applyLook(e.model, lookFor(e));
       const p = e.root.position;
@@ -667,7 +676,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
       const variant = variantFor(type, id);
       const tpl = getTemplate(type, level, variant);
       const taban = BUILDINGS[type].taban;
-      const st = type === 'agac' ? { y: heightAt(x, z), depth: 0 } : seat(x, z, taban * 0.85);
+      const st = dogaTuru(type) ? { y: heightAt(x, z), depth: 0 } : seat(x, z, taban * 0.85);
       const y = st.y;
       const root = new THREE.Group();
       root.position.set(x, y, z);
@@ -675,12 +684,12 @@ export function createRenderer(container: HTMLElement): GameRenderer {
       root.scale.setScalar(sizeFor(type, id));
       const holder = new THREE.Group();
       // Ağaçlar instanced havuzda çizilir; model boş bir yer tutucudur.
-      const model = type === 'agac' ? new THREE.Group() : instantiate(tpl);
+      const model = dogaTuru(type) ? new THREE.Group() : instantiate(tpl);
       holder.add(model);
       root.add(holder);
       // Temel: ayak izinden biraz küçük, duvar renginde; alçak taraftaki boşluğu kapatır (daire/kaide yok).
       let found: THREE.Mesh | null = null;
-      if (type !== 'agac' && st.depth > 0.1) {
+      if (!dogaTuru(type) && st.depth > 0.1) {
         const bb = tpl.body.geo.boundingBox ?? new THREE.Box3(new THREE.Vector3(-taban * 0.6, 0, -taban * 0.6), new THREE.Vector3(taban * 0.6, 1, taban * 0.6));
         found = new THREE.Mesh(foundGeo, paperMaterial(wallColor(type, variant)));
         found.scale.set((bb.max.x - bb.min.x) * 0.9, st.depth, (bb.max.z - bb.min.z) * 0.9);
@@ -706,7 +715,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
       applyLook(model, lookFor(e));
       pickDirty = true;
       if (!anim) {
-        if (type === 'agac') poolAdd(e);
+        if (dogaTuru(type)) poolAdd(e);
         else {
           makePath(e, false);
           lifeBuildingsDirty = true;
@@ -873,14 +882,14 @@ export function createRenderer(container: HTMLElement): GameRenderer {
         ghostRoot.add(ghostModel);
         ghostSpinners = findSpinners(ghostModel);
         ghostType = type;
-        applyLook(ghostModel, valid ? 'ghost' : 'ghostBad', type === 'agac');
+        applyLook(ghostModel, valid ? 'ghost' : 'ghostBad', dogaTuru(type));
         ghostValid = valid;
       } else if (valid !== ghostValid) {
-        applyLook(ghostModel, valid ? 'ghost' : 'ghostBad', type === 'agac');
+        applyLook(ghostModel, valid ? 'ghost' : 'ghostBad', dogaTuru(type));
         ghostValid = valid;
       }
       ghostRoot.visible = true;
-      ghostRoot.position.set(x, (type === 'agac' ? heightAt(x, z) : seat(x, z, BUILDINGS[type].taban * 0.85).y) + 0.03, z);
+      ghostRoot.position.set(x, (dogaTuru(type) ? heightAt(x, z) : seat(x, z, BUILDINGS[type].taban * 0.85).y) + 0.03, z);
       ghostRoot.rotation.y = rot;
     },
 
@@ -1152,14 +1161,14 @@ export function createRenderer(container: HTMLElement): GameRenderer {
         for (const s of ghostSpinners) s.rotation.z += 0.9 * d;
         const m = modelMaterial(ghostValid ? 'ghost' : 'ghostBad');
         m.opacity = (ghostValid ? 0.5 : 0.42) + Math.sin(time * 4) * 0.08;
-        if (ghostType === 'agac') treeGhostMaterial(ghostValid ? 'ghost' : 'ghostBad').opacity = m.opacity;
+        if (ghostType && dogaTuru(ghostType)) treeGhostMaterial(ghostValid ? 'ghost' : 'ghostBad').opacity = m.opacity;
       }
       gl.render(world.scene, cam.camera);
     },
 
     setBuildingLink(id, baglanti) {
       const e = entries.get(id);
-      if (!e || e.type === 'agac') return;
+      if (!e || dogaTuru(e.type)) return;
       const same = (e.link && baglanti && Math.abs(e.link.x - baglanti.x) < 1e-3 && Math.abs(e.link.z - baglanti.z) < 1e-3) || (!e.link && !baglanti);
       if (same) return;
       e.link = baglanti ? { x: baglanti.x, z: baglanti.z } : null;

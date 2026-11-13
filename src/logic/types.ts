@@ -19,13 +19,17 @@ export type BuildingType =
   | 'marangoz'
   | 'agil'
   | 'dokumaci'
-  | 'arilik';
+  | 'arilik'
+  | 'cicek'
+  | 'park'
+  | 'hamam'
+  | 'tiyatro';
 
 /** 'yemek' ortak yemek stoğudur: fırın, balıkçı (ve ileride başka yemek binaları) farklı miktarlarda üretir. */
 export type Good = 'bugday' | 'un' | 'yemek' | 'odun' | 'tas' | 'mobilya' | 'yun' | 'kumas' | 'bal';
 
 /** 'yemek' ihtiyacı: bir yemek satış yerinin (fırın, pazar) etki alanında olmak + stokta yeterli yemek. */
-export type Need = 'su' | 'yemek' | 'odun' | 'pazar' | 'okul' | 'mobilya' | 'saglik' | 'kumas' | 'bal';
+export type Need = 'su' | 'yemek' | 'odun' | 'pazar' | 'okul' | 'mobilya' | 'saglik' | 'kumas' | 'bal' | 'hamam' | 'kultur';
 
 export interface BuildingDef {
   type: BuildingType;
@@ -150,7 +154,7 @@ export interface RoadInfo {
 export interface Building {
   id: number;
   type: BuildingType;
-  /** Haritayla gelen orman ağacı. Yıkmak (kesmek) para ister, odun verir. */
+  /** Haritayla gelen orman ağacı ya da çayır çiçeği. Ağacı kesmek para ister, odun verir; çiçek bedavadır. */
   dogal?: boolean;
   /** Ağaç dışı binalar: kapıdan yola giden patikanın yol üzerindeki ucu (en yakın yol noktası) ve o yolun id'si. */
   baglanti?: { x: number; z: number; yol: number } | null;
@@ -192,6 +196,8 @@ export interface GameState {
   toplamYemek: number;
   /** Rastgele haritanın tohumu. Yoksa klasik (elle yapılmış) harita. */
   haritaTohum?: number;
+  /** Haritanın çayırlarına doğal çiçekler ekildi (çiçek öncesi kayıtlarda yüklenirken ekilir). */
+  cayirlar?: boolean;
   /** Gezgin tüccar: bu ziyarette kullanılan alım + satım birimi. Gün sonunda sıfırlanır. */
   tuccarKota?: number;
   /** Etkin sakin isteği (en fazla bir). */

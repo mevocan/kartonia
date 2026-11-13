@@ -1,4 +1,4 @@
-import { BALANCE, BUILDING_ORDER, BUILDINGS, HOUSE_LEVELS, ROADS } from '../data/buildings';
+import { BALANCE, BUILDING_ORDER, BUILDINGS, HOUSE_LEVELS, ROADS, dogaTuru } from '../data/buildings';
 import type {
   Building, BuildingType, DayReport, GameState, Good, HouseLevelDef, Need, NeedStatus,
 } from './types';
@@ -129,7 +129,7 @@ export function houseHappiness(s: GameState, h: Building, st: NeedStatus[]): num
   for (const b of s.binalar) {
     if (b.type === 'ev' || !inRange(b, h)) continue;
     const m = ayar(s, `mutluluk.${b.type}`);
-    if (b.type === 'agac') agac += m;
+    if (dogaTuru(b.type)) agac += m; // ağaç ve çiçek ortak sınırı paylaşır
     else toplam += m;
   }
   toplam += Math.min(agac, ayar(s, 'agacMutlulukSinir'));

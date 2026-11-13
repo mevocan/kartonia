@@ -3,8 +3,9 @@ import { BALANCE, BUILDINGS } from '../data/buildings';
 import { HARITA, OYUN_YARI_GENISLIK, haritayiAyarla, makeRng } from '../data/map';
 import type { BuildingInfo, DayReport, GameState } from './types';
 import {
-  buildingUpkeep, checkSite, demolishRefund, effectRadius, monumentStage, nextMonumentCost, upgradeCost, upgradeStone,
+  buildingUpkeep, checkSite, demolishRefund, effectRadius, monumentStage, naturalCut, nextMonumentCost, upgradeCost, upgradeStone,
 } from './placement';
+import { fillMeadows } from './doga';
 import { resample } from './geometry';
 import { bestRoadNear } from './roads';
 import { adjacencyBonus } from './adjacency';
@@ -85,6 +86,7 @@ export function createGame(haritaTohum?: number): GameState {
   if (haritaTohum !== undefined) s.haritaTohum = haritaTohum;
   s.yollar.push({ id: s.sonrakiId++, tur: 'toprak', noktalar: resample(HARITA.baslangicYolu, BALANCE.yolOrnekAraligi) });
   fillForests(s);
+  fillMeadows(s);
   return s;
 }
 
@@ -117,9 +119,10 @@ export function getBuildingInfo(s: GameState, id: number): BuildingInfo | null {
     }
   }
   if (b.dogal) {
+    const k = naturalCut(b);
     info.dogal = true;
-    info.kesimMaliyeti = BALANCE.dogalAgacKesimMaliyeti;
-    info.kesimOdun = BALANCE.dogalAgacKesimOdun;
+    info.kesimMaliyeti = k.maliyet;
+    info.kesimOdun = k.odun;
   }
   if (BUILDINGS[b.type].komsuluk) info.komsuluk = adjacencyBonus(s, b.type, b.x, b.z, b.id).durumlar;
   if (b.type === 'ev') {

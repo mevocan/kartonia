@@ -115,6 +115,8 @@
 
   "bilgi.ormanAgaci": "Orman ağacı",
   "bilgi.ormanAgaciMetin": "Ormanın doğal ağacı. Kesilirse odun verir.",
+  "bilgi.kirCicegi": "Kır çiçeği",
+  "bilgi.kirCicegiMetin": "Çayırın doğal çiçeği. Arılar sever; yanına kurulan Arılık daha çok bal yapar.",
   "bilgi.seviyeAlt": "Seviye {n} / {max}",
   "bilgi.nufus": "Nüfus",
   "bilgi.mutluluk": "Mutluluk",
@@ -148,6 +150,7 @@
   "bilgi.sonrakiSeviye": "Sonraki seviye: yarıçap {etki}, gider {gider} /gün",
   "bilgi.tasYetmiyor": "Taş yetmiyor: taş ocağı kur.",
   "bilgi.agacKes": "Ağacı kes (−{para} para, +{odun} odun)",
+  "bilgi.cicekSok": "Çiçeği sök (bedava)",
   "bilgi.yik": "Yık (+{iade})",
   "bilgi.uzunluk": "Uzunluk",
   "bilgi.kenardakiEvler": "Kenardaki evlere",
@@ -324,6 +327,8 @@
   "bina.ev.aciklama": "Sakinler yaşar ve vergi öder. İhtiyaçları karşılanınca büyür.",
   "bina.agac.ad": "Ağaç",
   "bina.agac.aciklama": "Yakındaki evleri mutlu eder. Oduncu ağaç ister.",
+  "bina.cicek.ad": "Çiçek",
+  "bina.cicek.aciklama": "Yakındaki evleri biraz mutlu eder. Arılar çiçek sever: yanındaki Arılık daha çok bal yapar.",
   "bina.tarla.ad": "Tarla",
   "bina.tarla.aciklama": "Buğday üretir.",
   "bina.cesme.ad": "Çeşme",
@@ -342,6 +347,12 @@
   "bina.saatKulesi.aciklama": "Kasabanın simgesi. İskeleyle başlar, malzeme gönderildikçe dört aşamada yükselir; bitince geniş bir alana mutluluk yayar.",
   "bina.hastane.ad": "Hastane",
   "bina.hastane.aciklama": "Etki alanındaki evlere sağlık hizmeti ve mutluluk verir.",
+  "bina.park.ad": "Park",
+  "bina.park.aciklama": "Çimen, havuz ve banklar. Etki alanındaki evleri epey mutlu eder.",
+  "bina.hamam.ad": "Hamam",
+  "bina.hamam.aciklama": "Etki alanındaki evlere hamam sağlar. Konaklar hamam ister.",
+  "bina.tiyatro.ad": "Tiyatro",
+  "bina.tiyatro.aciklama": "Etki alanındaki evlere kültür ve eğlence verir. Köşkler tiyatro ister.",
   "bina.ambar.ad": "Ambar",
   "bina.ambar.aciklama": "Her malın stok sınırını 100 artırır.",
   "bina.balikci.ad": "Balıkçı",
@@ -387,6 +398,8 @@
   "ihtiyac.saglik": "Sağlık",
   "ihtiyac.kumas": "Kumaş",
   "ihtiyac.bal": "Bal",
+  "ihtiyac.hamam": "Hamam",
+  "ihtiyac.kultur": "Tiyatro",
 
   "mevsim.ilkbahar": "İlkbahar",
   "mevsim.yaz": "Yaz",
@@ -408,5 +421,5 @@
   "komsuluk.dokumaci.etiket": "taze yün",
   "komsuluk.dokumaci.sart": "6 birim içinde Ağıl",
   "komsuluk.arilik.etiket": "çiçek",
-  "komsuluk.arilik.sart": "4 birim içinde ağaç"
+  "komsuluk.arilik.sart": "4 birim içinde çiçek"
 }

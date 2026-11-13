@@ -57,12 +57,14 @@ describe('hayvancılık zinciri', () => {
 });
 
 describe('arılık', () => {
-  it('bal üretir; ağaç yakınındaysa +%25; kışın üretmez', () => {
+  it('bal üretir; çiçek yakınındaysa +%25 (ağaç saymaz); kışın üretmez', () => {
     const s = blank();
     s.nufus = 100;
     const a = add(s, 'arilik', 20, 20);
     expect(uret(s).bal).toBeCloseTo(3);
     add(s, 'agac', 22, 20);
+    expect(uret(s).bal).toBeCloseTo(3);
+    add(s, 'cicek', 20, 23);
     expect(adjacencyBonus(s, 'arilik', a.x, a.z, a.id).oran).toBeCloseTo(0.25);
     expect(uret(s).bal).toBeCloseTo(3.75);
     s.gun = 16; // kış
@@ -70,7 +72,7 @@ describe('arılık', () => {
   });
 });
 
-/** Ev (0, 0) ve 3. seviye için bütün hizmetler: su, yemek satışı, pazar, okul, sağlık. */
+/** Ev (0, 0) ve bütün hizmetler: su, yemek satışı, pazar, okul, sağlık, hamam, tiyatro. */
 function hizmetliEv(seviye: number): { s: GameState; h: Building } {
   const s = blank();
   s.nufus = 200;
@@ -79,6 +81,8 @@ function hizmetliEv(seviye: number): { s: GameState; h: Building } {
   add(s, 'pazar', -4, 0);
   add(s, 'okul', 0, 5);
   add(s, 'hastane', 0, -5);
+  add(s, 'hamam', -4, 4.5);
+  add(s, 'tiyatro', 4, -4.5);
   s.stok.yemek = 100;
   s.stok.odun = 100;
   s.stok.mobilya = 100;
@@ -86,10 +90,12 @@ function hizmetliEv(seviye: number): { s: GameState; h: Building } {
 }
 
 describe('4. ve 5. ev seviyesi', () => {
-  it('seviye tanımları: konak 14 kişi + kumaş, köşk 18 kişi + bal; hepsi bir alt seviyenin ihtiyaçlarını içerir', () => {
+  it('seviye tanımları: konak 14 kişi + kumaş + hamam, köşk 18 kişi + bal + tiyatro; hepsi bir alt seviyenin ihtiyaçlarını içerir', () => {
     expect(HOUSE_LEVELS.map((l) => l.nufus)).toEqual([3, 6, 10, 14, 18]);
     expect(HOUSE_LEVELS[3].ihtiyaclar).toContain('kumas');
+    expect(HOUSE_LEVELS[3].ihtiyaclar).toContain('hamam');
     expect(HOUSE_LEVELS[4].ihtiyaclar).toContain('bal');
+    expect(HOUSE_LEVELS[4].ihtiyaclar).toContain('kultur');
     for (let i = 1; i < HOUSE_LEVELS.length; i++) {
       for (const n of HOUSE_LEVELS[i - 1].ihtiyaclar) expect(HOUSE_LEVELS[i].ihtiyaclar).toContain(n);
     }

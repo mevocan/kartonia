@@ -11,6 +11,10 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     type: 'agac', ad: 'Ağaç', aciklama: 'Yakındaki evleri mutlu eder. Oduncu ağaç ister.',
     maliyet: 5, gider: 0, taban: 0.5, etki: 4, mutluluk: 3, isci: 0, acilmaNufus: 0,
   },
+  cicek: {
+    type: 'cicek', ad: 'Çiçek', aciklama: 'Yakındaki evleri biraz mutlu eder. Arılar çiçek sever.',
+    maliyet: 3, gider: 0, taban: 0.4, etki: 3, mutluluk: 2, isci: 0, acilmaNufus: 0,
+  },
   tarla: {
     type: 'tarla', ad: 'Tarla', aciklama: 'Buğday üretir.',
     maliyet: 25, gider: 1, taban: 2.2, etki: 0, mutluluk: 0, isci: 2, acilmaNufus: 0,
@@ -89,21 +93,38 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     type: 'arilik', ad: 'Arılık', aciklama: 'Kovanlardan bal toplar; kışın arılar uyur. Köşkler bal ister.',
     maliyet: 40, gider: 1, taban: 1.0, etki: 0, mutluluk: 0, isci: 1, acilmaNufus: 100,
     uretim: { girdi: {}, cikti: { bal: 3 } }, kisinUretmez: true,
-    komsuluk: [{ kaynak: 'agac', mesafe: 4, oran: 0.25, etiket: 'çiçek', sart: '4 birim içinde ağaç' }],
+    komsuluk: [{ kaynak: 'cicek', mesafe: 4, oran: 0.25, etiket: 'çiçek', sart: '4 birim içinde çiçek' }],
+  },
+  park: {
+    type: 'park', ad: 'Park', aciklama: 'Çimen, havuz ve banklar. Etki alanındaki evleri epey mutlu eder.',
+    maliyet: 35, gider: 3, taban: 1.3, etki: 7, mutluluk: 6, isci: 1, acilmaNufus: 25,
+  },
+  hamam: {
+    type: 'hamam', ad: 'Hamam', aciklama: 'Etki alanındaki evlere hamam sağlar. Konaklar hamam ister.',
+    maliyet: 110, gider: 12, taban: 1.6, etki: 9, mutluluk: 3, isci: 3, acilmaNufus: 90, saglar: 'hamam', yukseltilebilir: true,
+  },
+  tiyatro: {
+    type: 'tiyatro', ad: 'Tiyatro', aciklama: 'Etki alanındaki evlere kültür ve eğlence verir. Köşkler tiyatro ister.',
+    maliyet: 150, gider: 16, taban: 1.8, etki: 10, mutluluk: 5, isci: 4, acilmaNufus: 140, saglar: 'kultur', yukseltilebilir: true,
   },
 };
 
+/** Yol istemeyen, kapısı ve patikası olmayan doğa parçaları (ağaç, çiçek). */
+export function dogaTuru(t: BuildingType): boolean {
+  return t === 'agac' || t === 'cicek';
+}
+
 export const BUILDING_ORDER: BuildingType[] = [
-  'ev', 'agac', 'tarla', 'cesme', 'degirmen', 'firin', 'oduncu', 'balikci', 'tasOcagi', 'marangoz', 'agil', 'dokumaci',
-  'arilik', 'ambar', 'pazar', 'okul', 'hastane', 'saatKulesi',
+  'ev', 'agac', 'cicek', 'tarla', 'cesme', 'degirmen', 'firin', 'oduncu', 'balikci', 'tasOcagi', 'marangoz', 'agil', 'dokumaci',
+  'arilik', 'ambar', 'pazar', 'okul', 'hastane', 'park', 'hamam', 'tiyatro', 'saatKulesi',
 ];
 
 export const HOUSE_LEVELS: HouseLevelDef[] = [
   { seviye: 1, nufus: 3, ihtiyaclar: [] },
   { seviye: 2, nufus: 6, ihtiyaclar: ['su', 'yemek'] },
   { seviye: 3, nufus: 10, ihtiyaclar: ['su', 'yemek', 'odun', 'pazar', 'okul', 'mobilya', 'saglik'] },
-  { seviye: 4, nufus: 14, ihtiyaclar: ['su', 'yemek', 'odun', 'pazar', 'okul', 'mobilya', 'saglik', 'kumas'] },
-  { seviye: 5, nufus: 18, ihtiyaclar: ['su', 'yemek', 'odun', 'pazar', 'okul', 'mobilya', 'saglik', 'kumas', 'bal'] },
+  { seviye: 4, nufus: 14, ihtiyaclar: ['su', 'yemek', 'odun', 'pazar', 'okul', 'mobilya', 'saglik', 'kumas', 'hamam'] },
+  { seviye: 5, nufus: 18, ihtiyaclar: ['su', 'yemek', 'odun', 'pazar', 'okul', 'mobilya', 'saglik', 'kumas', 'hamam', 'bal', 'kultur'] },
 ];
 
 export const ROADS: Record<RoadType, RoadDef> = {
