@@ -243,6 +243,7 @@ export function createAlertList(col: HTMLElement, onShowHouse: (id: number) => v
       const yeni = JSON.stringify(liste.map((u) => (u.tur === 'isci' ? { tur: u.tur, oran: Math.round(u.oran * 100) } : u)));
       if (yeni === imza) return;
       imza = yeni;
+      sira = 0; // liste değişti: tıklama yine ilk evden başlar
       box.replaceChildren();
       for (const u of liste) {
         const cip = el(u.tur === 'kuculen' ? 'button' : 'div', `uyari-cip ${u.tur}`);
@@ -258,8 +259,8 @@ export function createAlertList(col: HTMLElement, onShowHouse: (id: number) => v
           cip.title = t('uyari.kuculenIpucu');
           cip.addEventListener('click', () => {
             if (!evler.length) return;
+            onShowHouse(evler[sira % evler.length]);
             sira = (sira + 1) % evler.length;
-            onShowHouse(evler[sira]);
           });
         } else {
           ikon = '👷';

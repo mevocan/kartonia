@@ -3,7 +3,7 @@ import { BALANCE, BUILDINGS, dogaTuru } from '../data/buildings';
 import { HARITA, OYUN_YARI_GENISLIK, haritayiAyarla, makeRng } from '../data/map';
 import type { BuildingInfo, DayReport, GameState, Good } from './types';
 import {
-  buildingUpkeep, demolishRefund, effectRadius, monumentStage, naturalCut, nextMonumentCost, upgradeCost, upgradeStone,
+  buildingUpkeep, demolishRefund, effectRadius, stockLimit, monumentStage, naturalCut, nextMonumentCost, upgradeCost, upgradeStone,
 } from './placement';
 import { fillForests, fillMeadows } from './doga';
 import { resample } from './geometry';
@@ -124,13 +124,18 @@ export function getBuildingInfo(s: GameState, id: number): BuildingInfo | null {
     const kis = !!d.kisinUretmez && mevsim(s.gun) === 'kis';
     if (d.uretim) {
       const carpan = 1 + (d.komsuluk ? adjacencyBonus(s, b.type, b.x, b.z, b.id).oran : 0);
-      const k = kis ? 0 : oran;
+      const sinir = stockLimit(s);
+      const cikti = (Object.keys(d.uretim.cikti) as Good[]).map((mal): [Good, number] => [mal, ayar(s, `uretim.${b.type}.${mal}`)]);
+      // runProduction ile aynı sınır: çıktı deposu dolarsa üretim (ve girdi) o oranda düşer. Girdi stoğu ayrıca
+      // gösterilir (aynı gün başka bir binanın üreteceği girdi henüz stokta olmayabilir).
+      let k = kis ? 0 : oran;
+      for (const [mal, n] of cikti) if (n > 0) k = Math.min(k, Math.max(0, (sinir - s.stok[mal]) / (n * carpan)));
       info.uretimTahmini = {
         girdi: (Object.entries(d.uretim.girdi) as [Good, number][]).map(([mal, n]) => ({ mal, miktar: n * k, stok: s.stok[mal] })),
-        cikti: (Object.keys(d.uretim.cikti) as Good[]).map((mal) => ({ mal, miktar: ayar(s, `uretim.${b.type}.${mal}`) * carpan * k })),
+        cikti: cikti.map(([mal, n]) => ({ mal, miktar: n * carpan * k })),
       };
     } else if (d.agacBasinaOdun !== undefined) {
-      const miktar = treesInRange(s, b) * d.agacBasinaOdun * ayar(s, 'oduncuCarpani') * oran;
+      const miktar = Math.max(0, Math.min(treesInRange(s, b) * d.agacBasinaOdun * ayar(s, 'oduncuCarpani') * oran, stockLimit(s) - s.stok.odun));
       info.uretimTahmini = { girdi: [], cikti: [{ mal: 'odun', miktar }] };
     }
   }

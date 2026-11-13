@@ -37,6 +37,23 @@ describe('üretim tahmini', () => {
   });
 });
 
+describe('üretim tahmini ve depo sınırı', () => {
+  it('çıktı deposu doluysa beklenen üretim ve girdi düşer; oduncu da', () => {
+    const s = blank();
+    s.nufus = 100;
+    s.stok.bugday = 100;
+    s.stok.un = 197; // sınır 200: 3 un yer var
+    const d = add(s, 'degirmen', 0, 0);
+    const u = getBuildingInfo(s, d.id)!.uretimTahmini!;
+    expect(u.cikti[0].miktar).toBeCloseTo(3);
+    expect(u.girdi[0].miktar).toBeCloseTo(3);
+    s.stok.odun = 200;
+    const o = add(s, 'oduncu', -20, -20);
+    add(s, 'agac', -18, -20);
+    expect(getBuildingInfo(s, o.id)!.uretimTahmini!.cikti[0].miktar).toBe(0);
+  });
+});
+
 describe('kapsanan evler ve ev sayaçları', () => {
   it('çeşme alanındaki evleri sayar; evde ve ağaçta alan yok', () => {
     const s = blank();

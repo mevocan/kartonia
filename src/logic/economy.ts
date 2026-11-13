@@ -101,9 +101,19 @@ function kapsar(l: readonly Saglayici[] | undefined, h: Building): boolean {
   return !!l && l.some((p) => dist(p.x, p.z, h.x, h.z) <= p.r);
 }
 
+/**
+ * İhtiyacın stoktan bağımsız kısmı karşılanıyor mu: hizmet ihtiyacında etki alanında bir sağlayıcı, yemekte bir
+ * satış yeri; diğer stok ihtiyaçlarında yer şartı yoktur (true). Stok yeterliliği burada denetlenmez.
+ */
+export function hizmetVar(ix: HizmetIndeksi, h: Building, n: Need): boolean {
+  if (n === 'yemek') return kapsar(ix.yemek, h);
+  if (isStockNeed(n)) return true;
+  return kapsar(ix.saglar.get(n), h);
+}
+
 type StokIhtiyaci = 'yemek' | 'odun' | 'mobilya' | 'kumas' | 'bal';
 
-function isStockNeed(n: Need): n is StokIhtiyaci {
+export function isStockNeed(n: Need): n is StokIhtiyaci {
   return n === 'yemek' || n === 'odun' || n === 'mobilya' || n === 'kumas' || n === 'bal';
 }
 
@@ -245,9 +255,11 @@ export function runProduction(
         }
       } else if (d.agacBasinaOdun !== undefined) {
         const agac = treesInRange(s, b);
+        const tam = agac * d.agacBasinaOdun * ayar(s, 'oduncuCarpani') * oran;
+        const miktar = Math.min(tam, sinir - s.stok.odun);
+        // Diğer üreticilerle aynı kural: tam üretimin yarısından azını yapabildiyse sorun yazılır.
         if (sorunlar && agac === 0) sorunlar.push({ id: b.id, neden: 'agac' });
-        else if (sorunlar && s.stok.odun >= sinir) sorunlar.push({ id: b.id, neden: 'depo' });
-        const miktar = Math.min(agac * d.agacBasinaOdun * ayar(s, 'oduncuCarpani') * oran, sinir - s.stok.odun);
+        else if (sorunlar && tam > 0 && miktar < tam * 0.5) sorunlar.push({ id: b.id, neden: 'depo' });
         if (miktar <= 0) continue;
         s.stok.odun += miktar;
         uretilen.odun += miktar;
@@ -260,7 +272,7 @@ export function runProduction(
 export function endDay(s: GameState): DayReport {
   const rapor: DayReport = {
     gun: s.gun, vergi: 0, gider: 0, binaGider: 0, yolGider: 0, net: 0, binaVergileri: [], uretilen: emptyGoods(), tuketilen: emptyGoods(),
-    seviyeDegisimleri: [], yeniHedefler: [], yeniAcilanlar: [], oyunBitti: s.bitti, uretimSorunlari: [],
+    seviyeDegisimleri: [], yeniHedefler: [], yeniAcilanlar: [], oyunBitti: s.bitti, uretimSorunlari: [], evStokEksikleri: [],
   };
   if (s.bitti) return rapor;
 
@@ -293,6 +305,8 @@ export function endDay(s: GameState): DayReport {
     const ok = (n: Need) => st.some((x) => x.ihtiyac === n && x.karsilandi);
     const eski = h.seviye;
 
+    const stokEksik = cur.ihtiyaclar.find((n) => isStockNeed(n) && !ok(n));
+    if (stokEksik) rapor.evStokEksikleri.push({ id: h.id, neden: stokEksik });
     if (next && next.ihtiyaclar.every(ok)) h.iyiGun++;
     else h.iyiGun = 0;
     if (cur.ihtiyaclar.every(ok)) h.kotuGun = 0;

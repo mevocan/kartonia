@@ -1,6 +1,6 @@
 // Oyun: kayıt, oyun döngüsü ve katmanların birbirine bağlanması. main.ts dil dosyasını yükledikten sonra açar.
-import type { BuildingType, DayReport, GameState, Good, RoadType, UretimSorunu, Vec2 } from './logic/types';
-import { buildingPins } from './logic/pins';
+import type { BuildingType, DayReport, GameState, Good, RoadType, Vec2 } from './logic/types';
+import { buildingPins, type SonGun } from './logic/pins';
 import { igneGorunumu } from './ui/ikonlar';
 import {
   canPlace, canUpgrade, createGame, upgradeBuilding, demolish, demolishRoad, deserialize, getBuildingInfo, getRoadInfo, GOALS, KASABA_TAMAM_HEDEFI, placeBuilding,
@@ -84,8 +84,8 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   let duraklamadanOnce = 1;
   let arac: Tool = null;
   let secili: Selection | null = null;
-  /** Son gün sonunun üretim sorunları (harita iğneleri, bilgi paneli). Yeni oyunda ve kayıt yüklenince boş. */
-  let uretimSorunlari: UretimSorunu[] = [];
+  /** Son gün sonunun üretim sorunları ve evlerin stok eksikleri (harita iğneleri, bilgi paneli). Yeni oyunda ve kayıt yüklenince yok. */
+  let sonGun: SonGun | null = null;
 
   // ---- Arayüz parçaları ----
   // Ses: dosya yok, Web Audio ile üretilir. İlk tıklama / tuşta başlar (tarayıcı kuralı). Ayar ayrı anahtarda.
@@ -306,7 +306,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     }
     const bi = secili?.kind === 'bina' ? getBuildingInfo(s, secili.id) : null;
     if (!bi) secili = null;
-    info.show(bi, s.para, s.stok, bi ? uretimSorunlari.find((p) => p.id === bi.id)?.neden : undefined);
+    info.show(bi, s.para, s.stok, bi ? sonGun?.uretimSorunlari.find((p) => p.id === bi.id)?.neden : undefined);
   }
 
   function yukselt(id: number): void {
@@ -499,7 +499,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   /** Harita iğneleri: evde karşılanmayan ihtiyaç (anlık), üretim binasında son günün sorunu. */
   function uyarilariGuncelle(): void {
     const yeni = new Set<number>();
-    for (const p of buildingPins(s, uretimSorunlari)) {
+    for (const p of buildingPins(s, sonGun)) {
       if (yeni.has(p.id)) continue;
       yeni.add(p.id);
       renderer.setPin(p.id, igneGorunumu(p));
@@ -537,7 +537,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     if (r.vergi > 0) ses.play('vergi');
     ogretici.olay('gunSonu');
     hud.setReport(r);
-    uretimSorunlari = r.uretimSorunlari;
+    sonGun = { uretimSorunlari: r.uretimSorunlari, evStokEksikleri: r.evStokEksikleri };
     renderer.setPopulation(s.nufus);
     for (const v of r.binaVergileri) {
       const b = s.binalar.find((x) => x.id === v.id);
@@ -618,7 +618,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
       /* yok say */
     }
     s = createGame(rastgeleTohum());
-    uretimSorunlari = [];
+    sonGun = null;
     hud.setReport(null);
     renderer.rebuildTerrain();
     secili = null;

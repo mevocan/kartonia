@@ -94,6 +94,8 @@ export function createHud(
     }
     a.bicim = bicim;
     if (Math.round(a.hedef) === Math.round(v)) {
+      // Geçiş sürüyorsa da durdur: yoksa bir sonraki karede ara değer geri yazılır.
+      cancelAnimationFrame(a.raf);
       deger.textContent = bicim(v);
       a.hedef = v;
       a.v = v;

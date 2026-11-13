@@ -26,6 +26,32 @@ describe('ev iğneleri', () => {
     expect(buildingPins(s)).toEqual([]);
   });
 
+  it('dengeli kasaba: gün sonu stoğu tüketip sıfırlasa da, herkes beslendiyse yemek iğnesi çıkmaz', () => {
+    const s = blank();
+    const h = add(s, 'ev', 0, 0, 2);
+    add(s, 'cesme', 3, 0);
+    add(s, 'pazar', -4, 0);
+    s.stok.yemek = 6 * 0.25; // tam bir günlük
+    const r = endDay(s);
+    expect(s.stok.yemek).toBeCloseTo(0);
+    expect(r.evStokEksikleri).toEqual([]);
+    expect(buildingPins(s, r)).toEqual([]);
+    expect(h.kotuGun).toBe(0);
+  });
+
+  it('ortak stok yetmezse yalnızca beslenemeyen ev iğne alır (id sırası); uyarıyla tutarlı', () => {
+    const s = blank();
+    const a = add(s, 'ev', 0, 0, 2);
+    const b = add(s, 'ev', 2.5, 0, 2);
+    add(s, 'cesme', 1, 3);
+    add(s, 'pazar', 1, -4);
+    s.stok.yemek = 6 * 0.25; // yalnızca bir eve yeter
+    const r = endDay(s);
+    expect(buildingPins(s, r)).toEqual([{ id: b.id, tur: 'ihtiyac', neden: 'yemek' }]);
+    expect(townAlerts(s)).toContainEqual({ tur: 'kuculen', evler: [b.id] });
+    expect(a.kotuGun).toBe(0);
+  });
+
   it('üst seviyenin ihtiyacı iğne çıkarmaz (ev küçülmez, yalnızca büyümez)', () => {
     const s = blank();
     add(s, 'ev', 0, 0, 1);
@@ -60,15 +86,24 @@ describe('üretim sorunları', () => {
     expect(sorunlar(s)).toEqual([{ id: t.id, neden: 'depo' }, { id: o.id, neden: 'agac' }]);
   });
 
+  it('neredeyse dolu depoda oduncu da diğer üreticiler gibi işaretlenir (yarıdan az üretim)', () => {
+    const s = blank();
+    s.nufus = 100;
+    const o = add(s, 'oduncu', 0, 0);
+    for (let i = 0; i < 6; i++) add(s, 'agac', Math.cos(i) * 3, Math.sin(i) * 3);
+    s.stok.odun = stockLimit(s) - 0.5;
+    expect(sorunlar(s)).toEqual([{ id: o.id, neden: 'depo' }]);
+  });
+
   it('gün sonu raporu sorunları taşır; yıkılan binanın iğnesi çıkmaz', () => {
     const s = blank();
     s.nufus = 100;
     const d = add(s, 'degirmen', 0, 0);
     const r = endDay(s);
     expect(r.uretimSorunlari).toEqual([{ id: d.id, neden: 'bugday' }]);
-    expect(buildingPins(s, r.uretimSorunlari)).toEqual([{ id: d.id, tur: 'uretim', neden: 'bugday' }]);
+    expect(buildingPins(s, r)).toEqual([{ id: d.id, tur: 'uretim', neden: 'bugday' }]);
     s.binalar = s.binalar.filter((b) => b.id !== d.id);
-    expect(buildingPins(s, r.uretimSorunlari)).toEqual([]);
+    expect(buildingPins(s, r)).toEqual([]);
   });
 
   it('işçi eksikliği bina sorunu sayılmaz', () => {

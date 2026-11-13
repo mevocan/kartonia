@@ -266,6 +266,11 @@ export interface DayReport {
   yeniAcilanlar: BuildingType[];
   /** Günü yarıdan az verimle geçiren üretim binaları ve nedeni (harita iğneleri için). */
   uretimSorunlari: UretimSorunu[];
+  /**
+   * Gün sonundaki gerçek dağıtımda mevcut seviyesinin bir stok ihtiyacı (yemek, odun, mobilya, kumaş, bal)
+   * karşılanmayan evler ve ilk eksik mal (harita iğneleri için; ortak stok id sırasıyla paylaşılır).
+   */
+  evStokEksikleri: { id: number; neden: Need }[];
   oyunBitti: boolean;
 }
 

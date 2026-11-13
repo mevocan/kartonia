@@ -981,6 +981,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
         p.dirty = true;
       }
       slotOf.clear();
+      kalkis.clear(); // seçili binanın kaydı sahneyle birlikte gider
       entries.clear();
       dying.clear();
       highlighted = null;
