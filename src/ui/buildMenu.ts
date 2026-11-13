@@ -1,4 +1,5 @@
-// Alt kenardaki kağıt kart düğmeleri: yollar, binalar ve yıkma aracı.
+// Alt kenardaki inşa menüsü: kategoriler (Yollar, Konut, Üretim, Hizmet, Doğa) + Yık; kategoriye tıklayınca
+// üstünde o kategorinin kartları açılır.
 // Karta tıklamak aracı seçer ve sağda bina kartını (detay) açar; kilitli kartta yalnızca detay açılır.
 import type { BuildingType, GameState, RoadType } from '../logic/types';
 import { BUILDINGS, BUILDING_ORDER, ROADS } from '../data/buildings';
@@ -75,18 +76,19 @@ interface Kart {
   kilit: HTMLDivElement;
 }
 
-type Kategori = 'yol' | 'konut' | 'uretim' | 'hizmet';
+type Kategori = 'yol' | 'konut' | 'uretim' | 'hizmet' | 'doga';
 
-const KATEGORI_SIRASI: Kategori[] = ['yol', 'konut', 'uretim', 'hizmet'];
+const KATEGORI_SIRASI: Kategori[] = ['yol', 'konut', 'uretim', 'hizmet', 'doga'];
 
-const KATEGORILER: Record<Kategori, { ad: string; renk: string; ogeler: MenuKey[] }> = {
-  yol: { ad: t('menu.yollar'), renk: '#e3c08f', ogeler: ['toprak', 'asfalt'] },
-  konut: { ad: t('menu.konut'), renk: '#f4b7a3', ogeler: ['ev', 'agac', 'cicek'] },
+const KATEGORILER: Record<Kategori, { ad: string; ikon: string; renk: string; ogeler: MenuKey[] }> = {
+  yol: { ad: t('menu.yollar'), ikon: '🛤️', renk: '#e3c08f', ogeler: ['toprak', 'asfalt'] },
+  konut: { ad: t('menu.konut'), ikon: '🏠', renk: '#f4b7a3', ogeler: ['ev'] },
   uretim: {
-    ad: t('menu.uretim'), renk: '#f2d272',
+    ad: t('menu.uretim'), ikon: '🌾', renk: '#f2d272',
     ogeler: ['tarla', 'degirmen', 'firin', 'oduncu', 'balikci', 'tasOcagi', 'marangoz', 'agil', 'dokumaci', 'arilik', 'ambar'],
   },
-  hizmet: { ad: t('menu.hizmet'), renk: '#a9d5e8', ogeler: ['cesme', 'pazar', 'okul', 'hastane', 'park', 'hamam', 'tiyatro', 'saatKulesi'] },
+  hizmet: { ad: t('menu.hizmet'), ikon: '🏛️', renk: '#a9d5e8', ogeler: ['cesme', 'pazar', 'okul', 'hastane', 'park', 'hamam', 'tiyatro', 'saatKulesi'] },
+  doga: { ad: t('menu.doga'), ikon: '🌳', renk: '#b9d99a', ogeler: ['agac', 'cicek'] },
 };
 const YIKIM_RENK = '#f0a399';
 /** Kilitli kartın altındaki "🔒 35 nüfus". */
@@ -182,7 +184,9 @@ export function createBuildMenu(
     const d = KATEGORILER[k];
     const b = el('button', 'kagit kategori');
     b.style.setProperty('--kat', d.renk);
-    b.append(el('div', 'ad', d.ad), el('div', 'sayi', ''), el('span', 'yeni'));
+    const yazi = el('div', 'yazi');
+    yazi.append(el('div', 'ad', d.ad), el('div', 'sayi', ''));
+    b.append(el('span', 'ikon', d.ikon), yazi, el('span', 'yeni'));
     b.addEventListener('click', () => kategoriAc(acikKategori === k ? null : k));
     kategoriler.appendChild(b);
     kategoriButonlari.set(k, b);
@@ -191,7 +195,9 @@ export function createBuildMenu(
 
   const yikB = el('button', 'kagit kategori yikim');
   yikB.style.setProperty('--kat', YIKIM_RENK);
-  yikB.append(el('div', 'ad', t('menu.yik')), el('div', 'sayi', t('menu.xTusu')));
+  const yikYazi = el('div', 'yazi');
+  yikYazi.append(el('div', 'ad', t('menu.yik')), el('div', 'sayi', t('menu.xTusu')));
+  yikB.append(el('span', 'ikon', '🔨'), yikYazi);
   yikB.addEventListener('click', () => onSelect(secili === 'yikim' ? null : 'yikim'));
   kategoriler.appendChild(yikB);
   kategoriAc(null);

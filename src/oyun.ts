@@ -84,6 +84,8 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   let duraklamadanOnce = 1;
   let arac: Tool = null;
   let secili: Selection | null = null;
+  /** Son gün sonunun üretim sorunları (harita iğneleri, bilgi paneli). Yeni oyunda ve kayıt yüklenince boş. */
+  let uretimSorunlari: UretimSorunu[] = [];
 
   // ---- Arayüz parçaları ----
   // Ses: dosya yok, Web Audio ile üretilir. İlk tıklama / tuşta başlar (tarayıcı kuralı). Ayar ayrı anahtarda.
@@ -146,6 +148,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
       else renderer.showRange(b.x, b.z, r);
     },
     (id) => anitIlerlet(id),
+    (tur) => renderer.buildingThumbnail(tur),
   );
 
   // Sağ üst: giriş ekranını (menü) açar; yeni kasaba oradan başlatılır.
@@ -303,7 +306,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     }
     const bi = secili?.kind === 'bina' ? getBuildingInfo(s, secili.id) : null;
     if (!bi) secili = null;
-    info.show(bi, s.para, s.stok);
+    info.show(bi, s.para, s.stok, bi ? uretimSorunlari.find((p) => p.id === bi.id)?.neden : undefined);
   }
 
   function yukselt(id: number): void {
@@ -490,8 +493,6 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     input.refresh();
   }
 
-  /** Son gün sonunun üretim sorunları (harita iğneleri). Yeni oyunda ve kayıt yüklenince boş. */
-  let uretimSorunlari: UretimSorunu[] = [];
   /** Şu an iğnesi olan binalar: artık sorunu olmayanın iğnesi kalkar. */
   let ignesiOlanlar = new Set<number>();
 

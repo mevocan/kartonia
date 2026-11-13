@@ -318,6 +318,15 @@ export interface BuildingInfo {
   anit?: { asama: number; toplam: number; sonraki: { para: number; mal: Partial<Record<Good, number>> } | null };
   /** Kışın üretmeyen bina şu an kışta: üretim durdu. */
   kisinDurdu?: boolean;
+  /**
+   * Üretim binaları: bugünkü işçi oranı ve komşuluk bonusuyla beklenen günlük girdi ve çıktı (girdi stoğu
+   * yetmezse gerçek üretim düşer; `stok` o malın şu anki stoğu). Oduncu: girdi yok, çıktı ağaç sayısından.
+   */
+  uretimTahmini?: { girdi: { mal: Good; miktar: number; stok: number }[]; cikti: { mal: Good; miktar: number }[] };
+  /** Etki alanı olan bina (ev ve doğa hariç): alanındaki ev sayısı. */
+  kapsananEv?: number;
+  /** Ev: üst seviye ihtiyaçlarının üst üste karşılandığı / mevcut seviyeninkilerin karşılanmadığı gün ve eşikleri. */
+  evGun?: { iyi: number; kotu: number; buyumeEsik: number; kuculmeEsik: number };
 }
 
 export interface GoalDef {
