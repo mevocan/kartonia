@@ -205,14 +205,14 @@ export const BALANCE = {
     ] as { para: number; mal: Partial<Record<Good, number>> }[],
   },
   /**
-   * Gezgin tüccar (logic/trade.ts): her `aralik` günde bir gelir (ilk geliş `aralik`. gün) ve `kalis` gün kalır.
+   * Gezgin tüccar (logic/trade.ts): her `aralik` günde bir gelir (ilk geliş `aralik`. gün). Gelince takas menüsü
+   * açılır ve oyun durur; menü kapanınca tüccar gider.
    * Fiyatlar sabit: `sat` oyuncunun sattığı, `al` oyuncunun aldığı birim fiyat. Ziyaret başına alım + satım
    * toplamı `kota` birim (bütün ziyaret için, gün başına değil). Satış fiyatı alıştan belirgin düşük: tüccar para
    * basma yolu değil, takas aracıdır.
    */
   ticaret: {
     aralik: 8,
-    kalis: 3,
     kota: 40,
     fiyat: {
       bugday: { sat: 1, al: 3 },

@@ -27,7 +27,7 @@ export { heightAt, isLand, isLake } from './terrain';
 export { adjacencyBonus, adjacencySources, bonusText } from './adjacency';
 export { mevsim, mevsimGunu, kisaKalanGun, MEVSIMLER, type Mevsim } from './season';
 export {
-  tuccarVarMi, tuccarGeldiMi, tuccarKalisGunu, tuccaraKalanGun, kalanKota, tuccarKonumu, canBuy, canSell, buyGood, sellGood,
+  tuccarVarMi, tuccarGunu, tuccarUgurla, tuccaraKalanGun, kalanKota, tuccarKonumu, canBuy, canSell, buyGood, sellGood,
   type TicaretSebep,
 } from './trade';
 export { checkRequest, deliverFeast, istekHedefi, istekKalanGun, geciciMutlulukBugun } from './requests';

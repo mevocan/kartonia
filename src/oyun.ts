@@ -5,7 +5,7 @@ import { igneGorunumu } from './ui/ikonlar';
 import {
   canPlace, canUpgrade, createGame, upgradeBuilding, demolish, demolishRoad, deserialize, getBuildingInfo, getRoadInfo, GOALS, KASABA_TAMAM_HEDEFI, placeBuilding,
   placeRoad, planRoad, serialize, tick, mevsim, monumentStage, canAdvanceMonument, advanceMonument,
-  tuccarVarMi, tuccarGeldiMi, tuccarKalisGunu, tuccarKonumu, buyGood, sellGood, canBuy, canSell, checkRequest, deliverFeast,
+  tuccarVarMi, tuccarUgurla, tuccarKonumu, buyGood, sellGood, canBuy, canSell, checkRequest, deliverFeast,
   bekleyenSecim, kartCek, kartSec, kartBul, secimGunu, toplamSecim,
 } from './logic/game';
 import { BALANCE, BUILDINGS } from './data/buildings';
@@ -95,7 +95,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   window.addEventListener('keydown', sesKilidiAc);
   const hud = createHud(
     ui, (v) => setSpeed(v), () => setSpeed(hiz === 0 ? duraklamadanOnce : 0),
-    () => (tuccar.isOpen() ? tuccar.close() : (tuccar.open(), tuccar.update(s), ses.play('secim'))),
+    () => (tuccar.isOpen() ? tuccarUgurlandi() : tuccarAc()),
     () => sesAyarla(!ses.isEnabled()),
     (kanal, v) => sesDuzeyi(kanal, v),
   );
@@ -110,7 +110,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   const goal = createGoalCard(solSutun);
   const istekKarti = createRequestCard(solSutun, () => senlik(), (id) => binayaGit(id));
   const uyariListesi = createAlertList(solSutun, (id) => binayaGit(id));
-  const tuccar = createTradePanel(ui, (g, n) => ticaret(g, n, true), (g, n) => ticaret(g, n, false));
+  const tuccar = createTradePanel(ui, (g, n) => ticaret(g, n, true), (g, n) => ticaret(g, n, false), () => tuccarUgurlandi());
   const secici = createCardPicker(ui, (id) => kartSecildi(id));
   const kasabaYolu = createCardList(ui);
   // Olumsuz bildirimler (yapılamayan işlem, küçülen ev, borç) kısa bir hata sesiyle gelir.
@@ -203,6 +203,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     }
     if (!s.bitti) setSpeed(menuOncesiHiz);
     kartSecimiAc(); // bekleyen kart seçimi varsa
+    tuccarAc(); // tüccar kasabadaysa (ör. kayıt geliş gününde kaldı) menüsü yeniden açılır
   }
 
   function yeniKasaba(): void {
@@ -270,7 +271,8 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   }
 
   function setSpeed(v: number): void {
-    if (v > 0 && (secici.isOpen() || giris.isOpen())) return; // kart seçilene / menü kapanana kadar oyun duraklı
+    // Kart seçilene, menü kapanana, tüccarla alışveriş bitene kadar oyun duraklı.
+    if (v > 0 && (secici.isOpen() || giris.isOpen() || tuccar.isOpen())) return;
     if (v > 0) duraklamadanOnce = v;
     hiz = v;
     hud.setSpeed(v);
@@ -357,7 +359,35 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     bilgiYenile();
     arayuzYenile();
     if (bekleyenSecim(s) !== null) kartSecimiAc(); // aynı gün birden çok kart hedefi
-    else setSpeed(secimOncesiHiz);
+    else {
+      setSpeed(secimOncesiHiz);
+      tuccarAc(); // aynı gün tüccar da geldiyse
+    }
+  }
+
+  /** Tüccar menüsü açılmadan önceki hız: alışveriş bitince oyun bu hızla sürer. */
+  let tuccarOncesiHiz = 1;
+
+  /** Tüccar kasabadaysa takas menüsünü açar ve oyunu durdurur (geliş gününde kendiliğinden). */
+  function tuccarAc(): void {
+    if (!tuccarVarMi(s) || tuccar.isOpen() || giris.isOpen() || secici.isOpen() || s.bitti) return;
+    tuccarOncesiHiz = hiz > 0 ? hiz : duraklamadanOnce;
+    setTool(null);
+    setSpeed(0);
+    tuccar.open();
+    tuccar.update(s);
+    ses.play('secim');
+  }
+
+  /** Oyuncu menüyü kapattı: tüccar yola çıkar, oyun önceki hızıyla sürer. */
+  function tuccarUgurlandi(): void {
+    const vardi = tuccarVarMi(s);
+    tuccar.close();
+    tuccarUgurla(s);
+    if (vardi) toasts.show(t('bildirim.tuccarGitti'), 'bilgi');
+    kaydet(s);
+    arayuzYenile();
+    setSpeed(tuccarOncesiHiz);
   }
 
   /** Gezgin tüccarla takas (panel düğmeleri). */
@@ -571,8 +601,6 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     for (const tur of r.yeniAcilanlar) toasts.show(t('bildirim.yeniBina', { bina: binaAd(tur) }), 'iyi');
     if (r.tamamlananIstek) toasts.show(istekTamamMetni(r.tamamlananIstek), 'iyi');
     if (r.yeniIstek) toasts.show(t('bildirim.yeniIstek', { ad: istekAd(r.yeniIstek) }), 'bilgi');
-    if (tuccarGeldiMi(s.gun)) toasts.show(t('bildirim.tuccarGeldi', { gun: BALANCE.ticaret.kalis }), 'bilgi');
-    else if (tuccarKalisGunu(s.gun) === 1) toasts.show(t('bildirim.tuccarGidiyor'), 'bilgi');
     const mb = mevsimBildirimi(s.gun);
     if (mb) toasts.show(mb.metin, mb.tur);
 
@@ -585,7 +613,10 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     input.refresh();
     kaydet(s);
     if (r.oyunBitti || s.bitti) bitisGoster();
-    else kartSecimiAc();
+    else {
+      kartSecimiAc();
+      tuccarAc(); // geliş günü: menü açılır, oyun durur (kart seçimi açıksa seçim bitince)
+    }
   }
 
   function bitisGoster(): void {
@@ -628,7 +659,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     son.style.display = 'none';
     sahneyiKur();
     renderer.setSeason(mevsim(s.gun), true);
-    renderer.setMerchant(tuccarVarMi(s.gun) ? tuccarKonumu() : null, true);
+    renderer.setMerchant(tuccarVarMi(s) ? tuccarKonumu() : null, true);
     tuccar.close();
     arayuzYenile();
     input.refresh();
@@ -641,7 +672,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   // ---- Başlangıç ----
   sahneyiKur();
   renderer.setSeason(mevsim(s.gun), true);
-  renderer.setMerchant(tuccarVarMi(s.gun) ? tuccarKonumu() : null, true);
+  renderer.setMerchant(tuccarVarMi(s) ? tuccarKonumu() : null, true);
   arayuzYenile();
   input.refresh();
   // Oyun giriş ekranıyla, duraklı açılır; ilk ipucu, öğretici ve bekleyen kart seçimi oyuna girince gelir.
@@ -667,7 +698,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     }
     renderer.setDayProgress(s.gunIlerleme);
     renderer.setSeason(mevsim(s.gun)); // aynı mevsimde bir şey yapmaz; değişince yumuşak geçiş
-    renderer.setMerchant(tuccarVarMi(s.gun) ? tuccarKonumu() : null);
+    renderer.setMerchant(tuccarVarMi(s) ? tuccarKonumu() : null);
     ses.setAmbience(mevsim(s.gun), renderer.getZoom01());
     ses.setPaused(hiz === 0);
     hud.setDayProgress(s.gunIlerleme);
