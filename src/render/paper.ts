@@ -178,6 +178,28 @@ export function paperMaterial(color: string, doubleSide = false): THREE.MeshStan
 }
 
 export type ModelMatKind = 'base' | 'ghost' | 'ghostBad' | 'secim' | 'yikim';
+
+/** Gece ağırlığı 0..1 (scene.ts applyDayProgress yazar). Model malzemeleri pencere camlarını buna göre yakar. */
+export const gece = { value: 0 };
+const pencereIsik = { value: new THREE.Color(PALETTE.pencereIsik) };
+
+/** Pencere ışığı: `isik` tepe niteliği olan yüzeylere gece ağırlığıyla sıcak ışık (emissive) ekler. */
+function pencereYak(m: THREE.MeshStandardMaterial): void {
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uGece = gece;
+    sh.uniforms.uPencere = pencereIsik;
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', ['#include <common>', 'attribute float isik;', 'varying float vIsik;'].join('\n'))
+      .replace('#include <begin_vertex>', ['#include <begin_vertex>', 'vIsik = isik;'].join('\n'));
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', ['#include <common>', 'uniform float uGece;', 'uniform vec3 uPencere;', 'varying float vIsik;'].join('\n'))
+      .replace(
+        '#include <emissivemap_fragment>',
+        ['#include <emissivemap_fragment>', 'totalEmissiveRadiance += uPencere * (vIsik * uGece);'].join('\n'),
+      );
+  };
+  m.customProgramCacheKey = () => 'pencere';
+}
 const modelMats = new Map<ModelMatKind, THREE.MeshStandardMaterial>();
 
 /** Bina modelleri tepe rengi (vertex color) kullanır; bütün binalar bu birkaç malzemeyi paylaşır. */
@@ -191,6 +213,7 @@ export function modelMaterial(kind: ModelMatKind): THREE.MeshStandardMaterial {
     metalness: 0,
     flatShading: true,
   });
+  pencereYak(m);
   switch (kind) {
     case 'ghost':
       m.color.set(PALETTE.hayalet);

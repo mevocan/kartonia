@@ -13,10 +13,13 @@ import { ticaretGunSonu } from './trade';
 import { ayar, kartGunSonu } from './cards';
 
 // Marangoz odunu kullandığı için oduncudan sonra gelir.
-export const URETIM_SIRASI: BuildingType[] = ['tarla', 'degirmen', 'firin', 'oduncu', 'balikci', 'tasOcagi', 'marangoz'];
+// Ağıl buğdayı değirmenden sonra alır; dokumacı ağıldan sonra gelir.
+export const URETIM_SIRASI: BuildingType[] = [
+  'tarla', 'degirmen', 'firin', 'oduncu', 'balikci', 'tasOcagi', 'marangoz', 'agil', 'dokumaci', 'arilik',
+];
 
 export function emptyGoods(): Record<Good, number> {
-  return { bugday: 0, un: 0, yemek: 0, odun: 0, tas: 0, mobilya: 0 };
+  return { bugday: 0, un: 0, yemek: 0, odun: 0, tas: 0, mobilya: 0, yun: 0, kumas: 0, bal: 0 };
 }
 
 export function isProducer(t: BuildingType): boolean {
@@ -63,17 +66,21 @@ function hasService(s: GameState, h: Building, need: Need): boolean {
   return s.binalar.some((b) => BUILDINGS[b.type].saglar === need && inRange(b, h));
 }
 
-type StokIhtiyaci = 'yemek' | 'odun' | 'mobilya';
+type StokIhtiyaci = 'yemek' | 'odun' | 'mobilya' | 'kumas' | 'bal';
 
 function isStockNeed(n: Need): n is StokIhtiyaci {
-  return n === 'yemek' || n === 'odun' || n === 'mobilya';
+  return n === 'yemek' || n === 'odun' || n === 'mobilya' || n === 'kumas' || n === 'bal';
 }
 
-/** Kişi başı günlük tüketim. Kışın odun (yalnızca 3. seviye evler odun ister) kisOdunCarpani katı. */
+/** Kişi başı günlük tüketim. Kışın odun (3. seviye ve üstü evler odun ister) kisOdunCarpani katı. */
 function perCapita(s: GameState, n: StokIhtiyaci): number {
-  if (n === 'yemek') return BALANCE.yemekKisiBasi;
-  if (n === 'odun') return ayar(s, 'odunKisiBasi') * (mevsim(s.gun) === 'kis' ? BALANCE.mevsim.kisOdunCarpani : 1);
-  return BALANCE.mobilyaKisiBasi;
+  switch (n) {
+    case 'yemek': return BALANCE.yemekKisiBasi;
+    case 'odun': return ayar(s, 'odunKisiBasi') * (mevsim(s.gun) === 'kis' ? BALANCE.mevsim.kisOdunCarpani : 1);
+    case 'mobilya': return BALANCE.mobilyaKisiBasi;
+    case 'kumas': return BALANCE.kumasKisiBasi;
+    case 'bal': return BALANCE.balKisiBasi;
+  }
 }
 
 /** Evin etki alanında bir yemek satış yeri (fırın, pazar) var mı. */
@@ -83,7 +90,7 @@ function hasFoodSeller(s: GameState, h: Building): boolean {
 
 /**
  * Evin mevcut + bir üst seviyesinin ihtiyaçları (tekrarsız) ve durumu.
- * `tuketim` verilirse mevcut seviyenin yemek/odun/mobilya ihtiyacı stoktan düşülür ve oraya eklenir.
+ * `tuketim` verilirse mevcut seviyenin stok ihtiyaçları (yemek, odun, mobilya, kumaş, bal) stoktan düşülür ve oraya eklenir.
  */
 export function evaluateNeeds(s: GameState, h: Building, tuketim?: Record<Good, number>): NeedStatus[] {
   const cur = houseLevel(h.seviye);

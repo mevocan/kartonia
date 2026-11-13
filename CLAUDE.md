@@ -4,7 +4,7 @@ Oyunun adı **Kartonia** (eski çalışma adı Kağıt Kasaba). Klasör, paket a
 
 Bu klasör bağımsız bir oyundur. Üst klasördeki `sehir/CLAUDE.md` (Mini Şehir kart oyunu) bu projeye **uygulanmaz**; tek geçerli belge budur.
 
-Bilgisayar tarayıcısında oynanan, 3D, kağıttan maket görünümlü bir kasaba kurma oyunu. Oyuncu yuvarlak bir karton zeminin üstüne serbestçe (ızgarasız) kağıt binalar koyar. Sakinler vergi öder, vergiyle yeni binalar kurulur. Küçük bir üretim zinciri vardır. Gökdelen, apartman yok: en büyük yapı iki katlı ev ve saat kulesidir.
+Bilgisayar tarayıcısında oynanan, 3D, kağıttan maket görünümlü bir kasaba kurma oyunu. Oyuncu yuvarlak bir karton zeminin üstüne serbestçe (ızgarasız) kağıt binalar koyar. Sakinler vergi öder, vergiyle yeni binalar kurulur. Küçük bir üretim zinciri vardır. Gökdelen, apartman yok: en büyük yapılar iki katlı konak/köşk ve saat kulesidir.
 
 ## His
 
@@ -45,7 +45,8 @@ Bina kağıt maket gibi kurulur: önce düz bir kağıt açınım (taban izi) ye
 
 - Gerçek zamanlı. 1 gün = 15 saniye (1x hızda). Hız: duraklat / 1x / 2x / 3x.
 - Her gün sonunda ekonomi işlenir (`endDay`).
-- **Mevsimler** (`logic/season.ts`, `BALANCE.mevsim`): yıl 18 gün = İlkbahar 5, Yaz 5, Sonbahar 5, Kış 3. Mevsim `gun`dan türetilir, durumda alan yok. Kışın Tarla üretmez (`kisinUretmez`), 3. seviye evlerin odun tüketimi 2 katı; başka hiçbir şey değişmez. Diğer mevsimler yalnızca görsel. HUD'da mevsim + "kışa X gün", sonbaharın ilk günü uyarı. Çizim: `GameRenderer.setSeason(m, anlik?)` (`render/season.ts`): sonbaharda yapraklar hardal/terrakota, kışın karlı zemin, buzlu göl, açık renkli ağaçlar, düşen kağıt kar (tek InstancedMesh), 3 sn yumuşak geçiş.
+- **Mevsimler** (`logic/season.ts`, `BALANCE.mevsim`): yıl 18 gün = İlkbahar 5, Yaz 5, Sonbahar 5, Kış 3. Mevsim `gun`dan türetilir, durumda alan yok. Kışın Tarla ve Arılık üretmez (`kisinUretmez`), odun isteyen evlerin (3. seviye ve üstü) odun tüketimi 2 katı; başka hiçbir şey değişmez. Diğer mevsimler yalnızca görsel. HUD'da mevsim + "kışa X gün", sonbaharın ilk günü uyarı. Çizim: `GameRenderer.setSeason(m, anlik?)` (`render/season.ts`): sonbaharda yapraklar hardal/terrakota, kışın karlı zemin, buzlu göl, açık renkli ağaçlar, düşen kağıt kar (tek InstancedMesh), 3 sn yumuşak geçiş.
+- **Gece-gündüz** (yalnızca çizim, `render/scene.ts` `applyDayProgress`, `geceAgirligi`): her oyun günü kendi içinde döner. Günün ilk %80'i gündüz (güneş doğudan batıya), sonu akşam turuncusu ve gece (ay ışığı, soluk mavi gök ve sis); şafak yeni günün başında, böylece gün geçişinde ışık sıçramaz. Gece pencere camları sıcak ışıkla yanar: `ModelBuilder` `isik: true` parçalara `isik` tepe niteliği yazar (`windowAt` camı), model malzemesi `paper.ts` `gece` uniform'uyla parlatır. Renkler paletteki `gunesAksam`, `ayIsik`, `geceGok`, `geceYer`, `geceSis`, `pencereIsik`.
 - **Gezgin tüccar** (`logic/trade.ts`, `BALANCE.ticaret`): her 8 günde bir gelir ve 3 gün kalır (8–10, 16–18, ...; `aralik`, `kalis`), başlangıç yolunun kenar ucunda durur. Sabit fiyatlar (satış < alış), ziyaret başına 40 birim kota (bütün ziyaret için; `tuccarKota`, ziyaret bitince silinir). HUD'da 🛒 düğmesi → takas paneli (`ui/tradePanel.ts`). Çizim: `GameRenderer.setMerchant(konum, anlik?)`.
 - **Sakin istekleri** (`logic/requests.ts`, `BALANCE.istek`): nüfus > 10 iken en fazla bir istek, biri bitince 3 gün sonra yenisi, süre 4 gün, dolarsa cezasız kalkar. Tür tohum + günden deterministik. Şenlik (30 yemek → 3 gün +5 mutluluk), Ağaçlandırma (5 ağaç → 40 para), Kış hazırlığı (sonbaharda 40 odun → 60 para), Susuz ev (bir ev suya kavuşsun → 30 para). Hedef kartının altında istek kartı.
 - **Karar kartları** (`data/cards.ts`, `logic/cards.ts`): 50, 100 ve 150. günlerin sonunda (`BALANCE.kartSecimi`, `kartGunSonu`; toplam 3 kart) oyun duraklar, tohum + seçim numarasından deterministik üç kart (seçilen tekrar gelmez); seçim kalıcı (`kararlar`), bekleyen seçim `bekleyenKararlar`. 8 kart, her birinin artısı ve eksisi var. Kartların etkilediği değerler ekonomide `ayar(s, anahtar)` ile okunur (taban + kart etkileri); karta özel `if` yazılmaz. Seçim ekranı `ui/cardPicker.ts`; seçilen kartlar sol alt köşedeki "Kasabanın yolu" kartında hep yazar (`ui/cardList.ts`).
@@ -56,7 +57,7 @@ Bina kağıt maket gibi kurulur: önce düz bir kağıt açınım (taban izi) ye
 
 ## Göstergeler
 
-Para (başlangıç 150), Nüfus, Mutluluk (0–100, nüfusa göre ağırlıklı ortalama), ve 6 mal stoğu: Buğday, Un, Yemek, Odun, Taş, Mobilya. Her malın sınırı 200, her Ambar +100 ekler (`stockLimit`).
+Para (başlangıç 150), Nüfus, Mutluluk (0–100, nüfusa göre ağırlıklı ortalama), ve 9 mal stoğu: Buğday, Un, Yemek, Odun, Taş, Mobilya, Yün, Kumaş, Bal. Yün, kumaş ve bal HUD'da üretici binaları açılana (ya da stokta olana) kadar görünmez. Her malın sınırı 200, her Ambar +100 ekler (`stockLimit`).
 
 ## Binalar
 
@@ -64,7 +65,7 @@ Tanımlar `src/data/buildings.ts` içindedir; denge değerleri orada ayarlanır.
 
 | Bina | Ne yapar |
 |---|---|
-| Ev | Sakin barındırır, vergi öder. Seviye 1–3 (kulübe → ev → iki katlı ev). |
+| Ev | Sakin barındırır, vergi öder. Seviye 1–5 (kulübe → ev → iki katlı ev → konak → köşk). Konak ve köşk de iki katlıdır: konakta cumba ve sütunlu giriş, köşkte yan kanat, teras ve balkon. |
 | Ağaç | Yakındaki evlere mutluluk. Oduncunun hammaddesi. |
 | Tarla | Buğday üretir. |
 | Çeşme | Etki alanındaki evlere su sağlar. |
@@ -79,6 +80,9 @@ Tanımlar `src/data/buildings.ts` içindedir; denge değerleri orada ayarlanır.
 | Balıkçı | Göl kıyısına kurulur (`golKiyisi`), 3 yemek (balık) üretir: fırından az ama zincirsiz. |
 | Taş Ocağı | Yalnızca haritadaki taşlık alanlara kurulur, taş çıkarır. Gürültü. |
 | Marangoz | Odun → mobilya. Biraz gürültü. |
+| Ağıl | 3 buğday → 4 yün (koyunlar). Biraz koku (−2 mutluluk). 80 nüfusta açılır. |
+| Dokumacı | 4 yün → 4 kumaş. 80 nüfusta açılır. |
+| Arılık | Zincirsiz 3 bal; kışın üretmez. 100 nüfusta açılır. |
 
 ## Ekonomi kuralları
 
@@ -87,21 +91,23 @@ Tanımlar `src/data/buildings.ts` içindedir; denge değerleri orada ayarlanır.
 - **Yükseltme:** Çeşme, Pazar, Okul ve Hastane bilgi panelinden yerinde 3. seviyeye kadar yükseltilir. Taban değişmez; etki yarıçapı ×1 / ×1.4 / ×1.8, gider ×1 / ×1.5 / ×2 (yuvarlanır). Seviye 2 maliyeti kurulumun %60'ı + 10 taş, seviye 3 maliyeti kurulumun %100'ü + 25 taş (`BALANCE.yukseltme`). Her seviyede modele küçük bir ek gelir (kat eklenmez).
 - **Açılma:** Binalar nüfus eşiğine göre açılır (`acilmaNufus`).
 - **İşçi:** Üretim binaları işçi ister. Toplam işçi ihtiyacı nüfustan fazlaysa bütün üretim `nüfus / ihtiyaç` oranında düşer.
-- **Üretim sırası:** Tarla → Değirmen → Fırın → Oduncu → Balıkçı → Taş Ocağı → Marangoz. Girdi stokta yoksa üretim girdiyle orantılı düşer. Çıktı stok sınırına dayanırsa üretim de o oranda düşer.
+- **Üretim sırası:** Tarla → Değirmen → Fırın → Oduncu → Balıkçı → Taş Ocağı → Marangoz → Ağıl → Dokumacı → Arılık (ağıl buğdayı değirmenden sonra alır). Girdi stokta yoksa üretim girdiyle orantılı düşer. Çıktı stok sınırına dayanırsa üretim de o oranda düşer.
 - **Ev ihtiyaçları:**
   - Seviye 1 (3 kişi): ihtiyaç yok.
   - Seviye 2 (6 kişi): su + yemek.
   - Seviye 3 (10 kişi): su + yemek + odun + pazar + okul + mobilya + sağlık.
+  - Seviye 4, Konak (14 kişi): seviye 3 + kumaş (kişi başı 0.1).
+  - Seviye 5, Köşk (18 kişi): seviye 4 + bal (kişi başı 0.1).
   - Su/pazar/okul: evin merkezi o binanın etki yarıçapı içindeyse karşılanır.
   - **Yemek** tek bir ortak stoktur. Yemek binaları (Fırın, Balıkçı) aynı `yemek` malını farklı miktarlarda üretir; yeni bir yemek türü eklemek için `yemek` üreten yeni bir bina eklemek yeter. Ev kişi başı günlük 0.25 yemek yer, ama yalnızca bir satış yerinin (Fırın, Pazar; `yemekSatar`) etki alanındaysa. Odun/mobilya global stoktan tüketilir (seviye 3 için kişi başı odun 0.2, mobilya 0.1). Eski kayıtlardaki ekmek ve balık stokları yemeğe aktarılır.
   - Bir üst seviyenin bütün ihtiyaçları 2 gün üst üste karşılanırsa ev 1 seviye atlar. Mevcut seviyenin ihtiyaçları 2 gün üst üste karşılanmazsa 1 seviye düşer.
 - **Mutluluk (ev başına):** 45 + etki alanında evi kapsayan binaların `mutluluk` değerleri toplamı (ağaçlar en fazla +9 sayılır) + en iyi yakın yol (asfalt +5) + karşılanan ihtiyaç başına +2, 0–100 sınırlı. Sabitler `BALANCE` içinde (`mutlulukTaban`, `agacMutlulukSinir`, `ihtiyacMutluluk`, `mutlulukMin/Max`). Saat Kulesi olmadan hiçbir ev 100 olmaz.
-- **Komşuluk bonusu** (`logic/adjacency.ts`, kurallar `BUILDINGS[t].komsuluk`): Tarla kenarı göle ≤ 4 → buğday +%25; Değirmen merkezde yükseklik ≥ 1 → un +%25; Fırın 6 birim içinde Değirmen → yemek +%25; Marangoz 6 birim içinde Oduncu → mobilya +%25; Ev merkezi göle ≤ 5 → +3 mutluluk. Bonus saklanmaz, her seferinde hesaplanır; yalnızca çıktıyı artırır, girdi aynı. Yerleştirirken hayalet üstünde canlı etiket, bilgi panelinde Bonus satırı.
+- **Komşuluk bonusu** (`logic/adjacency.ts`, kurallar `BUILDINGS[t].komsuluk`): Tarla kenarı göle ≤ 4 → buğday +%25; Değirmen merkezde yükseklik ≥ 1 → un +%25; Fırın 6 birim içinde Değirmen → yemek +%25; Marangoz 6 birim içinde Oduncu → mobilya +%25; Ağıl 6 birim içinde Tarla → yün +%25; Dokumacı 6 birim içinde Ağıl → kumaş +%25; Arılık 4 birim içinde ağaç → bal +%25; Ev merkezi göle ≤ 5 → +3 mutluluk. Bonus saklanmaz, her seferinde hesaplanır; yalnızca çıktıyı artırır, girdi aynı. Yerleştirirken hayalet üstünde canlı etiket, bilgi panelinde Bonus satırı.
 - **Gelir-gider dökümü:** `DayReport` vergi, `binaGider`, `yolGider`, `net` taşır; HUD'da Para'nın üstüne gelince görünür.
-- **Vergi:** Her ev için `floor(nüfus × (0.5 + mutluluk/100) × seviye çarpanı)`; çarpan 1. ve 2. seviyede 1, 3. seviyede 0.6 (`BALANCE.vergiSeviyeCarpani`). Pazar, Okul ve Hastane gideri 9, 12, 15.
+- **Vergi:** Her ev için `floor(nüfus × (0.5 + mutluluk/100) × seviye çarpanı)`; çarpan 1. ve 2. seviyede 1, 3. seviyede 0.6, konakta 0.55, köşkte 0.5 (`BALANCE.vergiSeviyeCarpani`). Pazar, Okul ve Hastane gideri 9, 12, 15.
 - **Gider:** Her binanın günlük gideri (yükseltilmiş binada seviyeye göre).
 - **Borç:** Para 3 gün üst üste −50'nin altında biterse oyun biter.
-- **Hedefler** (sırayla, tamamlanınca bildirim; sayılabilenlerde kartta ilerleme görünür): 10 nüfus → ilk yemek → 50 nüfus → ilk 3. seviye ev → 150 nüfus ve Saat Kulesi ("Kasaba tamamlandı", yeni hedefler açılır) → bir Çeşme 3. seviye → 200 nüfus ve mutluluk ≥ 70 → 10 tane 3. seviye ev → bir Pazar ve bir Okul 3. seviye → aynı anda 150 yemek ve 100 odun → kasada 1000 para → 300 nüfus → 400 nüfus ve mutluluk ≥ 75 ("Kasaba efsanesi", oyun devam eder).
+- **Hedefler** (sırayla, tamamlanınca bildirim; sayılabilenlerde kartta ilerleme görünür): 10 nüfus → ilk yemek → 50 nüfus → ilk 3. seviye ev → 150 nüfus ve Saat Kulesi ("Kasaba tamamlandı", yeni hedefler açılır) → bir Çeşme 3. seviye → 200 nüfus ve mutluluk ≥ 70 → 10 tane 3. seviye ev → bir Pazar ve bir Okul 3. seviye → aynı anda 150 yemek ve 100 odun → kasada 1000 para → 300 nüfus → 3 konak → 1 köşk → 400 nüfus ve mutluluk ≥ 75 ("Kasaba efsanesi", oyun devam eder). Konak ve köşk hedefleri sonradan araya girdi: yün/kumaş/bal öncesi bir kayıt bütün eski hedefleri bitirmişse (`ESKI_HEDEF_SAYISI`) yine hepsi bitmiş sayılır (`save.ts`).
 
 ## Kontroller (masaüstü)
 
@@ -136,7 +142,7 @@ GitHub'da herkese açık depo. `main`'e her push'ta `.github/workflows/deploy.ym
 
 ## YAPMA listesi
 
-- Gökdelen, apartman, 2 kattan yüksek ev.
+- Gökdelen, apartman, 2 kattan yüksek ev (yeni ev seviyeleri de iki katlı kalır; büyüme genişlik ve süsle gösterilir).
 - Izgara, kare/altıgen tahta. Yerleşim serbesttir.
 - Yol ağı bağlantı analizi (BFS). Bağlantı yalnızca "uç bir yola kenetlenmeli" ve "bina yol kenarında" kurallarıyla sağlanır.
 - Köprü, tünel.

@@ -115,7 +115,7 @@
 
   "bilgi.ormanAgaci": "Orman ağacı",
   "bilgi.ormanAgaciMetin": "Ormanın doğal ağacı. Kesilirse odun verir.",
-  "bilgi.seviyeAlt": "Seviye {n} / 3",
+  "bilgi.seviyeAlt": "Seviye {n} / {max}",
   "bilgi.nufus": "Nüfus",
   "bilgi.mutluluk": "Mutluluk",
   "bilgi.tahminiVergi": "Tahmini vergi",
@@ -185,8 +185,12 @@
   "hedef.10.aciklama": "Kasada 1000 para biriktir.",
   "hedef.11.ad": "Kalabalık kasaba",
   "hedef.11.aciklama": "300 nüfusa ulaş.",
-  "hedef.12.ad": "Kasaba efsanesi",
-  "hedef.12.aciklama": "400 nüfusa ulaş, ortalama mutluluk en az 75 olsun.",
+  "hedef.12.ad": "Konaklar",
+  "hedef.12.aciklama": "3 evi 4. seviyeye (Konak) çıkar.",
+  "hedef.13.ad": "Köşk",
+  "hedef.13.aciklama": "Bir evi 5. seviyeye (Köşk) çıkar.",
+  "hedef.14.ad": "Kasaba efsanesi",
+  "hedef.14.aciklama": "400 nüfusa ulaş, ortalama mutluluk en az 75 olsun.",
 
   "istek.senlik.ad": "🎉 Şenlik",
   "istek.senlik.aciklama": "Sakinler şenlik istiyor: stoktan {yemek} yemek teslim et. Ödül: {gun} gün bütün evlere +{mutluluk} mutluluk.",
@@ -346,6 +350,12 @@
   "bina.tasOcagi.aciklama": "Taşlık alana kurulur, taş çıkarır. Taş, hizmet binası yükseltmelerinde kullanılır. Gürültülüdür.",
   "bina.marangoz.ad": "Marangoz",
   "bina.marangoz.aciklama": "Odundan mobilya yapar. İki katlı evler mobilya ister.",
+  "bina.agil.ad": "Ağıl",
+  "bina.agil.aciklama": "Koyun besler: buğdayla yün üretir. Biraz kokar.",
+  "bina.dokumaci.ad": "Dokumacı",
+  "bina.dokumaci.aciklama": "Yünden kumaş dokur. Konaklar kumaş ister.",
+  "bina.arilik.ad": "Arılık",
+  "bina.arilik.aciklama": "Kovanlardan bal toplar; kışın arılar uyur. Köşkler bal ister.",
 
   "yol.toprak.ad": "Toprak Yol",
   "yol.toprak.aciklama": "Ucuz patika. Binalar yol kenarına kurulur.",
@@ -355,6 +365,8 @@
   "evSeviye.1": "Kulübe",
   "evSeviye.2": "Ev",
   "evSeviye.3": "İki katlı ev",
+  "evSeviye.4": "Konak",
+  "evSeviye.5": "Köşk",
 
   "mal.bugday": "Buğday",
   "mal.un": "Un",
@@ -362,6 +374,9 @@
   "mal.odun": "Odun",
   "mal.tas": "Taş",
   "mal.mobilya": "Mobilya",
+  "mal.yun": "Yün",
+  "mal.kumas": "Kumaş",
+  "mal.bal": "Bal",
 
   "ihtiyac.su": "Su",
   "ihtiyac.yemek": "Yemek (fırın / pazar)",
@@ -370,6 +385,8 @@
   "ihtiyac.okul": "Okul",
   "ihtiyac.mobilya": "Mobilya",
   "ihtiyac.saglik": "Sağlık",
+  "ihtiyac.kumas": "Kumaş",
+  "ihtiyac.bal": "Bal",
 
   "mevsim.ilkbahar": "İlkbahar",
   "mevsim.yaz": "Yaz",
@@ -385,5 +402,11 @@
   "komsuluk.firin.etiket": "taze un",
   "komsuluk.firin.sart": "6 birim içinde Değirmen",
   "komsuluk.marangoz.etiket": "yakın odun",
-  "komsuluk.marangoz.sart": "6 birim içinde Oduncu"
+  "komsuluk.marangoz.sart": "6 birim içinde Oduncu",
+  "komsuluk.agil.etiket": "otlak",
+  "komsuluk.agil.sart": "6 birim içinde Tarla",
+  "komsuluk.dokumaci.etiket": "taze yün",
+  "komsuluk.dokumaci.sart": "6 birim içinde Ağıl",
+  "komsuluk.arilik.etiket": "çiçek",
+  "komsuluk.arilik.sart": "4 birim içinde ağaç"
 }

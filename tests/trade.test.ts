@@ -60,6 +60,7 @@ describe('tüccar: fiyatlar', () => {
     expect(BALANCE.ticaret.fiyat).toEqual({
       bugday: { sat: 1, al: 3 }, un: { sat: 2, al: 5 }, yemek: { sat: 2, al: 6 },
       odun: { sat: 2, al: 5 }, tas: { sat: 3, al: 8 }, mobilya: { sat: 6, al: 15 },
+      yun: { sat: 2, al: 6 }, kumas: { sat: 5, al: 12 }, bal: { sat: 4, al: 10 },
     });
     for (const f of Object.values(BALANCE.ticaret.fiyat)) expect(f.sat).toBeLessThan(f.al);
   });

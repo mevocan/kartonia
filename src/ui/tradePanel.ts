@@ -15,6 +15,9 @@ const MALLAR: { g: Good; ikon: string }[] = [
   { g: 'odun', ikon: '🪵' },
   { g: 'tas', ikon: '🪨' },
   { g: 'mobilya', ikon: '🪑' },
+  { g: 'yun', ikon: '🧶' },
+  { g: 'kumas', ikon: '🧵' },
+  { g: 'bal', ikon: '🍯' },
 ];
 
 export interface TradePanel {

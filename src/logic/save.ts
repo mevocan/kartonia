@@ -1,6 +1,7 @@
 import type { GameState, Good } from './types';
 import { emptyGoods } from './economy';
 import { haritayiAyarla } from '../data/map';
+import { ESKI_HEDEF_SAYISI, GOALS } from './goals';
 
 export const SAVE_SURUM = 2; // 1: yolsuz eski sürüm, reddedilir
 
@@ -40,7 +41,10 @@ export function deserialize(json: string): GameState {
   delete eski.stok.balik;
   if (typeof s.toplamYemek !== 'number') s.toplamYemek = typeof eski.toplamEkmek === 'number' ? eski.toplamEkmek : 0;
   delete eski.toplamEkmek;
-  // Sonradan eklenen mallar (taş, mobilya) eski kayıtlarda yok: 0 ile başlar.
+  // Yün/kumaş/bal öncesi kayıt: bütün hedefleri bitirmişse (eski efsane) yeni Konak ve Köşk hedefleri
+  // araya girdiği için yine "hepsi bitti" sayılır; efsane hedefi yeniden sorulmaz.
+  if (typeof s.stok.kumas !== 'number' && s.hedef >= ESKI_HEDEF_SAYISI) s.hedef = GOALS.length;
+  // Sonradan eklenen mallar (taş, mobilya, yün, kumaş, bal) eski kayıtlarda yok: 0 ile başlar.
   for (const g of Object.keys(emptyGoods()) as Good[]) {
     if (typeof s.stok[g] !== 'number') s.stok[g] = 0;
   }

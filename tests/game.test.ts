@@ -12,7 +12,7 @@ describe('başlangıç', () => {
     expect(s.para).toBe(150);
     expect(s.gun).toBe(1);
     expect(s.mutluluk).toBe(45); // ev yokken taban mutluluk
-    expect(s.stok).toEqual({ bugday: 0, un: 0, yemek: 0, odun: 0, tas: 0, mobilya: 0 });
+    expect(s.stok).toEqual({ bugday: 0, un: 0, yemek: 0, odun: 0, tas: 0, mobilya: 0, yun: 0, kumas: 0, bal: 0 });
     expect([GUN_SURESI, ZEMIN_YARICAP, BOSLUK, STOK_SINIR]).toEqual([15, 48, 0.1, 200]);
   });
 });
@@ -45,8 +45,9 @@ describe('tick', () => {
 });
 
 describe('hedefler', () => {
-  it('13 hedef, 5. hedef "Kasaba tamamlandı"', () => {
-    expect(GOALS).toHaveLength(13);
+  it('15 hedef, 5. hedef "Kasaba tamamlandı", sonuncusu "Kasaba efsanesi"', () => {
+    expect(GOALS).toHaveLength(15);
+    expect(GOALS[GOALS.length - 1].ad).toBe('Kasaba efsanesi');
     expect(GOALS[KASABA_TAMAM_HEDEFI].ad).toBe('Kasaba tamamlandı');
   });
 
@@ -91,7 +92,14 @@ describe('hedefler', () => {
     s.mutluluk = 74;
     expect(checkGoals(s)).toEqual([]);
     s.mutluluk = 75;
+    expect(checkGoals(s)).toEqual([]); // önce Konaklar ve Köşk
+    expect(goalProgress(s)).toEqual({ mevcut: 0, hedef: 3 });
+    const konaklar = [add(s, 'ev', 20, 20, 4), add(s, 'ev', 23, 20, 4)];
+    expect(checkGoals(s)).toEqual([]);
+    konaklar.push(add(s, 'ev', 26, 20, 4));
     expect(checkGoals(s)).toEqual([12]);
+    konaklar[0].seviye = 5;
+    expect(checkGoals(s)).toEqual([13, 14]);
     expect(s.hedef).toBe(GOALS.length);
     expect(goalProgress(s)).toBeNull();
   });

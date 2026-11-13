@@ -73,17 +73,37 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     uretim: { girdi: { odun: 4 }, cikti: { mobilya: 4 } },
     komsuluk: [{ kaynak: 'oduncu', mesafe: 6, oran: 0.25, etiket: 'yakın odun', sart: '6 birim içinde Oduncu' }],
   },
+  agil: {
+    type: 'agil', ad: 'Ağıl', aciklama: 'Koyun besler: buğdayla yün üretir. Biraz kokar.',
+    maliyet: 55, gider: 2, taban: 2.0, etki: 4, mutluluk: -2, isci: 2, acilmaNufus: 80,
+    uretim: { girdi: { bugday: 3 }, cikti: { yun: 4 } },
+    komsuluk: [{ kaynak: 'tarla', mesafe: 6, oran: 0.25, etiket: 'otlak', sart: '6 birim içinde Tarla' }],
+  },
+  dokumaci: {
+    type: 'dokumaci', ad: 'Dokumacı', aciklama: 'Yünden kumaş dokur. Konaklar kumaş ister.',
+    maliyet: 60, gider: 2, taban: 1.3, etki: 0, mutluluk: 0, isci: 2, acilmaNufus: 80,
+    uretim: { girdi: { yun: 4 }, cikti: { kumas: 4 } },
+    komsuluk: [{ kaynak: 'agil', mesafe: 6, oran: 0.25, etiket: 'taze yün', sart: '6 birim içinde Ağıl' }],
+  },
+  arilik: {
+    type: 'arilik', ad: 'Arılık', aciklama: 'Kovanlardan bal toplar; kışın arılar uyur. Köşkler bal ister.',
+    maliyet: 40, gider: 1, taban: 1.0, etki: 0, mutluluk: 0, isci: 1, acilmaNufus: 100,
+    uretim: { girdi: {}, cikti: { bal: 3 } }, kisinUretmez: true,
+    komsuluk: [{ kaynak: 'agac', mesafe: 4, oran: 0.25, etiket: 'çiçek', sart: '4 birim içinde ağaç' }],
+  },
 };
 
 export const BUILDING_ORDER: BuildingType[] = [
-  'ev', 'agac', 'tarla', 'cesme', 'degirmen', 'firin', 'oduncu', 'balikci', 'tasOcagi', 'marangoz', 'ambar',
-  'pazar', 'okul', 'hastane', 'saatKulesi',
+  'ev', 'agac', 'tarla', 'cesme', 'degirmen', 'firin', 'oduncu', 'balikci', 'tasOcagi', 'marangoz', 'agil', 'dokumaci',
+  'arilik', 'ambar', 'pazar', 'okul', 'hastane', 'saatKulesi',
 ];
 
 export const HOUSE_LEVELS: HouseLevelDef[] = [
   { seviye: 1, nufus: 3, ihtiyaclar: [] },
   { seviye: 2, nufus: 6, ihtiyaclar: ['su', 'yemek'] },
   { seviye: 3, nufus: 10, ihtiyaclar: ['su', 'yemek', 'odun', 'pazar', 'okul', 'mobilya', 'saglik'] },
+  { seviye: 4, nufus: 14, ihtiyaclar: ['su', 'yemek', 'odun', 'pazar', 'okul', 'mobilya', 'saglik', 'kumas'] },
+  { seviye: 5, nufus: 18, ihtiyaclar: ['su', 'yemek', 'odun', 'pazar', 'okul', 'mobilya', 'saglik', 'kumas', 'bal'] },
 ];
 
 export const ROADS: Record<RoadType, RoadDef> = {
@@ -117,8 +137,8 @@ export const BALANCE = {
   mutlulukMax: 100,
   /** Ev vergisi: floor(nüfus × (vergiTaban + mutluluk/100) × vergiSeviyeCarpani[seviye − 1]). */
   vergiTaban: 0.5,
-  /** Ev seviyesine göre vergi çarpanı (1, 2, 3). 3. seviye ev kalabalık ama kişi başı daha az öder. */
-  vergiSeviyeCarpani: [1, 1, 0.6],
+  /** Ev seviyesine göre vergi çarpanı (1–5). Büyük evler kalabalık ama kişi başı daha az öder. */
+  vergiSeviyeCarpani: [1, 1, 0.6, 0.55, 0.5],
   seviyeGunEsigi: 2,
   borcSiniri: -50,
   borcGunSiniri: 3,
@@ -142,8 +162,12 @@ export const BALANCE = {
     /** O seviyeye çıkmak için gereken taş (taş ocağından). */
     tas: [0, 10, 25],
   },
-  /** Seviye 3 evlerde kişi başı günlük mobilya. */
+  /** Seviye 3+ evlerde kişi başı günlük mobilya. */
   mobilyaKisiBasi: 0.1,
+  /** Seviye 4+ evlerde (Konak) kişi başı günlük kumaş. */
+  kumasKisiBasi: 0.1,
+  /** Seviye 5 evlerde (Köşk) kişi başı günlük bal. */
+  balKisiBasi: 0.1,
   /** Balıkçı: taban kenarı göle en fazla bu kadar uzak olabilir. */
   golKiyisi: 1.5,
   /**
@@ -176,6 +200,9 @@ export const BALANCE = {
       odun: { sat: 2, al: 5 },
       tas: { sat: 3, al: 8 },
       mobilya: { sat: 6, al: 15 },
+      yun: { sat: 2, al: 6 },
+      kumas: { sat: 5, al: 12 },
+      bal: { sat: 4, al: 10 },
     } as Record<Good, { sat: number; al: number }>,
   },
   /**
@@ -203,7 +230,7 @@ export const BALANCE = {
   /** Mevsimler (logic/season.ts): yıl = İlkbahar, Yaz, Sonbahar, Kış gün sayıları. */
   mevsim: {
     gunler: [5, 5, 5, 3],
-    /** Kışın 3. seviye evlerin odun tüketimi bu kat. */
+    /** Kışın odun isteyen evlerin (3. seviye ve üstü) odun tüketimi bu kat. */
     kisOdunCarpani: 2,
   },
 } as const;

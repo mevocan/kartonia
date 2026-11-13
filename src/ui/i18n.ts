@@ -69,8 +69,9 @@ export const malAd = (g: Good): string => t(`mal.${g}`);
 export const malAdKucuk = (g: Good): string => kucuk(malAd(g));
 export const ihtiyacAd = (n: Need): string => t(`ihtiyac.${n}`);
 export const mevsimAd = (m: Mevsim): string => t(`mevsim.${m}`);
-/** Ev seviyesinin adı (1–3). */
-export const evSeviyeAd = (s: number): string => (s >= 1 && s <= 3 ? t(`evSeviye.${s as 1 | 2 | 3}`) : '');
+/** Ev seviyesinin adı (1–5). */
+export const evSeviyeAd = (s: number): string =>
+  s >= 1 && s <= 5 ? t(`evSeviye.${s as 1 | 2 | 3 | 4 | 5}`) : '';
 
 /** Karar kartının adı, artısı ve eksisi. */
 export function kartMetni(k: KararKarti): { ad: string; arti: string; eksi: string } {

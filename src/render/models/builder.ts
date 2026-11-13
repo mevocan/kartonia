@@ -27,6 +27,8 @@ export interface Place {
   wob?: number;
   edges?: boolean;
   edgeDeg?: number;
+  /** Gece ışık yanar (pencere camı): `isik` tepe niteliği 1 olur, model malzemesi geceleyin parlatır. */
+  isik?: boolean;
 }
 
 export interface Baked {
@@ -152,6 +154,8 @@ export class ModelBuilder {
       col[i * 3 + 2] = tmpColor.b;
     }
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    // Bütün parçalarda aynı nitelik kümesi olsun (birleştirme için): ışıksız parçada 0.
+    g.setAttribute('isik', new THREE.BufferAttribute(new Float32Array(n).fill(p.isik ? 1 : 0), 1));
     const eg = p.edges !== false ? new THREE.EdgesGeometry(g, p.edgeDeg ?? 25) : null;
     let acc = this.cur;
     if (!acc) {
@@ -277,7 +281,7 @@ export function windowAt(b: ModelBuilder, x: number, y: number, z: number, w: nu
   const off = (d: number) => ({ x: x + Math.sin(ry) * d, z: z + Math.cos(ry) * d });
   b.piece('detay', () => {
     b.plate(w + 0.08, h + 0.08, frame, { ...off(dz), y: y - 0.04, ry, wob: 0.02 });
-    b.plate(w, h, glass, { ...off(dz * 2.6), y, ry, wob: 0.0, edges: false });
+    b.plate(w, h, glass, { ...off(dz * 2.6), y, ry, wob: 0.0, edges: false, isik: true });
     b.plate(0.025, h, frame, { ...off(dz * 3.6), y, ry, wob: 0, edges: false }, 0.02);
     b.plate(w, 0.025, frame, { ...off(dz * 3.6), y: y + h / 2 - 0.012, ry, wob: 0, edges: false }, 0.02);
   });

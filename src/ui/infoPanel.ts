@@ -16,7 +16,9 @@ export interface InfoPanel {
   showRoad(info: RoadInfo): void;
 }
 
-const MAL_IKON: Record<Good, string> = { bugday: '🌾', un: '🥣', yemek: '🍽️', odun: '🪵', tas: '🪨', mobilya: '🪑' };
+const MAL_IKON: Record<Good, string> = {
+  bugday: '🌾', un: '🥣', yemek: '🍽️', odun: '🪵', tas: '🪨', mobilya: '🪑', yun: '🧶', kumas: '🧵', bal: '🍯',
+};
 
 export function createInfoPanel(
   root: HTMLElement,
@@ -66,7 +68,7 @@ export function createInfoPanel(
         ? bas(t('bilgi.ormanAgaci'), t('bilgi.ormanAgaciMetin'))
         : bas(
           ev ? evSeviyeAd(info.seviye) || binaAd(info.type) : binaAd(info.type),
-          ev ? t('bilgi.seviyeAlt', { n: info.seviye }) : binaAciklama(info.type),
+          ev ? t('bilgi.seviyeAlt', { n: info.seviye, max: HOUSE_LEVELS.length }) : binaAciklama(info.type),
         );
 
       if (info.nufus !== undefined) satir(tablo, t('bilgi.nufus'), String(info.nufus));

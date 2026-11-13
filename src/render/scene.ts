@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { DIS_SINIR, OYUN_YARI_GENISLIK } from '../data/map';
 import { PALETTE } from './palette';
 import { createTerrain, type Terrain } from './terrain';
+import { gece } from './paper';
 
 // Sahne: ekranı dolduran kağıt arazi, güneş + gök ışığı, araziye uyumlu sis.
 // Gölge frustumu kamera hedefini izler (texel'e kenetli). Sis uzağı, çizilen arazinin kenarından önce örter.
@@ -82,17 +83,58 @@ const cWarm = new THREE.Color(PALETTE.gunesSicak);
 const tmp = new THREE.Color();
 const sunDir = new THREE.Vector3(0, 1, 0);
 
-/** Gün ilerlemesi: güneş doğudan batıya yay çizer; sabah/akşam sıcak, öğlen nötr. Gece yok. */
+const cAksam = new THREE.Color(PALETTE.gunesAksam);
+const cAy = new THREE.Color(PALETTE.ayIsik);
+const cGok = new THREE.Color(PALETTE.gokIsik);
+const cYer = new THREE.Color(PALETTE.yerIsik);
+const cGeceGok = new THREE.Color(PALETTE.geceGok);
+const cGeceYer = new THREE.Color(PALETTE.geceYer);
+
+/** Günün aydınlık kısmı: güneş [0, GUN_SONU] boyunca doğudan batıya gider, sonrası gece. */
+const GUN_SONU = 0.8;
+/** Şafak ve alacakaranlık süresi (gün oranı). */
+const GECIS = 0.08;
+
+const yumusak = (x: number): number => {
+  const k = Math.max(0, Math.min(1, x));
+  return k * k * (3 - 2 * k);
+};
+
+/**
+ * Gece ağırlığı 0..1. Gün 0'da gece biter (şafak), GUN_SONU'na doğru akşam olur, gün sonuna kadar gecedir;
+ * böylece gün geçişinde (1 → 0) ışık sıçramaz.
+ */
+export function geceAgirligi(t: number): number {
+  const k = ((t % 1) + 1) % 1;
+  if (k < GECIS) return 1 - yumusak(k / GECIS);
+  if (k < GUN_SONU - GECIS) return 0;
+  if (k < GUN_SONU) return yumusak((k - (GUN_SONU - GECIS)) / GECIS);
+  return 1;
+}
+
+/**
+ * Gün ilerlemesi: gündüz güneş doğudan batıya yay çizer (sabah/akşam sıcak, öğlen nötr); akşam turuncuya
+ * döner, gece ay ışığı (soluk mavi) batıdan doğuya geri geçer. Pencereler gece ağırlığıyla yanar (paper.ts gece).
+ */
 export function applyDayProgress(w: World, t: number): void {
   const k = Math.max(0, Math.min(1, t));
-  const az = -0.8 + k * 1.6;
-  const el = 0.85 + Math.sin(k * Math.PI) * 0.3;
+  const g = geceAgirligi(k);
+  // Gündüz: 0..GUN_SONU boyunca doğu → batı; gece: batı → doğu (ay). Uçlar birleşir.
+  const p = k < GUN_SONU ? k / GUN_SONU : 1 - (k - GUN_SONU) / (1 - GUN_SONU);
+  const az = -0.8 + p * 1.6;
+  const tepe = Math.sin(p * Math.PI);
+  const el = 0.85 + tepe * 0.3;
   sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).normalize();
-  const warm = 1 - Math.sin(k * Math.PI);
-  tmp.copy(cNoon).lerp(cWarm, warm * 0.35);
+  // Akşam: gecenin hemen öncesinde ve şafakta turuncu.
+  const aksam = Math.max(0, 1 - Math.abs(g - 0.45) / 0.45) * (k > 0.5 || k < GECIS ? 1 : 0);
+  tmp.copy(cNoon).lerp(cWarm, (1 - tepe) * 0.35).lerp(cAksam, aksam * 0.6).lerp(cAy, g);
   w.sun.color.copy(tmp);
-  w.sun.intensity = 2.1 + Math.sin(k * Math.PI) * 0.2;
-  w.hemi.intensity = 1.5 + Math.sin(k * Math.PI) * 0.15;
+  const gunduzGunes = 2.1 + tepe * 0.2;
+  w.sun.intensity = gunduzGunes + (0.55 - gunduzGunes) * g;
+  w.hemi.intensity = 1.5 + tepe * 0.15 + (0.75 - 1.5) * g;
+  w.hemi.color.copy(cGok).lerp(cGeceGok, g);
+  w.hemi.groundColor.copy(cYer).lerp(cGeceYer, g);
+  gece.value = g;
 }
 
 const fwd = new THREE.Vector3();

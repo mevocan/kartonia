@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import type { BuildingType, RoadType, Vec2 } from '../logic/types';
-import { BUILDINGS, BUILDING_ORDER } from '../data/buildings';
+import { BUILDINGS, BUILDING_ORDER, HOUSE_LEVELS } from '../data/buildings';
 import { heightAt } from '../logic/terrain';
 import { DIS_SINIR } from '../data/map';
 import type { GameRenderer } from './api';
 import { PALETTE, EV_DUVAR } from './palette';
 import {
-  modelMaterial, lineMaterial, paperMaterial, canvasTexture, disposeMaterials, roadMaterial, treeMaterial, treeGhostMaterial, ruzgar,
+  modelMaterial, lineMaterial, paperMaterial, canvasTexture, disposeMaterials, roadMaterial, treeMaterial, treeGhostMaterial, ruzgar, gece,
 } from './paper';
 import { createWorld, applyDayProgress, followShadow, updateFog, ZEMIN_R } from './scene';
 import { rayTerrain } from './terrain';
@@ -187,6 +187,12 @@ function wallColor(type: BuildingType, variant: number): string {
       return PALETTE.tasKoyu;
     case 'marangoz':
       return PALETTE.ahsapAcik;
+    case 'agil':
+      return PALETTE.ahsap;
+    case 'dokumaci':
+      return PALETTE.lavanta;
+    case 'arilik':
+      return PALETTE.cimenAcik;
     default:
       return PALETTE.mukavva;
   }
@@ -234,8 +240,10 @@ export function createRenderer(container: HTMLElement): GameRenderer {
   const cSis = new THREE.Color(PALETTE.sis);
   const cSisKis = new THREE.Color(PALETTE.sisKis);
   const cSisSonbahar = new THREE.Color(PALETTE.sisSonbahar);
+  const cGeceSis = new THREE.Color(PALETTE.geceSis);
   let sisS = -1;
   let sisK = -1;
+  let sisG = -1;
   const roads = new Map<number, RoadEntry>();
   const dyingRoads = new Set<RoadEntry>();
   let pickMeshes: THREE.Object3D[] = [];
@@ -253,7 +261,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
   // Bütün şablonları baştan üret (oyun sırasında takılma olmasın).
   for (const t of BUILDING_ORDER) {
     const vars = t === 'ev' ? EV_DUVAR.length : t === 'agac' ? TREE_VARIANTS : 1;
-    const levels = t === 'ev' || BUILDINGS[t].yukseltilebilir ? 3 : 1;
+    const levels = t === 'ev' ? HOUSE_LEVELS.length : BUILDINGS[t].yukseltilebilir ? 3 : 1;
     for (let l = 1; l <= levels; l++) for (let v = 0; v < vars; v++) getTemplate(t, l, v);
   }
   for (let a = 0; a < ANIT_ASAMA; a++) getTemplate('saatKulesi', 1, 0, a);
@@ -1105,10 +1113,12 @@ export function createRenderer(container: HTMLElement): GameRenderer {
       {
         const s = sonbaharW();
         const k = kisW();
-        if (s !== sisS || k !== sisK) {
+        const g = gece.value;
+        if (s !== sisS || k !== sisK || g !== sisG) {
           sisS = s;
           sisK = k;
-          world.fog.color.copy(cSis).lerp(cSisSonbahar, s * 0.6).lerp(cSisKis, k);
+          sisG = g;
+          world.fog.color.copy(cSis).lerp(cSisSonbahar, s * 0.6).lerp(cSisKis, k).lerp(cGeceSis, g * 0.85);
           if (world.scene.background instanceof THREE.Color) world.scene.background.copy(world.fog.color);
         }
         snow.update(d, k, cam.getTarget(), cam.getDistance());

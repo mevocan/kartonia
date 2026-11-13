@@ -177,7 +177,7 @@ describe('kayıt uyumu', () => {
     delete eski.durum.toplamYemek;
     eski.durum.toplamEkmek = 77;
     const y = deserialize(JSON.stringify(eski));
-    expect(y.stok).toEqual({ bugday: 1, un: 2, yemek: 42, odun: 4, tas: 0, mobilya: 0 });
+    expect(y.stok).toEqual({ bugday: 1, un: 2, yemek: 42, odun: 4, tas: 0, mobilya: 0, yun: 0, kumas: 0, bal: 0 });
     expect(y.toplamYemek).toBe(77);
     expect('toplamEkmek' in y).toBe(false);
   });

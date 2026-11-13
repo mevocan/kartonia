@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { BuildingType } from '../../logic/types';
-import { BUILDINGS } from '../../data/buildings';
+import { BUILDINGS, HOUSE_LEVELS } from '../../data/buildings';
 import { EV_DUVAR } from '../palette';
 import { modelMaterial, lineMaterial } from '../paper';
 import type { Baked, BakedModel, ModelBuilder } from './builder';
@@ -9,6 +9,7 @@ import { buildTree, buildField, TREE_VARIANTS } from './nature';
 import { buildMill, buildBakery, buildWoodcutter } from './production';
 import { buildFountain, buildFountainWater, buildMarket, buildSchool, buildClockTower, ANIT_ASAMA } from './civic';
 import { buildHospital, buildBarn, buildFishery, buildQuarry, buildCarpenter } from './extra';
+import { buildSheepfold, buildWeaver, buildApiary } from './pastoral';
 
 // Model şablonları: her (tür, seviye, çeşit) için bir kez üretilir, örnekler geometriyi paylaşır.
 
@@ -58,7 +59,8 @@ function fromBuilder(b: ModelBuilder): ModelTemplate {
  * şablondur; parçalar grup etiketini taşır (PieceBaked.grup = aşama, iskele ISKELE_GRUP).
  */
 export function getTemplate(type: BuildingType, level: number, variant: number, asama = ANIT_ASAMA): ModelTemplate {
-  const lv = type === 'ev' || BUILDINGS[type].yukseltilebilir ? Math.max(1, Math.min(3, level)) : 1;
+  const maxLv = type === 'ev' ? HOUSE_LEVELS.length : BUILDINGS[type].yukseltilebilir ? 3 : 1;
+  const lv = Math.max(1, Math.min(maxLv, level));
   const as = type === 'saatKulesi' ? Math.max(0, Math.min(ANIT_ASAMA, Math.round(asama))) : ANIT_ASAMA;
   const key = as < ANIT_ASAMA ? `${type}-${lv}-${variant}-a${as}` : `${type}-${lv}-${variant}`;
   const hit = cache.get(key);
@@ -66,7 +68,7 @@ export function getTemplate(type: BuildingType, level: number, variant: number, 
   let tpl: ModelTemplate;
   switch (type) {
     case 'ev':
-      tpl = fromBuilder(buildHouse(Math.max(1, Math.min(3, level)), variant));
+      tpl = fromBuilder(buildHouse(lv, variant));
       break;
     case 'agac':
       tpl = fromBuilder(buildTree(variant));
@@ -115,6 +117,15 @@ export function getTemplate(type: BuildingType, level: number, variant: number, 
       break;
     case 'marangoz':
       tpl = fromBuilder(buildCarpenter());
+      break;
+    case 'agil':
+      tpl = fromBuilder(buildSheepfold());
+      break;
+    case 'dokumaci':
+      tpl = fromBuilder(buildWeaver());
+      break;
+    case 'arilik':
+      tpl = fromBuilder(buildApiary());
       break;
   }
   cache.set(key, tpl);

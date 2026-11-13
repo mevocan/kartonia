@@ -84,7 +84,7 @@ const KATEGORILER: Record<Kategori, { ad: string; renk: string; ogeler: MenuKey[
   konut: { ad: t('menu.konut'), renk: '#f4b7a3', ogeler: ['ev', 'agac'] },
   uretim: {
     ad: t('menu.uretim'), renk: '#f2d272',
-    ogeler: ['tarla', 'degirmen', 'firin', 'oduncu', 'balikci', 'tasOcagi', 'marangoz', 'ambar'],
+    ogeler: ['tarla', 'degirmen', 'firin', 'oduncu', 'balikci', 'tasOcagi', 'marangoz', 'agil', 'dokumaci', 'arilik', 'ambar'],
   },
   hizmet: { ad: t('menu.hizmet'), renk: '#a9d5e8', ogeler: ['cesme', 'pazar', 'okul', 'hastane', 'saatKulesi'] },
 };

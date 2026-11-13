@@ -50,7 +50,7 @@ export const LIFE = {
   /** Gidilebilecek ev dışı hedefler. */
   hedefTurleri: [
     'firin', 'pazar', 'okul', 'degirmen', 'tarla', 'oduncu', 'saatKulesi', 'cesme',
-    'hastane', 'ambar', 'balikci', 'tasOcagi', 'marangoz',
+    'hastane', 'ambar', 'balikci', 'tasOcagi', 'marangoz', 'agil', 'dokumaci', 'arilik',
   ] as BuildingType[],
   /** Figürlerin zeminden yüksekliği (yol şeridi kalınlığı). */
   zeminPay: 0.07,
@@ -65,6 +65,8 @@ export const LIFE = {
   baca: {
     ev2: { x: 0.36, z: -0.2, y: 1.62 },
     ev3: { x: -0.4, z: -0.22, y: 2.48 },
+    ev4: { x: -0.5, z: -0.22, y: 2.54 },
+    ev5: { x: -0.58, z: -0.22, y: 2.54 },
     firin: { x: -0.42, z: -0.18, y: 2.05 },
   },
   dumanAralik: [0.55, 0.9] as const,
@@ -958,7 +960,9 @@ export class TownLife {
     for (const { b } of this.buildings.values()) {
       let c: { x: number; z: number; y: number } | null = null;
       if (b.type === 'ev' && b.seviye === 2) c = LIFE.baca.ev2;
-      else if (b.type === 'ev' && b.seviye >= 3) c = LIFE.baca.ev3;
+      else if (b.type === 'ev' && b.seviye === 3) c = LIFE.baca.ev3;
+      else if (b.type === 'ev' && b.seviye === 4) c = LIFE.baca.ev4;
+      else if (b.type === 'ev' && b.seviye >= 5) c = LIFE.baca.ev5;
       else if (b.type === 'firin') c = LIFE.baca.firin;
       if (!c) continue;
       const w = toWorld(b, c.x, c.z);

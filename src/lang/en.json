@@ -115,7 +115,7 @@
 
   "bilgi.ormanAgaci": "Forest tree",
   "bilgi.ormanAgaciMetin": "A natural forest tree. Gives wood when cut down.",
-  "bilgi.seviyeAlt": "Level {n} / 3",
+  "bilgi.seviyeAlt": "Level {n} / {max}",
   "bilgi.nufus": "Population",
   "bilgi.mutluluk": "Happiness",
   "bilgi.tahminiVergi": "Estimated tax",
@@ -185,8 +185,12 @@
   "hedef.10.aciklama": "Save up 1000 coins in the treasury.",
   "hedef.11.ad": "Crowded town",
   "hedef.11.aciklama": "Reach 300 population.",
-  "hedef.12.ad": "Town legend",
-  "hedef.12.aciklama": "Reach 400 population with average happiness of at least 75.",
+  "hedef.12.ad": "Mansions",
+  "hedef.12.aciklama": "Raise 3 houses to level 4 (Mansion).",
+  "hedef.13.ad": "Manor",
+  "hedef.13.aciklama": "Raise a house to level 5 (Manor).",
+  "hedef.14.ad": "Town legend",
+  "hedef.14.aciklama": "Reach 400 population with average happiness of at least 75.",
 
   "istek.senlik.ad": "🎉 Festival",
   "istek.senlik.aciklama": "The residents want a festival: deliver {yemek} food from storage. Reward: +{mutluluk} happiness for every house for {gun} days.",
@@ -346,6 +350,12 @@
   "bina.tasOcagi.aciklama": "Built on rocky ground, mines stone. Stone is used to upgrade service buildings. Noisy.",
   "bina.marangoz.ad": "Carpenter",
   "bina.marangoz.aciklama": "Makes furniture from wood. Two-storey houses need furniture.",
+  "bina.agil.ad": "Sheepfold",
+  "bina.agil.aciklama": "Raises sheep: turns wheat into wool. A little smelly.",
+  "bina.dokumaci.ad": "Weaver",
+  "bina.dokumaci.aciklama": "Weaves wool into cloth. Mansions need cloth.",
+  "bina.arilik.ad": "Apiary",
+  "bina.arilik.aciklama": "Collects honey from the hives; the bees sleep in winter. Manors need honey.",
 
   "yol.toprak.ad": "Dirt Road",
   "yol.toprak.aciklama": "Cheap path. Buildings are placed along roads.",
@@ -355,6 +365,8 @@
   "evSeviye.1": "Hut",
   "evSeviye.2": "House",
   "evSeviye.3": "Two-storey house",
+  "evSeviye.4": "Mansion",
+  "evSeviye.5": "Manor",
 
   "mal.bugday": "Wheat",
   "mal.un": "Flour",
@@ -362,6 +374,9 @@
   "mal.odun": "Wood",
   "mal.tas": "Stone",
   "mal.mobilya": "Furniture",
+  "mal.yun": "Wool",
+  "mal.kumas": "Cloth",
+  "mal.bal": "Honey",
 
   "ihtiyac.su": "Water",
   "ihtiyac.yemek": "Food (bakery / market)",
@@ -370,6 +385,8 @@
   "ihtiyac.okul": "School",
   "ihtiyac.mobilya": "Furniture",
   "ihtiyac.saglik": "Health",
+  "ihtiyac.kumas": "Cloth",
+  "ihtiyac.bal": "Honey",
 
   "mevsim.ilkbahar": "Spring",
   "mevsim.yaz": "Summer",
@@ -385,5 +402,11 @@
   "komsuluk.firin.etiket": "fresh flour",
   "komsuluk.firin.sart": "a Mill within 6 units",
   "komsuluk.marangoz.etiket": "nearby wood",
-  "komsuluk.marangoz.sart": "a Woodcutter within 6 units"
+  "komsuluk.marangoz.sart": "a Woodcutter within 6 units",
+  "komsuluk.agil.etiket": "pasture",
+  "komsuluk.agil.sart": "a Field within 6 units",
+  "komsuluk.dokumaci.etiket": "fresh wool",
+  "komsuluk.dokumaci.sart": "a Sheepfold within 6 units",
+  "komsuluk.arilik.etiket": "blossoms",
+  "komsuluk.arilik.sart": "a tree within 4 units"
 }

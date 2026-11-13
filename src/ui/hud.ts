@@ -1,5 +1,6 @@
 // Üst şerit: gün, para, nüfus, mutluluk, stoklar, hız düğmeleri.
-import type { DayReport, GameState, Good } from '../logic/types';
+import type { BuildingType, DayReport, GameState, Good } from '../logic/types';
+import { isUnlocked } from '../logic/placement';
 import type { SesKanali } from '../audio/api';
 import { el, flash, tr } from './dom';
 import { kisaKalanGun, mevsim, mevsimGunu, type Mevsim } from '../logic/season';
@@ -25,13 +26,17 @@ export interface Hud {
   setSound(on: boolean, genel: number, muzik: number): void;
 }
 
-const GOODS: { key: Good; ad: string; ikon: string }[] = [
+/** `uretici` verilmiş mal, stokta yokken o bina açılana kadar şeritte görünmez (şerit kalabalıklaşmasın). */
+const GOODS: { key: Good; ad: string; ikon: string; uretici?: BuildingType }[] = [
   { key: 'bugday', ad: malAd('bugday'), ikon: '🌾' },
   { key: 'un', ad: malAd('un'), ikon: '🥣' },
   { key: 'yemek', ad: malAd('yemek'), ikon: '🍽️' },
   { key: 'odun', ad: malAd('odun'), ikon: '🪵' },
   { key: 'tas', ad: malAd('tas'), ikon: '🪨' },
   { key: 'mobilya', ad: malAd('mobilya'), ikon: '🪑' },
+  { key: 'yun', ad: malAd('yun'), ikon: '🧶', uretici: 'agil' },
+  { key: 'kumas', ad: malAd('kumas'), ikon: '🧵', uretici: 'dokumaci' },
+  { key: 'bal', ad: malAd('bal'), ikon: '🍯', uretici: 'arilik' },
 ];
 
 function yuz(m: number): string {
@@ -218,6 +223,8 @@ export function createHud(
       mCubukIc.style.background = mutlulukRengi(s.mutluluk);
       for (const st of stoklar) {
         const v = s.stok[st.g.key];
+        const u = st.g.uretici;
+        st.wrap.style.display = !u || v >= 1 || isUnlocked(s, u) ? '' : 'none';
         set(st.wrap, st.deger, v, tr(Math.floor(v)));
       }
       cubukIc.style.width = `${Math.round(s.gunIlerleme * 100)}%`;

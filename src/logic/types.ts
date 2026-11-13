@@ -16,13 +16,16 @@ export type BuildingType =
   | 'ambar'
   | 'balikci'
   | 'tasOcagi'
-  | 'marangoz';
+  | 'marangoz'
+  | 'agil'
+  | 'dokumaci'
+  | 'arilik';
 
 /** 'yemek' ortak yemek stoğudur: fırın, balıkçı (ve ileride başka yemek binaları) farklı miktarlarda üretir. */
-export type Good = 'bugday' | 'un' | 'yemek' | 'odun' | 'tas' | 'mobilya';
+export type Good = 'bugday' | 'un' | 'yemek' | 'odun' | 'tas' | 'mobilya' | 'yun' | 'kumas' | 'bal';
 
 /** 'yemek' ihtiyacı: bir yemek satış yerinin (fırın, pazar) etki alanında olmak + stokta yeterli yemek. */
-export type Need = 'su' | 'yemek' | 'odun' | 'pazar' | 'okul' | 'mobilya' | 'saglik';
+export type Need = 'su' | 'yemek' | 'odun' | 'pazar' | 'okul' | 'mobilya' | 'saglik' | 'kumas' | 'bal';
 
 export interface BuildingDef {
   type: BuildingType;
@@ -93,7 +96,7 @@ export interface KomsulukDurum {
 }
 
 export interface HouseLevelDef {
-  seviye: 1 | 2 | 3;
+  seviye: 1 | 2 | 3 | 4 | 5;
   nufus: number;
   ihtiyaclar: Need[];
 }
@@ -155,7 +158,7 @@ export interface Building {
   z: number;
   /** Radyan, Y ekseni etrafında. */
   rot: number;
-  /** Evler ve yükseltilebilir hizmet binaları 1–3, diğerleri hep 1. */
+  /** Evler 1–5, yükseltilebilir hizmet binaları 1–3, diğerleri hep 1. */
   seviye: number;
   /** Üst seviye ihtiyaçlarının üst üste karşılandığı gün sayısı. */
   iyiGun: number;

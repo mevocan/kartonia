@@ -10,6 +10,10 @@ function seviye3Ev(s: GameState): number {
   return s.binalar.filter((b) => b.type === 'ev' && b.seviye >= 3).length;
 }
 
+function seviyeliEv(s: GameState, seviye: number): number {
+  return s.binalar.filter((b) => b.type === 'ev' && b.seviye >= seviye).length;
+}
+
 function enYuksekSeviye(s: GameState, t: BuildingType): number {
   return s.binalar.reduce((m, b) => (b.type === t ? Math.max(m, b.seviye) : m), 0);
 }
@@ -60,6 +64,15 @@ const GOAL_LIST: Goal[] = [
     ilerleme: (s) => [s.nufus, 300],
   },
   {
+    ad: 'Konaklar', aciklama: '3 evi 4. seviyeye (Konak) çıkar.',
+    check: (s) => seviyeliEv(s, 4) >= 3,
+    ilerleme: (s) => [seviyeliEv(s, 4), 3],
+  },
+  {
+    ad: 'Köşk', aciklama: 'Bir evi 5. seviyeye (Köşk) çıkar.',
+    check: (s) => seviyeliEv(s, 5) >= 1,
+  },
+  {
     ad: 'Kasaba efsanesi', aciklama: '400 nüfusa ulaş, ortalama mutluluk en az 75 olsun.',
     check: (s) => s.nufus >= 400 && s.mutluluk >= 75,
     ilerleme: (s) => [s.nufus, 400],
@@ -67,6 +80,9 @@ const GOAL_LIST: Goal[] = [
 ];
 
 export const GOALS: GoalDef[] = GOAL_LIST.map(({ ad, aciklama }) => ({ ad, aciklama }));
+
+/** Konak ve Köşk hedefleri eklenmeden önceki hedef sayısı (eski kayıtların göçü için, save.ts). */
+export const ESKI_HEDEF_SAYISI = 13;
 
 /** "Kasaba tamamlandı" hedefinin indeksi (eski son hedef; sonrasında yeni hedefler başlar). */
 export const KASABA_TAMAM_HEDEFI = 4;

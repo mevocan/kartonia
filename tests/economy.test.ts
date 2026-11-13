@@ -46,9 +46,10 @@ describe('üretim', () => {
     add(s, 'degirmen', 5, 0);
     add(s, 'tarla', 0, 0);
     const { u, t } = produce(s);
-    expect(u).toEqual({ bugday: 6, un: 6, yemek: 8, odun: 0, tas: 0, mobilya: 0 });
-    expect(t).toEqual({ bugday: 6, un: 4, yemek: 0, odun: 0, tas: 0, mobilya: 0 });
-    expect(s.stok).toEqual({ bugday: 0, un: 2, yemek: 8, odun: 0, tas: 0, mobilya: 0 });
+    const yeni = { yun: 0, kumas: 0, bal: 0 };
+    expect(u).toEqual({ bugday: 6, un: 6, yemek: 8, odun: 0, tas: 0, mobilya: 0, ...yeni });
+    expect(t).toEqual({ bugday: 6, un: 4, yemek: 0, odun: 0, tas: 0, mobilya: 0, ...yeni });
+    expect(s.stok).toEqual({ bugday: 0, un: 2, yemek: 8, odun: 0, tas: 0, mobilya: 0, ...yeni });
     expect(s.toplamYemek).toBe(8);
   });
 
@@ -116,9 +117,14 @@ describe('ihtiyaçlar', () => {
     const h1 = add(s, 'ev', 0, 0, 1);
     const h2 = add(s, 'ev', 5, 0, 2);
     const h3 = add(s, 'ev', 10, 0, 3);
+    const h4 = add(s, 'ev', 15, 0, 4);
+    const h5 = add(s, 'ev', 20, 0, 5);
+    const ust = ['su', 'yemek', 'odun', 'pazar', 'okul', 'mobilya', 'saglik'];
     expect(evaluateNeeds(s, h1).map((x) => x.ihtiyac)).toEqual(['su', 'yemek']);
-    expect(evaluateNeeds(s, h2).map((x) => x.ihtiyac)).toEqual(['su', 'yemek', 'odun', 'pazar', 'okul', 'mobilya', 'saglik']);
-    expect(evaluateNeeds(s, h3).map((x) => x.ihtiyac)).toEqual(['su', 'yemek', 'odun', 'pazar', 'okul', 'mobilya', 'saglik']);
+    expect(evaluateNeeds(s, h2).map((x) => x.ihtiyac)).toEqual(ust);
+    expect(evaluateNeeds(s, h3).map((x) => x.ihtiyac)).toEqual([...ust, 'kumas']);
+    expect(evaluateNeeds(s, h4).map((x) => x.ihtiyac)).toEqual([...ust, 'kumas', 'bal']);
+    expect(evaluateNeeds(s, h5).map((x) => x.ihtiyac)).toEqual([...ust, 'kumas', 'bal']);
   });
 
   it('yemek: id küçük ev önce beslenir, yetmeyen karşılanmaz', () => {
@@ -275,7 +281,8 @@ describe('mutluluk', () => {
 
     it('3. seviye, tam hizmet + ağaç + asfalt: 87, vergi 8 (×0.6); Saat Kulesi olmadan 100\'e ulaşmaz', () => {
       const { s, h } = tamHizmet();
-      expect(evaluateNeeds(s, h).every((n) => n.karsilandi)).toBe(true);
+      // Mevcut seviyenin bütün ihtiyaçları karşılanır (üst seviyenin kumaşı hariç).
+      expect(evaluateNeeds(s, h).every((n) => n.karsilandi || n.ihtiyac === 'kumas')).toBe(true);
       expect(olc(s, h)).toEqual([87, 8]); // floor(10 × 1.37 × 0.6)
       expect(olc(s, h)[0]).toBeLessThan(100);
     });
@@ -319,8 +326,10 @@ describe('vergi ve gider', () => {
     expect(houseTax(10, 0)).toBe(5);
   });
 
-  it('3. seviye evde vergi çarpanı 0.6, 1. ve 2. seviyede 1', () => {
-    expect(BALANCE.vergiSeviyeCarpani).toEqual([1, 1, 0.6]);
+  it('vergi çarpanı: 1. ve 2. seviyede 1, 3. seviyede 0.6, konakta 0.55, köşkte 0.5', () => {
+    expect(BALANCE.vergiSeviyeCarpani).toEqual([1, 1, 0.6, 0.55, 0.5]);
+    expect(houseTax(14, 100, 4)).toBe(11); // floor(14 × 1.5 × 0.55)
+    expect(houseTax(18, 100, 5)).toBe(13); // floor(18 × 1.5 × 0.5)
     expect(houseTax(6, 50, 2)).toBe(6);
     expect(houseTax(10, 50, 3)).toBe(6); // floor(10 × 1.0 × 0.6)
     expect(houseTax(10, 100, 3)).toBe(9); // 8.999… değil, 9

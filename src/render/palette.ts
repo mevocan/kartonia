@@ -90,6 +90,13 @@ export const PALETTE = {
   gunesSicak: '#ffcf9a',
   gokIsik: '#fff1dc',
   yerIsik: '#c9a27c',
+  // Gece-gündüz (render/scene.ts): akşam turuncusu, ay ışığı, gece göğü, yanan pencere
+  gunesAksam: '#ffab6b',
+  ayIsik: '#a9bce8',
+  geceGok: '#7d8fc4',
+  geceYer: '#4a4a6e',
+  geceSis: '#3c4670',
+  pencereIsik: '#ffc56a',
 
   // Mevsimler (render/season.ts)
   yaprakHardal: '#e9b23c',
