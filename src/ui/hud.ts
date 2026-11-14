@@ -9,7 +9,10 @@ import type { SesKanali } from '../audio/api';
 import { el, flash, tr } from './dom';
 import { kisaKalanGun, mevsim, mevsimGunu, type Mevsim } from '../logic/season';
 import { tuccarVarMi } from '../logic/trade';
-import { malAd, mevsimAd, t } from './i18n';
+import { malAd, mevsimAd, t, type Anahtar } from './i18n';
+import { suregenEtkiler } from '../logic/cards';
+import { SENLIKLER } from '../data/senlikler';
+import { senlikAd } from './gunluk';
 import { MAL_IKON } from './ikonlar';
 
 /** Mevsim simgesi ve adı (HUD ve bildirimler). */
@@ -142,7 +145,10 @@ export function createHud(
   const cubuk = el('div', 'gun-cubuk');
   const cubukIc = el('div');
   cubuk.appendChild(cubukIc);
-  zaman.append(zUst, kalanYazi, cubuk);
+  // Süren etkiler (mevsim şenliği, ziyafet): simge + kalan gün.
+  const etkiSerit = el('div', 'etki-serit');
+  zaman.append(zUst, kalanYazi, cubuk, etkiSerit);
+  let etkiImza = '';
 
   // ---- Kasaba adası ----
   const kasaba = ada();
@@ -318,6 +324,24 @@ export function createHud(
         : t('hud.kisaKalan', { n: kisaKalanGun(s.gun) });
       zaman.classList.toggle('kis', m === 'kis');
       zaman.classList.toggle('yakin', m === 'sonbahar');
+      zaman.title = t(`mevsim.${m}.etki` as Anahtar);
+      // Etkiler kaynağa göre gruplanır (bir şenliğin birkaç etkisi tek çip).
+      const gruplar = new Map<string, number>();
+      for (const e of suregenEtkiler(s)) gruplar.set(e.kaynak, Math.max(gruplar.get(e.kaynak) ?? 0, e.bitisGun));
+      const imza = [...gruplar].map(([k, b]) => `${k}:${b - s.gun}`).join('|');
+      if (imza !== etkiImza) {
+        etkiImza = imza;
+        etkiSerit.replaceChildren();
+        for (const [kaynak, bitis] of gruplar) {
+          const m2 = kaynak.startsWith('senlik.') ? (kaynak.slice(7) as Mevsim) : null;
+          const ikon = m2 ? SENLIKLER[m2].ikon : '🎉';
+          const ad = m2 ? senlikAd(m2) : t('istek.senlik.ad');
+          const kalan = bitis - s.gun + 1;
+          const c = el('span', 'etki-cip', `${ikon} ${kalan}`);
+          c.title = t('hud.etkiCip', { ad, n: kalan });
+          etkiSerit.appendChild(c);
+        }
+      }
 
       set(para.wrap, para.deger, s.para, tr);
       para.wrap.classList.toggle('borc', s.para < 0);

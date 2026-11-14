@@ -58,6 +58,15 @@ export function deserialize(json: string): GameState {
   haritayiAyarla(s.haritaTohum);
   // Çiçek öncesi kayıt: haritanın çayırları boş yerlere ekilir (binalara, yollara dokunmaz).
   if (!s.cayirlar) fillMeadows(s);
+  // Eski ziyafet ödülü (geciciMutluluk) süreli etkilere taşınır.
+  if (s.geciciMutluluk) {
+    if (s.geciciMutluluk.bitisGun >= s.gun) {
+      (s.etkiler ??= []).push({
+        anahtar: 'evMutluluk', islem: 'ekle', deger: s.geciciMutluluk.deger, bitisGun: s.geciciMutluluk.bitisGun, kaynak: 'ziyafet',
+      });
+    }
+    delete s.geciciMutluluk;
+  }
   // Günlük öncesi kayıt: olmuş anlar gizli kayıtla işaretlenir, günlük bugünden başlar.
   gunlukGocu(s);
   return s;

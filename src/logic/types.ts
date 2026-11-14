@@ -1,5 +1,17 @@
 // Kağıt Kasaba — ortak tipler ve mantık API sözleşmesi.
 // Bu dosya mantık, çizim ve arayüz arasındaki sözleşmedir. Değiştirmeden önce bütün katmanları düşün.
+import type { AyarAnahtari } from '../data/cards';
+import type { Mevsim } from './season';
+
+/** Süreli etki: ayar anahtarına `islem` ile `deger` uygular, bitisGun dahil. */
+export interface GeciciEtki {
+  anahtar: AyarAnahtari;
+  islem: 'ekle' | 'carp';
+  deger: number;
+  bitisGun: number;
+  /** Kaynağı (arayüzde çip için): 'ziyafet' ya da 'senlik.<mevsim>'. */
+  kaynak: string;
+}
 
 export type BuildingType =
   | 'ev'
@@ -204,8 +216,16 @@ export interface GameState {
   istek?: Istek;
   /** Bir sonraki isteğin en erken gelebileceği gün (bir istek bitince bekleme süresi). */
   sonrakiIstekGunu?: number;
-  /** Şenlik ödülü: bitisGun dahil, bütün evlere geçici mutluluk. */
+  /** Eski biçim (ziyafet ödülü); yüklenirken `etkiler`e taşınır. */
   geciciMutluluk?: { deger: number; bitisGun: number };
+  /** Süreli etkiler (mevsim şenlikleri, ziyafet): ayar() bitisGun dahil uygular, gün sonunda süresi biten kalkar. */
+  etkiler?: GeciciEtki[];
+  /** Mevsim şenliklerinin en son yapıldığı yıl (yılda bir kez). */
+  senlikYili?: Partial<Record<Mevsim, number>>;
+  /** Tüccarın bıraktığı sipariş: `ziyaret` numaralı gelişte teslim edilirse normal fiyatın üstü ödenir. */
+  tuccarSiparis?: { mal: Good; miktar: number; ziyaret: number };
+  /** Bir önceki sakin isteğinin türü (aynı tür art arda gelmez). */
+  sonIstekTuru?: IstekTuru;
   /** Seçilmiş karar kartlarının id'leri (seçim sırasıyla, kalıcı). Eski kayıtta yok = boş. */
   kararlar?: string[];
   /** Kart seçimi bekleyen seçim numaraları (0: 50. gün, 1: 100. gün, 2: 150. gün). Seçilene kadar oyun duraklar. */
@@ -220,7 +240,7 @@ export interface GameState {
 
 export type GunlukTur =
   | 'ilkEv' | 'ilkYemek' | 'ilkTuccar' | 'ilkKis' | 'nufus' | 'evSeviye' | 'kule' | 'kuleTamam' | 'kart' | 'senlik'
-  | 'hedef' | 'gazete' | 'gunlukBasladi';
+  | 'hedef' | 'gazete' | 'gunlukBasladi' | 'festival';
 
 export interface GunlukKaydi {
   gun: number;
@@ -378,6 +398,8 @@ export interface BuildingInfo {
   kapsananEv?: number;
   /** Ev: üst seviye ihtiyaçlarının üst üste karşılandığı / mevcut seviyeninkilerin karşılanmadığı gün ve eşikleri. */
   evGun?: { iyi: number; kotu: number; buyumeEsik: number; kuculmeEsik: number };
+  /** Üretim binası: bu mevsimin üretim çarpanı (yalnızca etkisi olan mevsimde). */
+  mevsimCarpani?: number;
   /** Ev: mutluluğu büyüme eşiğinin altında, bu yüzden büyüyemez (en üst seviyede tanımsız). */
   mutsuz?: boolean;
 }
@@ -423,16 +445,23 @@ export interface GoalDef {
  */
 
 /** Sakin isteği türleri (logic/requests.ts). */
-export type IstekTuru = 'senlik' | 'agaclandirma' | 'kisHazirligi' | 'susuzEv';
+/** 'senlik' arayüzde "Ziyafet" adıyla görünür (kayıt uyumu için kimlik değişmedi). */
+export type IstekTuru =
+  | 'senlik' | 'agaclandirma' | 'kisHazirligi' | 'susuzEv' | 'park' | 'golEvi' | 'cicekDik' | 'gurultu' | 'mobilya'
+  | 'asfaltEv' | 'erzak' | 'yukseltme';
 
 export interface Istek {
   tur: IstekTuru;
   /** İsteğin geldiği ilk gün. Süre: baslangicGun .. baslangicGun + sure − 1. */
   baslangicGun: number;
-  /** Ağaçlandırma: dikilen ağaç; kış hazırlığı: stoktaki odun; diğerleri 0/1. */
+  /** Sayaç türleri: dikilen ağaç / çiçek; stok türleri: stoktaki mal; diğerleri 0/1. */
   ilerleme: number;
-  /** Susuz ev: suya kavuşması istenen ev. */
+  /** Susuz ev / gürültülü ev: kurtarılması istenen ev. */
   hedefBinaId?: number;
+  /** Artış türleri (park, golEvi, asfaltEv, yukseltme): istek geldiğindeki sayı. */
+  baz?: number;
+  /** İsteyen sakinin ad sırası (dil dosyasındaki `sakin.adlar` listesinde). Eski kayıtta yok. */
+  sakin?: number;
 }
 
 export interface IstekSonuc {

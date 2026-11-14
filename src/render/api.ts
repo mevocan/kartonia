@@ -93,6 +93,10 @@ export interface GameRenderer {
 
   /** Dünya noktasından yukarı uçan kağıt etiketli sayı/metin. */
   floatText(x: number, z: number, text: string, color: string): void;
+  /** Noktada bir kez bol konfeti (şenlik başlangıcı). miktar 1 = normal. */
+  celebrate(x: number, z: number, miktar?: number): void;
+  /** Şenlik sürerken bu noktalarda (meydanlar) ara ara küçük konfeti; null kapatır. Yalnızca görsel. */
+  setFestival(noktalar: Vec2[] | null): void;
 
   /**
    * Sol tuşla sürükleyerek kaydırma (varsayılan açık). Kamera sol sürüklemeyi ancak 5 px'ten fazla

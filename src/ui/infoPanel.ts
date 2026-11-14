@@ -187,6 +187,9 @@ export function createInfoPanel(
     if (info.isciOrani !== undefined) satir(tb, t('bilgi.isci'), t('bilgi.yuzde', { n: Math.round(info.isciOrani * 100) }), info.isciOrani < 1 ? 'eksi' : '');
     if (info.agacSayisi !== undefined) satir(tb, t('bilgi.agac'), String(info.agacSayisi));
     bonusSatiri(tb, info);
+    if (info.mevsimCarpani !== undefined) {
+      satir(tb, t('bilgi.mevsimEtkisi'), t('bilgi.yuzdeArti', { n: Math.round((info.mevsimCarpani - 1) * 100) }), 'arti');
+    }
     if (info.etki > 0) satir(tb, t('bilgi.etki'), yuvarla(info.etki));
     if (info.kapsananEv !== undefined && BUILDINGS[info.type].mutluluk < 0) {
       satir(tb, t('bilgi.gurultuEv'), String(info.kapsananEv), info.kapsananEv > 0 ? 'eksi' : '');

@@ -185,7 +185,9 @@ describe('istek türleri', () => {
     s.sonrakiIstekGunu = 4;
     const y = deserialize(serialize(s));
     expect(y.istek).toEqual(s.istek);
-    expect(y.geciciMutluluk).toEqual(s.geciciMutluluk);
+    // Eski ziyafet biçimi süreli etkiye taşınır.
+    expect(y.geciciMutluluk).toBeUndefined();
+    expect(y.etkiler).toEqual([{ anahtar: 'evMutluluk', islem: 'ekle', deger: 5, bitisGun: 9, kaynak: 'ziyafet' }]);
     expect(y.sonrakiIstekGunu).toBe(4);
   });
 });

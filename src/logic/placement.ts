@@ -62,6 +62,7 @@ export function placeBuilding(s: GameState, t: BuildingType, x: number, z: numbe
   const b: Building = { id: s.sonrakiId++, type: t, x, z, rot, seviye: 1, iyiGun: 0, kotuGun: 0 };
   if (BUILDINGS[t].anit) b.insaat = BALANCE.anit.asamalar.length; // iskeleyle başlar
   if (t === 'agac' && s.istek?.tur === 'agaclandirma') s.istek.ilerleme++; // ağaçlandırma isteği
+  if (t === 'cicek' && s.istek?.tur === 'cicekDik') s.istek.ilerleme++; // çiçek dikme isteği
   if (!dogaTuru(t)) {
     b.baglanti = linkFor(s, x, z);
     binaSayaci(s); // yılın gazetesi: kurulan bina

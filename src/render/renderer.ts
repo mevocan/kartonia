@@ -272,6 +272,9 @@ export function createRenderer(container: HTMLElement): GameRenderer {
   const hit = new THREE.Vector3();
   const tmpV = new THREE.Vector3();
   let time = 0;
+  /** Şenlik sürerken konfeti atılan noktalar (setFestival) ve sonraki atışa kalan süre. */
+  let senlikNoktalari: Vec2[] | null = null;
+  let senlikSayac = 0;
   let highlighted: { id: number; mode: 'secim' | 'yikim' } | null = null;
   let roadHl: { id: number; mode: 'secim' | 'yikim' } | null = null;
   applyDayProgress(world, 0.3);
@@ -1259,11 +1262,29 @@ export function createRenderer(container: HTMLElement): GameRenderer {
       applyDayProgress(world, t);
     },
 
+    celebrate(x, z, miktar = 1) {
+      const y = heightAt(x, z);
+      confetti.burst(x, y + 1.6, z, Math.round(36 * miktar), undefined, 1.2);
+    },
+
+    setFestival(noktalar) {
+      senlikNoktalari = noktalar && noktalar.length ? noktalar.slice() : null;
+    },
+
     update(dt) {
       const d = Math.min(Math.max(dt, 0), 0.1);
       time += d;
       cam.update(d);
       tweens.update(d);
+      // Şenlik sürerken meydanlarda (pazar, park, kule) ara ara küçük konfeti.
+      if (senlikNoktalari) {
+        senlikSayac -= d;
+        if (senlikSayac <= 0) {
+          senlikSayac = 0.9 + Math.random() * 0.8;
+          const p = senlikNoktalari[Math.floor(Math.random() * senlikNoktalari.length)];
+          confetti.burst(p.x + (Math.random() - 0.5) * 2, heightAt(p.x, p.z) + 2.2, p.z + (Math.random() - 0.5) * 2, 9, undefined, 0.7);
+        }
+      }
       for (const p of pools.values()) if (p.hat) p.hat.count = p.mesh.count; // çizgi film dış hattı
       // Seçili binanın yükselmesi / inişi (arayüz hızında, oyun hızından bağımsız)
       for (const [e, hedef] of kalkis) {
