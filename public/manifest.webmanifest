@@ -1,0 +1,10 @@
+{
+  "name": "Kartonia",
+  "short_name": "Kartonia",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#e9dcc3",
+  "theme_color": "#e9dcc3"
+}

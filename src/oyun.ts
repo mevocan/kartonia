@@ -18,6 +18,7 @@ import { isUnlocked } from './logic/placement';
 import { createRenderer } from './render/renderer';
 import type { GameRenderer } from './render/api';
 import { createHud, MEVSIM_GORUNUM } from './ui/hud';
+import { createMobile } from './ui/mobil';
 import { createTitleScreen } from './ui/titleScreen';
 import { createBuildMenu, type Tool } from './ui/buildMenu';
 import { createInfoPanel } from './ui/infoPanel';
@@ -88,6 +89,9 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
 
   let hiz = 1;
   let duraklamadanOnce = 1;
+  /** Dokunmatik cihaz dikey tutuluyor: "yan çevir" perdesi açık, oyun duraklı (ui/mobil.ts). */
+  let dikeyEkran = false;
+  let dikeyDurdurdu = false;
   let arac: Tool = null;
   let secili: Selection | null = null;
   /** Son gün sonunun üretim sorunları ve evlerin stok eksikleri (harita iğneleri, bilgi paneli). Yeni oyunda ve kayıt yüklenince yok. */
@@ -291,7 +295,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
 
   function setSpeed(v: number): void {
     // Kart seçilene, menü kapanana, takas menüsü kapanana kadar oyun duraklı.
-    if (v > 0 && (secici.isOpen() || giris.isOpen() || tuccar.isOpen() || pencereAcik())) return;
+    if (v > 0 && (dikeyEkran || secici.isOpen() || giris.isOpen() || tuccar.isOpen() || pencereAcik())) return;
     if (v > 0) duraklamadanOnce = v;
     hiz = v;
     hud.setSpeed(v);
@@ -923,6 +927,18 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     requestAnimationFrame(kare);
   };
   requestAnimationFrame(kare);
+
+  // Mobil: küçük ekranda arayüz ölçeği; dokunmatik cihaz dikey tutulursa oyun durur, yataya dönünce sürer.
+  createMobile(ui, (dikey) => {
+    dikeyEkran = dikey;
+    if (dikey) {
+      dikeyDurdurdu = hiz > 0;
+      if (dikeyDurdurdu) setSpeed(0);
+    } else if (dikeyDurdurdu) {
+      dikeyDurdurdu = false;
+      setSpeed(duraklamadanOnce);
+    }
+  });
 }
 
 /** main.ts dil dosyasını yükledikten sonra çağırır. */

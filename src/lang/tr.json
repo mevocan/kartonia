@@ -34,7 +34,7 @@
   "giris.is.yikim": "Yıkma aracı",
   "giris.is.birak": "Seçimi bırak",
   "giris.is.hiz": "Duraklat, hız",
-  "giris.dokunmatik": "🖱️ Kartonia fare ve klavye için tasarlandı. En iyi deneyim için bilgisayardan oyna.",
+  "giris.dokunmatik": "📱 Tek parmakla kaydır, iki parmakla yakınlaştır ve döndür. Bina koymak ya da seçmek için dokun.",
   "giris.kayitNotu": "Kasaban bu tarayıcıda kendiliğinden kaydedilir.",
 
   "genel.menu": "☰ Menü",
@@ -626,5 +626,12 @@
   "meydan.secildi": "🏘️ Mahalle karakteri: {ad}",
   "meydan.paraYok": "Karakteri değiştirmek için para yetmiyor.",
   "meydan.uretimVar": "Alanda üretim binası varken mahalle Bahçeli olamaz.",
-  "meydan.olmaz": "Bu karakter seçilemez."
+  "meydan.olmaz": "Bu karakter seçilemez.",
+
+  "hud.tamEkran": "Tam ekran",
+  "hud.tamEkranCik": "Tam ekrandan çık",
+  "mobil.cevir": "Telefonunu yan çevir",
+  "mobil.cevirAlt": "Kartonia yatay ekranda oynanır. Oyun, telefonu çevirene kadar duraklı.",
+  "mobil.tamEkran": "Tam ekran oyna",
+  "mobil.iosIpucu": "Tam ekran için: Paylaş → Ana Ekrana Ekle, sonra oyunu ana ekrandan aç."
 }

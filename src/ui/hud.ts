@@ -14,6 +14,7 @@ import { suregenEtkiler } from '../logic/cards';
 import { SENLIKLER } from '../data/senlikler';
 import { senlikAd } from './gunluk';
 import { MAL_IKON } from './ikonlar';
+import { tamEkranAc, tamEkranda, tamEkranDestekli, tamEkranKapat } from './mobil';
 
 /** Mevsim simgesi ve adı (HUD ve bildirimler). */
 export const MEVSIM_GORUNUM: Record<Mevsim, { ikon: string; ad: string }> = {
@@ -286,6 +287,21 @@ export function createHud(
   });
   sesKutu.append(sesDugme, sesPanel);
   kontrol.appendChild(sesKutu);
+  // Tam ekran (telefonda yönü de yataya kilitler); tarayıcı desteklemiyorsa (iPhone Safari) düğme yok.
+  if (tamEkranDestekli()) {
+    const tamDugme = el('button', 'hud-dugme tam-ekran', '⛶');
+    tamDugme.id = 'tamEkranDugme';
+    const tamGuncelle = (): void => {
+      const acik = tamEkranda();
+      tamDugme.title = t(acik ? 'hud.tamEkranCik' : 'hud.tamEkran');
+      tamDugme.classList.toggle('acik', acik);
+    };
+    tamDugme.addEventListener('click', () => void (tamEkranda() ? tamEkranKapat() : tamEkranAc()));
+    document.addEventListener('fullscreenchange', tamGuncelle);
+    document.addEventListener('webkitfullscreenchange', tamGuncelle);
+    tamGuncelle();
+    kontrol.appendChild(tamDugme);
+  }
   const hizlar = el('div', 'hizlar');
   const hizDugmeleri: { speed: number; b: HTMLButtonElement }[] = [];
   for (const [speed, label, title] of [
