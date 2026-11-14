@@ -89,7 +89,7 @@ const KATEGORILER: Record<Kategori, { ad: string; ikon: string; renk: string; og
   },
   hizmet: {
     ad: t('menu.hizmet'), ikon: '🏛️', renk: '#a9d5e8',
-    ogeler: ['cesme', 'pazar', 'okul', 'hastane', 'park', 'hamam', 'tiyatro', 'saatKulesi', 'kervansaray', 'botanik'],
+    ogeler: ['cesme', 'pazar', 'okul', 'hastane', 'park', 'hamam', 'tiyatro', 'meydan', 'saatKulesi', 'kervansaray', 'botanik'],
   },
   doga: { ad: t('menu.doga'), ikon: '🌳', renk: '#b9d99a', ogeler: ['agac', 'cicek', 'cit', 'bank', 'ciceklik', 'lamba', 'heykel'] },
 };

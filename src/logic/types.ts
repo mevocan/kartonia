@@ -44,7 +44,9 @@ export type BuildingType =
   | 'heykel'
   // Büyük projeler (anıt; Saat Kulesi bitince açılır)
   | 'kervansaray'
-  | 'botanik';
+  | 'botanik'
+  // Mahalle meydanı: karakteri (Çarşı / Bahçeli / Zanaat) etki alanına uygulanır
+  | 'meydan';
 
 /** 'yemek' ortak yemek stoğudur: fırın, balıkçı (ve ileride başka yemek binaları) farklı miktarlarda üretir. */
 export type Good = 'bugday' | 'un' | 'yemek' | 'odun' | 'tas' | 'mobilya' | 'yun' | 'kumas' | 'bal';
@@ -204,6 +206,8 @@ export interface Building {
   insaat?: number;
   /** Mevcut seviye ihtiyaçlarının üst üste karşılanmadığı gün sayısı. */
   kotuGun: number;
+  /** Meydan: seçilen mahalle karakteri (logic/meydan.ts). Seçilmeden etkisizdir. */
+  karakter?: 'carsi' | 'bahceli' | 'zanaat';
 }
 
 export interface GameState {
@@ -306,6 +310,8 @@ export type PlaceFailReason =
   | 'kumas'        // anıta kumaş yetmiyor
   | 'bal'          // anıta bal yetmiyor
   | 'tek'          // bu binadan kasabada zaten var
+  | 'meydanCakisiyor' // başka bir Meydan'ın alanıyla çakışıyor
+  | 'bahceli'      // Bahçeli Meydan'ın alanına üretim binası konamaz
   | 'para'
   | 'kilitli'
   | 'bitti';
@@ -422,6 +428,10 @@ export interface BuildingInfo {
   kapsananEv?: number;
   /** Ev: üst seviye ihtiyaçlarının üst üste karşılandığı / mevcut seviyeninkilerin karşılanmadığı gün ve eşikleri. */
   evGun?: { iyi: number; kotu: number; buyumeEsik: number; kuculmeEsik: number };
+  /** Meydan: seçili karakter (yoksa tanımsız) ve karakter değiştirme bedeli. */
+  meydan?: { karakter?: 'carsi' | 'bahceli' | 'zanaat'; degisim: number; kapsananBina: number };
+  /** Binanın bulunduğu Meydan'ın karakteri (ev ve üretim binasında, etkisi varsa). */
+  mahalle?: 'carsi' | 'bahceli' | 'zanaat';
   /** Üretim binası: bu mevsimin üretim çarpanı (yalnızca etkisi olan mevsimde). */
   mevsimCarpani?: number;
   /** Ev: mutluluğu büyüme eşiğinin altında, bu yüzden büyüyemez (en üst seviyede tanımsız). */

@@ -6,7 +6,8 @@ import {
   canPlace, canUpgrade, createGame, upgradeBuilding, demolish, demolishRoad, deserialize, getBuildingInfo, getRoadInfo, GOALS, KASABA_TAMAM_HEDEFI, EFSANE_HEDEFI, placeBuilding,
   placeRoad, planRoad, serialize, tick, mevsim, monumentStage, canAdvanceMonument, advanceMonument,
   tuccarVarMi, tuccarGeldiMi, tuccarKalisGunu, tuccarKonumu, buyGood, sellGood, canBuy, canSell, checkRequest, deliverRequest,
-  senlikBaslat, senlikDurumu, suregenEtkiler, siparisTeslim, kasabaUnvani,
+  senlikBaslat, senlikDurumu, suregenEtkiler, siparisTeslim, kasabaUnvani, gorselSeviye, karakterDurumu, karakterSec,
+  type Karakter,
   bekleyenSecim, kartCek, kartSec, kartBul, secimGunu, toplamSecim,
   anlikGoruntu, geriAl, geriAlEkle, geriAlinabilir, geriAlTemizle, geriAlYigini, type GeriAlTur,
 } from './logic/game';
@@ -163,6 +164,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     },
     (id) => anitIlerlet(id),
     (tur) => renderer.buildingThumbnail(tur),
+    (id, k) => karakterSecYap(id, k),
   );
 
   // Sağ üst: giriş ekranını (menü) açar; yeni kasaba oradan başlatılır.
@@ -470,11 +472,11 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     for (const b of yeni.binalar) {
       const o = eskiB.get(b.id);
       if (!o) {
-        renderer.addBuilding(b.id, b.type, b.x, b.z, b.rot, b.seviye, true, b.baglanti ?? null);
+        renderer.addBuilding(b.id, b.type, b.x, b.z, b.rot, gorselSeviye(b), true, b.baglanti ?? null);
         if (b.insaat) renderer.setMonumentStage(b.id, monumentStage(b), false);
         continue;
       }
-      if (o.seviye !== b.seviye) renderer.setBuildingLevel(b.id, b.seviye);
+      if (gorselSeviye(o) !== gorselSeviye(b)) renderer.setBuildingLevel(b.id, gorselSeviye(b));
       if (JSON.stringify(o.baglanti ?? null) !== JSON.stringify(b.baglanti ?? null)) renderer.setBuildingLink(b.id, b.baglanti ?? null);
     }
     const yeniY = new Set(yeni.yollar.map((r) => r.id));
@@ -587,6 +589,26 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     if (r) toasts.show(istekTamamMetni(r), 'iyi');
   }
 
+  /** Meydan: bilgi panelinden mahalle karakteri seçimi (ilki bedava, değişim para ister). Geri alınamaz. */
+  function karakterSecYap(id: number, k: Karakter): void {
+    const d = karakterDurumu(s, id, k);
+    if (!karakterSec(s, id, k)) {
+      toasts.show(t(d.sebep === 'para' ? 'meydan.paraYok' : d.sebep === 'uretimVar' ? 'meydan.uretimVar' : 'meydan.olmaz'), 'kotu');
+      return;
+    }
+    geriAlSifirla();
+    const b = s.binalar.find((x) => x.id === id);
+    if (b) {
+      renderer.setBuildingLevel(id, gorselSeviye(b));
+      if (d.bedel > 0) renderer.floatText(b.x, b.z, `−${d.bedel}`, KIRMIZI);
+    }
+    ses.play('seviye');
+    toasts.show(t('meydan.secildi', { ad: t(`meydan.${k}.ad`) }), 'iyi');
+    bilgiYenile();
+    arayuzYenile();
+    input.refresh();
+  }
+
   /** Anıt (Saat Kulesi): bilgi panelindeki "Malzeme gönder" düğmesi. */
   function anitIlerlet(id: number): void {
     const c = canAdvanceMonument(s, id);
@@ -626,7 +648,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     const b = placeBuilding(s, tur, x, z, rot);
     if (!b) return;
     geriAlKaydet(onceki, 'bina', tur);
-    renderer.addBuilding(b.id, b.type, b.x, b.z, b.rot, b.seviye, true, b.baglanti ?? null);
+    renderer.addBuilding(b.id, b.type, b.x, b.z, b.rot, gorselSeviye(b), true, b.baglanti ?? null);
     ses.play('kurulum');
     if (tur === 'ev' || tur === 'cesme') ogretici.olay(tur);
     if (b.insaat) renderer.setMonumentStage(b.id, 0); // anıt: yalnızca taban + iskele kurulur
@@ -736,7 +758,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     renderer.clearRoads();
     for (const r of s.yollar) renderer.addRoad(r.id, r.tur, r.noktalar, false);
     for (const b of s.binalar) {
-      renderer.addBuilding(b.id, b.type, b.x, b.z, b.rot, b.seviye, false, b.baglanti ?? null);
+      renderer.addBuilding(b.id, b.type, b.x, b.z, b.rot, gorselSeviye(b), false, b.baglanti ?? null);
       if (b.insaat) renderer.setMonumentStage(b.id, monumentStage(b), false); // yarım anıt
     }
     renderer.setPopulation(s.nufus);

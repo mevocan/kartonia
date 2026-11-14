@@ -606,5 +606,25 @@
   "unvan.4": "Legendary town",
   "gunluk.projeTamam": "The {ad} was completed!",
   "gunluk.unvan": "The town's new title: {ad}.",
-  "gazete.unvan": "{unvan} · Year {yil} · Day {gun} · Year-end edition"
+  "gazete.unvan": "{unvan} · Year {yil} · Day {gun} · Year-end edition",
+
+  "bina.meydan.ad": "Square",
+  "bina.meydan.aciklama": "The heart of a neighbourhood. Once built, choose a character: Bazaar, Garden or Crafts; it applies to buildings in its area.",
+  "sebep.meydanCakisiyor": "Overlaps another Square's area. Squares must be far apart.",
+  "sebep.bahceli": "Production buildings can't go in a Garden Square's area.",
+  "meydan.secilmedi": "No character chosen",
+  "meydan.sec": "Choose the neighbourhood character (first choice is free)",
+  "meydan.degistir": "Change character ({para} coins)",
+  "meydan.kapsanan": "Buildings in area",
+  "meydan.mahalle": "Neighbourhood",
+  "meydan.carsi.ad": "Bazaar",
+  "meydan.carsi.etki": "Home taxes +15%, but crowded: −2 happiness for homes.",
+  "meydan.bahceli.ad": "Garden",
+  "meydan.bahceli.etki": "Tree/flower happiness cap +4 for homes; no production buildings in the area.",
+  "meydan.zanaat.ad": "Crafts",
+  "meydan.zanaat.etki": "Production buildings +15%, but workshop noise: −3 happiness for homes.",
+  "meydan.secildi": "🏘️ Neighbourhood character: {ad}",
+  "meydan.paraYok": "Not enough coins to change the character.",
+  "meydan.uretimVar": "A neighbourhood with production buildings can't become a Garden.",
+  "meydan.olmaz": "This character can't be chosen."
 }

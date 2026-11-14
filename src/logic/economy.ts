@@ -12,6 +12,7 @@ import { istekGunSonu } from './requests';
 import { ticaretGunSonu } from './trade';
 import { ayar, etkilerGunSonu, kartGunSonu } from './cards';
 import { gunlukGunSonu } from './gunluk';
+import { karakterEtkisi } from './meydan';
 
 // Marangoz odunu kullandığı için oduncudan sonra gelir.
 // Ağıl buğdayı değirmenden sonra alır; dokumacı ağıldan sonra gelir.
@@ -176,8 +177,10 @@ export function houseHappiness(s: GameState, h: Building, st: NeedStatus[]): num
     else if (BUILDINGS[b.type].sus) sus += m; // süsler ayrı sınır
     else toplam += m;
   }
-  toplam += Math.min(agac, ayar(s, 'agacMutlulukSinir'));
+  const mahalle = karakterEtkisi(s, h.x, h.z); // Meydan karakteri: Çarşı / Zanaat kalabalığı, Bahçeli ağaç tavanı
+  toplam += Math.min(agac, ayar(s, 'agacMutlulukSinir') + mahalle.agacSinir);
   toplam += Math.min(sus, BALANCE.susMutlulukSinir);
+  toplam += mahalle.mutluluk;
   const yol = bestRoadNear(s, h); // yakın yollardan yalnızca en iyisi sayılır
   if (yol) toplam += ROADS[yol.tur].mutluluk;
   toplam += currentNeedsMet(h, st) * BALANCE.ihtiyacMutluluk;
@@ -230,7 +233,8 @@ export function runProduction(
         // Çıktı miktarları karar kartlarıyla değişebilir (ayar).
         const cikti = (Object.keys(d.uretim.cikti) as Good[]).map((g): [Good, number] => [g, ayar(s, `uretim.${t}.${g}`)]);
         // Komşuluk bonusu yalnızca çıktıyı artırır; girdi tüketimi değişmez (gereken × f).
-        const carpan = 1 + (d.komsuluk ? adjacencyBonus(s, t, b.x, b.z, b.id).oran : 0);
+        // Zanaat Meydanı alanındaki üretim binası daha çok üretir.
+        const carpan = (1 + (d.komsuluk ? adjacencyBonus(s, t, b.x, b.z, b.id).oran : 0)) * karakterEtkisi(s, b.x, b.z).uretim;
         let neden: UretimSorunu['neden'] | null = null;
         for (const [g, n] of girdi) {
           if (n > 0 && s.stok[g] / n < f) {
@@ -258,7 +262,7 @@ export function runProduction(
         }
       } else if (d.agacBasinaOdun !== undefined) {
         const agac = treesInRange(s, b);
-        const tam = agac * d.agacBasinaOdun * ayar(s, 'oduncuCarpani') * oran;
+        const tam = agac * d.agacBasinaOdun * ayar(s, 'oduncuCarpani') * oran * karakterEtkisi(s, b.x, b.z).uretim;
         const miktar = Math.min(tam, sinir - s.stok.odun);
         // Diğer üreticilerle aynı kural: tam üretimin yarısından azını yapabildiyse sorun yazılır.
         if (sorunlar && agac === 0) sorunlar.push({ id: b.id, neden: 'agac' });
@@ -296,7 +300,7 @@ export function endDay(s: GameState): DayReport {
     const m = houseHappiness(s, h, st);
     mutluluklar.set(h.id, m);
     // Karar: vergi, seviye değişiminden önceki seviyenin nüfusuyla hesaplanır.
-    const v = houseTax(housePopulation(h), m, h.seviye, ayar(s, 'vergiCarpani'));
+    const v = houseTax(housePopulation(h), m, h.seviye, ayar(s, 'vergiCarpani') * karakterEtkisi(s, h.x, h.z).vergi);
     rapor.binaVergileri.push({ id: h.id, miktar: v });
     rapor.vergi += v;
   }

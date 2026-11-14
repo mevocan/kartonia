@@ -270,3 +270,79 @@ export function buildBotanic(asama = ANIT_ASAMA): ModelBuilder {
   grupla(b, ISKELE_GRUP, () => alcakIskele(b, sW + 0.3, 2.6, 1.1));
   return b;
 }
+
+/**
+ * Meydan: taş döşeli yuvarlak meydan. Görünüm (seviye) karaktere göre: 1 seçilmemiş (ilan panosu),
+ * 2 Çarşı (tenteli tezgâhlar), 3 Bahçeli (ortada ağaç, tarhlar, banklar), 4 Zanaat (tezgâh, örs, odun yığını).
+ */
+export function buildSquare(gorunum = 1): ModelBuilder {
+  const b = new ModelBuilder('meydan');
+  b.as('taban', () => {
+    b.cyl(1.3, 1.34, 0.06, 14, P.tas, { wob: 0.01 });
+    b.cyl(0.55, 0.55, 0.02, 12, P.tasKoyu, { y: 0.06, wob: 0, edges: false });
+  });
+  if (gorunum === 1) {
+    b.as('govde', () => {
+      b.box(0.05, 0.6, 0.05, P.ahsap, { x: -0.25, y: 0.06, wob: 0 });
+      b.box(0.05, 0.6, 0.05, P.ahsap, { x: 0.25, y: 0.06, wob: 0 });
+      b.box(0.62, 0.4, 0.04, P.ahsapAcik, { y: 0.34, wob: 0.01 });
+    });
+    b.as('detay', () => {
+      b.plate(0.22, 0.16, P.kagit, { x: -0.12, y: 0.44, z: 0.03, wob: 0.05 });
+      b.plate(0.18, 0.22, P.krem, { x: 0.14, y: 0.4, z: 0.03, wob: 0.05 });
+    });
+  } else if (gorunum === 2) {
+    const tente = [P.tuccarTente, P.hardal, P.teal];
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2 + 0.4;
+      b.withFrame(Math.cos(a) * 0.72, Math.sin(a) * 0.72, -a + Math.PI / 2, () => {
+        b.piece('govde', () => {
+          b.box(0.5, 0.26, 0.28, P.ahsap, { y: 0.06, wob: 0.01 });
+          for (const s of [-1, 1]) b.box(0.035, 0.62, 0.035, P.ahsapAcik, { x: s * 0.23, z: -0.12, y: 0.06, wob: 0 });
+        });
+        b.piece('cati', () => b.box(0.6, 0.04, 0.42, tente[i], { y: 0.66, z: 0.02, rx: 0.25, wob: 0.02 }));
+        b.piece('detay', () => {
+          b.ball(0.06, P.hardal, { x: -0.12, y: 0.37 });
+          b.ball(0.06, P.gul, { x: 0.02, y: 0.37 });
+          b.box(0.12, 0.08, 0.1, P.kumasMavi, { x: 0.15, y: 0.33, wob: 0.05 });
+        });
+      });
+    }
+  } else if (gorunum === 3) {
+    b.as('govde', () => {
+      b.cyl(0.06, 0.08, 0.7, 6, P.ahsap, { y: 0.06 });
+      b.ball(0.38, P.yesil, { y: 0.95 });
+      b.ball(0.26, P.koyuYesil, { x: 0.18, y: 1.12, z: 0.1 });
+    });
+    b.as('detay', () => {
+      const renk = [P.gul, P.lavanta, P.hardal, P.pembe];
+      for (let i = 0; i < 4; i++) {
+        const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+        const x = Math.cos(a) * 0.82;
+        const z = Math.sin(a) * 0.82;
+        b.box(0.36, 0.06, 0.24, P.toprakIz, { x, z, y: 0.06, ry: -a, wob: 0 });
+        for (let k = -1; k <= 1; k++) b.ball(0.06, renk[(i + k + 4) % 4], { x: x + Math.cos(a + Math.PI / 2) * k * 0.11, z: z + Math.sin(a + Math.PI / 2) * k * 0.11, y: 0.15 });
+      }
+      for (const s of [-1, 1]) {
+        b.withFrame(s * 0.55, 0, s * Math.PI / 2, () => {
+          b.box(0.4, 0.035, 0.12, P.ahsap, { y: 0.19, wob: 0.01 });
+          b.box(0.4, 0.12, 0.025, P.ahsap, { y: 0.23, z: -0.055, wob: 0.01 });
+        });
+      }
+    });
+  } else {
+    b.as('govde', () => {
+      b.box(0.62, 0.32, 0.3, P.ahsap, { x: -0.3, y: 0.06, z: 0.2, wob: 0.01 });
+      b.box(0.3, 0.16, 0.2, P.murekkep, { x: 0.45, y: 0.06, z: -0.1, wob: 0 });
+      b.box(0.36, 0.08, 0.16, P.tasKoyu, { x: 0.45, y: 0.22, z: -0.1, wob: 0 });
+      b.cyl(0.2, 0.24, 0.42, 8, P.terrakota, { x: -0.2, y: 0.06, z: -0.55 });
+    });
+    b.as('detay', () => {
+      for (let i = 0; i < 4; i++) b.cyl(0.06, 0.06, 0.5, 6, P.ahsapAcik, { x: 0.55 + (i % 2) * 0.13, y: 0.1 + Math.floor(i / 2) * 0.12, z: 0.45, rx: Math.PI / 2, wob: 0 });
+      b.box(0.14, 0.04, 0.1, P.tas, { x: -0.38, y: 0.38, z: 0.2, wob: 0.05 });
+      b.box(0.04, 0.16, 0.04, P.ahsapAcik, { x: -0.18, y: 0.38, z: 0.2, rz: 0.4, wob: 0 });
+      b.ball(0.08, P.hardal, { x: -0.2, y: 0.5, z: -0.55 }); // ocak ateşi
+    });
+  }
+  return b;
+}
