@@ -258,6 +258,10 @@ export interface DayReport {
   seviyeDegisimleri: LevelChange[];
   /** Bu gün tamamlanan hedeflerin indeksleri. */
   yeniHedefler: number[];
+  /** Tamamlanan hedeflerin kasaya eklenen toplam ödülü (vergi ve net bunu içermez). */
+  hedefOdulu: number;
+  /** Mutluluğu büyüme eşiğinin altında olduğu için büyüyemeyen evler (en üst seviye hariç; harita iğneleri için). */
+  mutsuzEvler: number[];
   /** Bu gün sonunda gelen yeni sakin isteği. */
   yeniIstek?: IstekTuru;
   /** Bu gün sonunda tamamlanan istek (Şenlik hariç: o düğmeyle hemen tamamlanır). */
@@ -282,9 +286,13 @@ export interface UretimSorunu {
 
 /**
  * Haritada bina üstünde gösterilecek iğne. 'ihtiyac': evin mevcut seviyesinin karşılanmayan ihtiyacı
- * (sürerse ev küçülür). 'uretim': son gün sonundaki üretim sorunu.
+ * (sürerse ev küçülür). 'uretim': son gün sonundaki üretim sorunu. 'mutsuz': ev mutluluğu büyüme eşiğinin altında
+ * (son gün sonundan; ihtiyaç iğnesi olan evde gösterilmez).
  */
-export type BinaIgnesi = { id: number; tur: 'ihtiyac'; neden: Need } | { id: number; tur: 'uretim'; neden: UretimSorunu['neden'] };
+export type BinaIgnesi =
+  | { id: number; tur: 'ihtiyac'; neden: Need }
+  | { id: number; tur: 'uretim'; neden: UretimSorunu['neden'] }
+  | { id: number; tur: 'mutsuz' };
 
 export interface NeedStatus {
   ihtiyac: Need;
@@ -332,11 +340,15 @@ export interface BuildingInfo {
   kapsananEv?: number;
   /** Ev: üst seviye ihtiyaçlarının üst üste karşılandığı / mevcut seviyeninkilerin karşılanmadığı gün ve eşikleri. */
   evGun?: { iyi: number; kotu: number; buyumeEsik: number; kuculmeEsik: number };
+  /** Ev: mutluluğu büyüme eşiğinin altında, bu yüzden büyüyemez (en üst seviyede tanımsız). */
+  mutsuz?: boolean;
 }
 
 export interface GoalDef {
   ad: string;
   aciklama: string;
+  /** Tamamlanınca kasaya eklenen para. */
+  odul: number;
 }
 
 /*

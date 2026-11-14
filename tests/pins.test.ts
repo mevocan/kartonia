@@ -57,6 +57,20 @@ describe('ev iğneleri', () => {
     add(s, 'ev', 0, 0, 1);
     expect(buildingPins(s)).toEqual([]);
   });
+
+  it('mutsuz ev (son gün sonundan) iğne alır; ihtiyaç iğnesi varsa o öncelikli', () => {
+    const s = blank();
+    const h1 = add(s, 'ev', 0, 0, 1);
+    const h2 = add(s, 'ev', 10, 0, 2); // su yok: ihtiyaç iğnesi
+    const son = { uretimSorunlari: [], evStokEksikleri: [], mutsuzEvler: [h1.id, h2.id] };
+    expect(buildingPins(s, son)).toEqual([
+      { id: h2.id, tur: 'ihtiyac', neden: 'su' },
+      { id: h1.id, tur: 'mutsuz' },
+    ]);
+    // O günden beri yıkılan ev atlanır.
+    s.binalar = s.binalar.filter((b) => b.id !== h1.id);
+    expect(buildingPins(s, son)).toEqual([{ id: h2.id, tur: 'ihtiyac', neden: 'su' }]);
+  });
 });
 
 describe('üretim sorunları', () => {

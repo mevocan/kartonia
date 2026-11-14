@@ -560,7 +560,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     if (r.vergi > 0) ses.play('vergi');
     ogretici.olay('gunSonu');
     hud.setReport(r);
-    sonGun = { uretimSorunlari: r.uretimSorunlari, evStokEksikleri: r.evStokEksikleri };
+    sonGun = { uretimSorunlari: r.uretimSorunlari, evStokEksikleri: r.evStokEksikleri, mutsuzEvler: r.mutsuzEvler };
     renderer.setPopulation(s.nufus);
     for (const v of r.binaVergileri) {
       const b = s.binalar.find((x) => x.id === v.id);
@@ -586,7 +586,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     if (r.yeniHedefler.length > 0) ses.play('hedef');
     // Tamamlanan hedefi kart kutlar (aynı gün birden çoksa sonuncusu); büyük dönüm noktaları ayrıca bildirilir.
     const sonHedef = r.yeniHedefler[r.yeniHedefler.length - 1];
-    if (sonHedef !== undefined && GOALS[sonHedef]) goal.kutla(hedefMetni(sonHedef).ad);
+    if (sonHedef !== undefined && GOALS[sonHedef]) goal.kutla(hedefMetni(sonHedef).ad, r.hedefOdulu);
     for (const i of r.yeniHedefler) {
       if (i === KASABA_TAMAM_HEDEFI) toasts.show(t('bildirim.kasabaTamam'), 'iyi');
       if (i === GOALS.length - 1) toasts.show(t('bildirim.efsane'), 'iyi');

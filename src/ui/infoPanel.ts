@@ -4,7 +4,7 @@
 //   hizmet  → etki alanı, kapsadığı evler, sağladığı ihtiyaç, yükseltme
 //   anıt    → inşaat aşaması ve malzeme gönderme;  doğa → kesme / sökme
 import type { BuildingInfo, BuildingType, Good, Need, RoadInfo, UretimSorunu } from '../logic/types';
-import { BUILDINGS, HOUSE_LEVELS, ROADS } from '../data/buildings';
+import { BALANCE, BUILDINGS, HOUSE_LEVELS, ROADS } from '../data/buildings';
 import { el, panelAc, panelKapat, tr } from './dom';
 import { IHTIYAC_IKON, MAL_IKON } from './ikonlar';
 import {
@@ -124,6 +124,7 @@ export function createInfoPanel(
     const enUst = info.seviye >= HOUSE_LEVELS.length;
     let durum: Durum | null = null;
     if (g && g.kotu > 0) durum = { ikon: '📉', metin: t('bilgi.durumKuculuyor', { n: g.kotu, esik: g.kuculmeEsik }), tur: 'kotu' };
+    else if (info.mutsuz) durum = { ikon: '😟', metin: t('bilgi.durumMutsuz'), tur: 'uyari' };
     else if (g && g.iyi > 0 && !enUst) durum = { ikon: '📈', metin: t('bilgi.durumBuyuyor', { n: g.iyi, esik: g.buyumeEsik }), tur: 'iyi' };
     else if (enUst) durum = { ikon: '⭐', metin: t('bilgi.durumEnUst'), tur: 'notr' };
     bas(evSeviyeAd(info.seviye) || binaAd(info.type), t('bilgi.seviyeAlt', { n: info.seviye, max: HOUSE_LEVELS.length }), binaResmi('ev'), durum);
@@ -132,6 +133,7 @@ export function createInfoPanel(
       { ikon: '🙂', deger: String(Math.round(info.mutluluk ?? 0)), etiket: t('bilgi.mutluluk') },
       { ikon: '💰', deger: `+${info.tahminiVergi ?? 0}`, etiket: t('bilgi.vergiGun') },
     ]);
+    if (info.mutsuz) box.appendChild(el('div', 'not', t('bilgi.mutsuzNot', { esik: BALANCE.buyumeMutluluk })));
     const tb = tablo();
     satir(tb, t('bilgi.yol'), info.yol ? yolAd(info.yol) : t('genel.yok'));
     bonusSatiri(tb, info);

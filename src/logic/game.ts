@@ -1,5 +1,5 @@
 // Mantık API'si: types.ts'deki sözleşmenin tek giriş noktası.
-import { BALANCE, BUILDINGS, dogaTuru } from '../data/buildings';
+import { BALANCE, BUILDINGS, HOUSE_LEVELS, dogaTuru } from '../data/buildings';
 import { HARITA, OYUN_YARI_GENISLIK, haritayiAyarla, makeRng } from '../data/map';
 import type { BuildingInfo, DayReport, GameState, Good } from './types';
 import {
@@ -30,10 +30,10 @@ export {
   tuccarVarMi, tuccarGeldiMi, tuccarKalisGunu, tuccaraKalanGun, kalanKota, tuccarKonumu, canBuy, canSell, buyGood, sellGood,
   type TicaretSebep,
 } from './trade';
-export { checkRequest, deliverFeast, istekHedefi, istekKalanGun, geciciMutlulukBugun } from './requests';
+export { checkRequest, deliverFeast, istekHedefi, istekKalanGun, istekOdulu, neseliMi, geciciMutlulukBugun } from './requests';
 export { ayar, kartCek, kartSec, kartBul, bekleyenSecim, secimGunu, toplamSecim } from './cards';
 export { serialize, deserialize } from './save';
-export { GOALS, goalProgress, KASABA_TAMAM_HEDEFI } from './goals';
+export { GOALS, goalProgress, goalReward, KASABA_TAMAM_HEDEFI, ZENGIN_KASABA } from './goals';
 
 export const GUN_SURESI = BALANCE.gunSuresi;
 // Oynanabilir alanın yarı genişliği (artık yuvarlatılmış kare; kurallarda isLand kullanılır).
@@ -116,6 +116,7 @@ export function getBuildingInfo(s: GameState, id: number): BuildingInfo | null {
     info.ihtiyaclar = st;
     info.yol = bestRoadNear(s, b)?.tur ?? null;
     info.evGun = { iyi: b.iyiGun, kotu: b.kotuGun, buyumeEsik: ayar(s, 'seviyeAtlamaGun'), kuculmeEsik: BALANCE.seviyeGunEsigi };
+    if (b.seviye < HOUSE_LEVELS.length) info.mutsuz = m < BALANCE.buyumeMutluluk;
   }
   if (isProducer(b.type)) {
     const oran = workerRatio(s);

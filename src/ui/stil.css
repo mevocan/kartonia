@@ -834,6 +834,25 @@ h1, h2, h3, h4 { font-weight: 400; letter-spacing: 0.01em; }
 .giris-dugme.tehlike { color: #fff; border-color: var(--hat); }
 .dil-secim button.secili { background: var(--altin); color: var(--metin); }
 
+/* Hedef ödülü: başlık satırında küçük hardal çip; kutlamada "+75 💰" olarak yeşile döner */
+#hedef .ust { gap: 6px; }
+#hedef .ust .etiket { margin-right: auto; }
+#hedef .odul-cip:empty { display: none; }
+#hedef .odul-cip {
+  font-size: 12.5px; padding: 0 7px; line-height: 1.5; white-space: nowrap;
+  background: var(--altin-acik); color: var(--metin); border: 1.5px solid var(--hat); border-radius: var(--el-kose-kucuk);
+  transform: rotate(2deg);
+}
+#hedef .odul-cip.kazanildi { background: var(--cayir); animation: vurgu var(--sure-yavas) var(--egri); }
+
+/* Neşeli kasaba: mutluluğun yanında küçük çip */
+.hud-oge .neseli-cip { display: none; }
+.hud-oge.neseli .neseli-cip {
+  display: inline-block; font-size: 12px; line-height: 1.4; padding: 0 6px; align-self: flex-start;
+  background: var(--cayir); color: var(--metin); border: 1.5px solid var(--hat); border-radius: var(--el-kose-kucuk);
+  transform: rotate(-3deg);
+}
+
 /* ---------- Hareket azaltma ---------- */
 
 @media (prefers-reduced-motion: reduce) {

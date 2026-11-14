@@ -60,13 +60,13 @@ const I = BALANCE.istek;
 /** İsteğin başlığı. */
 export const istekAd = (tur: IstekTuru): string => t(`istek.${tur}.ad`);
 
-/** İsteğin açıklaması (sayılar BALANCE'tan). */
-export function istekAciklama(tur: IstekTuru): string {
+/** İsteğin açıklaması (sayılar BALANCE'tan; `odul` şu anki para ödülü, neşeli kasabada artar: istekOdulu). */
+export function istekAciklama(tur: IstekTuru, odul: number): string {
   switch (tur) {
     case 'senlik': return t('istek.senlik.aciklama', { yemek: I.senlikYemek, gun: I.senlikGun, mutluluk: I.senlikMutluluk });
-    case 'agaclandirma': return t('istek.agaclandirma.aciklama', { sayi: I.agacSayisi, odul: I.agacOdul });
-    case 'kisHazirligi': return t('istek.kisHazirligi.aciklama', { odun: I.kisOdun, odul: I.kisOdul });
-    case 'susuzEv': return t('istek.susuzEv.aciklama', { odul: I.suOdul });
+    case 'agaclandirma': return t('istek.agaclandirma.aciklama', { sayi: I.agacSayisi, odul });
+    case 'kisHazirligi': return t('istek.kisHazirligi.aciklama', { odun: I.kisOdun, odul });
+    case 'susuzEv': return t('istek.susuzEv.aciklama', { odul });
   }
 }
 

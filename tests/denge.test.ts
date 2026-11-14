@@ -1,8 +1,9 @@
-// Denge ölçümü: elle kurulmuş üç referans kasabanın
-// bir günlük vergi, gider ve net gelirini hesaplayıp yazdırır. Sayı değiştirmez, yalnızca ölçer.
+// Denge ölçümü: elle kurulmuş referans kasabaların bir günlük vergi, gider ve net gelirini hesaplayıp yazdırır;
+// ayrıca ev seviyesi başına mahalle neti ve açılıştaki bekleme denetlenir.
 // Çıktıyı görmek için: npx vitest run tests/denge.test.ts
 import { describe, expect, it } from 'vitest';
-import { endDay, stockLimit } from '../src/logic/game';
+import { BALANCE, BUILDINGS } from '../src/data/buildings';
+import { endDay, isUnlocked, stockLimit } from '../src/logic/game';
 import { evaluateNeeds, houseLevel } from '../src/logic/economy';
 import type { BuildingType, GameState, Good } from '../src/logic/types';
 import { add, addRoad, blank } from './helpers';
@@ -126,5 +127,89 @@ describe('denge ölçümü (Aşama 1b)', () => {
       );
     }
     console.log(['', 'Denge ölçümü (1 gün):', ...satirlar, ''].join('\n'));
+  });
+});
+
+// ---- Evi büyütmek kârlı olmalı ----
+
+/** Ev seviyesine göre bütün ihtiyaçları karşılayan mahallenin hizmetleri (yemek satış yeri dahil). */
+const SEVIYE_HIZMET: Record<number, BuildingType[]> = {
+  2: ['cesme', 'firin'],
+  3: ['cesme', 'pazar', 'okul', 'hastane'],
+  4: ['cesme', 'pazar', 'okul', 'hastane', 'hamam'],
+  5: ['cesme', 'pazar', 'okul', 'hastane', 'hamam', 'tiyatro'],
+};
+
+/** 12 evlik tam mahalle (stoklar dolu, her evin yanında bir ağaç, toprak çevre yolu): bir günün neti. */
+function mahalleNeti(seviye: number): { vergi: number; gider: number; net: number } {
+  const s = blank();
+  SEVIYE_HIZMET[seviye].forEach((t, i) => add(s, t, Math.cos(i), Math.sin(i)));
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    add(s, 'ev', Math.cos(a) * EV_HALKA, Math.sin(a) * EV_HALKA, seviye);
+    add(s, 'agac', Math.cos(a + 0.2) * (EV_HALKA + 1.6), Math.sin(a + 0.2) * (EV_HALKA + 1.6));
+  }
+  addRoad(s, 'toprak', Array.from({ length: 49 }, (_, i) => ({
+    x: Math.cos((i / 48) * Math.PI * 2) * YOL_HALKA, z: Math.sin((i / 48) * Math.PI * 2) * YOL_HALKA,
+  })));
+  s.nufus = 999; // işçi oranı 1
+  for (const g of Object.keys(s.stok) as Good[]) s.stok[g] = stockLimit(s);
+  const r = endDay(s);
+  return { vergi: r.vergi, gider: r.gider, net: r.net };
+}
+
+describe('denge: ev seviyesi', () => {
+  it('tam bir mahallede her ev seviyesi bir öncekinden en az %25 daha fazla net bırakır', () => {
+    const netler = [2, 3, 4, 5].map((sev) => ({ sev, ...mahalleNeti(sev) }));
+    console.log(['', '12 evlik tam mahalle (1 gün, üretim gideri hariç):',
+      ...netler.map((n) => `seviye ${n.sev}: vergi ${n.vergi} · hizmet gideri ${n.gider} · net ${n.net}`), ''].join('\n'));
+    for (let i = 1; i < netler.length; i++) expect(netler[i].net).toBeGreaterThanOrEqual(netler[i - 1].net * 1.25);
+  });
+});
+
+// ---- Açılış temposu ----
+
+/**
+ * Hedefleri izleyen sade bir açılış: 5 kulübe + Çeşme, sonra sırayla Balıkçı, Fırın, evler, Tarla, Değirmen ve
+ * yeni evler. Her gün parası yeten ve açılmış olan sıradaki iş alınır. "Bekleme": sıradaki iş varken hiçbir şey
+ * alınamayan gün. Kabul: ilk 40 günde 4 günden uzun bekleme serisi yok.
+ */
+describe('denge: açılış', () => {
+  it('ilk 40 günde 4 günden uzun "alacak bir şey yok" dönemi olmaz', () => {
+    const s = blank();
+    s.para = BALANCE.baslangicPara;
+    let evNo = 0;
+    const evKoy = (): void => {
+      // Halka üzerinde: çeşme (7) ve fırın (6) alanında.
+      const a = (evNo++ / 14) * Math.PI * 2;
+      add(s, 'ev', Math.cos(a) * 4.5, Math.sin(a) * 4.5);
+    };
+    const al = (t: BuildingType): boolean => {
+      if (!isUnlocked(s, t) || s.para < BUILDINGS[t].maliyet) return false;
+      s.para -= BUILDINGS[t].maliyet;
+      if (t === 'ev') evKoy();
+      else if (t === 'cesme' || t === 'firin') add(s, t, t === 'cesme' ? 1 : -1, 0);
+      else add(s, t, 30 + s.binalar.length * 4, 30); // üretim mahalleden uzakta (gürültü)
+      return true;
+    };
+    const sira: BuildingType[] = [
+      'ev', 'ev', 'ev', 'ev', 'ev', 'cesme', 'balikci', 'firin', 'ev', 'ev', 'ev', 'tarla', 'degirmen',
+      'ev', 'ev', 'ev', 'ev', 'ev', 'ev', 'tarla',
+    ];
+    let seri = 0;
+    let enUzun = 0;
+    const gunluk: string[] = [];
+    for (let gun = 1; gun <= 40 && sira.length; gun++) {
+      const alinan: BuildingType[] = [];
+      while (sira.length && al(sira[0])) alinan.push(sira.shift()!);
+      if (alinan.length === 0 && sira.length) enUzun = Math.max(enUzun, ++seri);
+      else seri = 0;
+      const r = endDay(s);
+      gunluk.push(`g${r.gun} ${alinan.join(',') || '—'} | para ${Math.round(s.para)} net ${r.net}` +
+        `${r.hedefOdulu ? ` ödül +${r.hedefOdulu}` : ''} nüfus ${s.nufus}${sira.length ? ` sıradaki ${sira[0]}` : ''}`);
+    }
+    console.log(['', 'Açılış (en uzun bekleme ' + enUzun + ' gün):', ...gunluk, ''].join('\n'));
+    expect(sira).toEqual([]);
+    expect(enUzun).toBeLessThanOrEqual(4);
   });
 });

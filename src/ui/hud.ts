@@ -2,7 +2,8 @@
 // Stok (yemek, odun + bütün stoklar paneli) · Kontrol (tüccar, ses, hız).
 // Sayı geçişleri arayüz zamanıyla (performance.now) çalışır: oyun 3x hızdayken de aynı hızdadır.
 import type { BuildingType, DayReport, GameState, Good } from '../logic/types';
-import { HOUSE_LEVELS } from '../data/buildings';
+import { BALANCE, HOUSE_LEVELS } from '../data/buildings';
+import { neseliMi } from '../logic/requests';
 import { isUnlocked, stockLimit } from '../logic/placement';
 import type { SesKanali } from '../audio/api';
 import { el, flash, tr } from './dom';
@@ -167,6 +168,7 @@ export function createHud(
     satir(t('hud.binaGider'), -r.binaGider);
     satir(t('hud.yolGider'), -r.yolGider);
     satir(t('hud.net'), r.net, 'net');
+    if (r.hedefOdulu > 0) satir(t('hud.hedefOdulu'), r.hedefOdulu);
     dokum.appendChild(tablo);
   }
   const nufus = item(kasaba, '👥', t('hud.nufus'));
@@ -176,6 +178,9 @@ export function createHud(
   const mCubukIc = el('div');
   mCubuk.appendChild(mCubukIc);
   mutluluk.metin.appendChild(mCubuk);
+  // Neşeli kasaba: ortalama mutluluk eşiğin üstündeyken küçük çip (istek ödülleri artar).
+  const neseliCip = el('span', 'neseli-cip', t('hud.neseli'));
+  mutluluk.wrap.appendChild(neseliCip);
 
   // ---- Stok adası ----
   const stokAda = ada();
@@ -304,6 +309,11 @@ export function createHud(
       mutlulukIkon.textContent = yuz(s.mutluluk);
       mCubukIc.style.width = `${Math.max(0, Math.min(100, s.mutluluk))}%`;
       mCubukIc.style.background = mutlulukRengi(s.mutluluk);
+      const neseli = neseliMi(s);
+      mutluluk.wrap.classList.toggle('neseli', neseli);
+      mutluluk.wrap.title = neseli
+        ? `${t('hud.mutluluk')} · ${t('hud.neseliAciklama', { n: Math.round((BALANCE.neseliIstekCarpani - 1) * 100) })}`
+        : t('hud.mutluluk');
 
       const gerekli = tuketilenMallar(s);
       const kritik = (g: Good): boolean => s.stok[g] < 1 && gerekli.has(g);

@@ -52,6 +52,17 @@ export function istekHedefi(tur: IstekTuru): number {
 }
 
 /** Etkin isteğin son gününe kadar kalan gün (bugün dahil). İstek yoksa 0. */
+/** Kasaba neşeli mi: ortalama mutluluk eşiğin üstünde (istek para ödülleri artar). */
+export function neseliMi(s: GameState): boolean {
+  return s.mutluluk >= BALANCE.neseliMutluluk;
+}
+
+/** İsteğin şu anki para ödülü: taban ödül, neşeli kasabada neseliIstekCarpani katı (yuvarlanır). Şenlik para vermez. */
+export function istekOdulu(s: GameState, tur: IstekTuru): number {
+  const taban = tur === 'agaclandirma' ? I.agacOdul : tur === 'kisHazirligi' ? I.kisOdul : tur === 'susuzEv' ? I.suOdul : 0;
+  return Math.round(taban * (neseliMi(s) ? BALANCE.neseliIstekCarpani : 1));
+}
+
 export function istekKalanGun(s: GameState): number {
   if (!s.istek) return 0;
   return Math.max(0, s.istek.baslangicGun + I.sure - s.gun);
@@ -71,14 +82,12 @@ export function checkRequest(s: GameState): IstekSonuc | null {
   const ist = s.istek;
   if (!ist || s.bitti) return null;
   let tamam = false;
-  let para = 0;
+  const para = istekOdulu(s, ist.tur);
   if (ist.tur === 'agaclandirma') {
     tamam = ist.ilerleme >= I.agacSayisi;
-    para = I.agacOdul;
   } else if (ist.tur === 'kisHazirligi') {
     ist.ilerleme = Math.min(s.stok.odun, I.kisOdun);
     tamam = s.stok.odun >= I.kisOdun - 1e-9;
-    para = I.kisOdul;
   } else if (ist.tur === 'susuzEv') {
     const h = s.binalar.find((b) => b.id === ist.hedefBinaId);
     if (!h) {
@@ -87,7 +96,6 @@ export function checkRequest(s: GameState): IstekSonuc | null {
     }
     tamam = suVar(s, h);
     ist.ilerleme = tamam ? 1 : 0;
-    para = I.suOdul;
   }
   if (!tamam) return null;
   s.para += para;

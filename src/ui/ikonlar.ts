@@ -10,9 +10,10 @@ export const IHTIYAC_IKON: Record<Need, string> = {
   hamam: '♨️', kultur: '🎭',
 };
 
-/** İğnenin simgesi ve rengi: ev ihtiyacı uyarı, üretim sorunu bilgi rengindedir. */
+/** İğnenin simgesi ve rengi: ev ihtiyacı ve mutsuz ev uyarı, üretim sorunu bilgi rengindedir. */
 export function igneGorunumu(p: BinaIgnesi): { ikon: string; tur: 'uyari' | 'bilgi' } {
   if (p.tur === 'ihtiyac') return { ikon: IHTIYAC_IKON[p.neden], tur: 'uyari' };
+  if (p.tur === 'mutsuz') return { ikon: '😟', tur: 'uyari' };
   if (p.neden === 'depo') return { ikon: '📦', tur: 'bilgi' };
   if (p.neden === 'agac') return { ikon: '🌳', tur: 'bilgi' };
   return { ikon: MAL_IKON[p.neden], tur: 'bilgi' };
