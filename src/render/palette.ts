@@ -141,7 +141,7 @@ export const PALETTE = {
   kumasMavi: '#79b8e0',
 } as const;
 
-// Deneme (çizgi film): daha parlak ve doygun arazi, açık gök. Türetilen diziler (EV_DUVAR…) aşağıda okunur.
+// Çizgi film (resimli kitap): taze ama soluk pastel arazi, açık mavi gök. Türetilen diziler (EV_DUVAR…) aşağıda okunur.
 if (CIZGI) {
   Object.assign(PALETTE as Record<string, string>, {
     cimen: '#a9d283',
@@ -149,10 +149,10 @@ if (CIZGI) {
     ormanZemin: '#8cbf72',
     cimenDis: '#9bc77f',
     ormanDis: '#7bae68',
-    sis: '#cfe9e4',
+    sis: '#c8e3ee',
     gokIsik: '#eef8ff',
     yerIsik: '#a8cf86',
-    su: '#7fd0f0',
+    su: '#94cfe3',
     kum: '#f7e3a8',
   });
 }

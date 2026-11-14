@@ -200,3 +200,38 @@ export function createFold(tpl: ModelTemplate, mat: THREE.Material = modelMateri
     },
   };
 }
+
+/**
+ * Çizgi film kurulumu: bina yerden ezik çıkar, hafifçe uzayıp yerine oturur (squash & stretch).
+ * createFold ile aynı sözleşme (FoldRun), böylece kurma / yıkma / seviye değişimi aynı yoldan oynar.
+ * Dış hat (ters kabuk) de birlikte büyür.
+ */
+export function createPop(tpl: ModelTemplate, mat: THREE.Material, hat: THREE.Mesh | null): FoldRun {
+  const obj = new THREE.Group();
+  const govde = new THREE.Group();
+  const mesh = new THREE.Mesh(tpl.body.geo, mat);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.raycast = () => {};
+  const lines = new THREE.LineSegments(tpl.body.edges, lineMaterial('base'));
+  lines.raycast = () => {};
+  govde.add(mesh, lines);
+  if (hat) govde.add(hat);
+  obj.add(govde);
+  const dur = 0.62;
+  return {
+    obj,
+    dur,
+    set(time: number) {
+      const k = Math.max(0, Math.min(1, time / dur));
+      // Dikey: geri tepen büyüme (biraz uzar, sonra oturur); yatay: önce geniş, sonra normal.
+      const y = Math.max(0.001, ease.outBack(k));
+      const xz = 1 + (1 - k) * 0.35 * Math.sin(k * Math.PI);
+      govde.scale.set(xz * Math.min(1, k * 3 + 0.001), y, xz * Math.min(1, k * 3 + 0.001));
+      obj.visible = k > 0;
+    },
+    dispose() {
+      obj.clear();
+    },
+  };
+}

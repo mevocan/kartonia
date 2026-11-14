@@ -7,13 +7,14 @@ import type { AyakTur, GameRenderer, PinTur } from './api';
 import { PALETTE, EV_DUVAR } from './palette';
 import {
   modelMaterial, lineMaterial, paperMaterial, canvasTexture, disposeMaterials, roadMaterial, treeMaterial, treeGhostMaterial, ruzgar, gece,
+  agacHatMalzemesi,
 } from './paper';
 import { createWorld, applyDayProgress, followShadow, updateFog, ZEMIN_R } from './scene';
 import { rayTerrain } from './terrain';
 import { getThumbnail, renderThumbnails } from './thumbnails';
 import { OrbitCamera } from './camera';
 import { Tweens, Confetti, FloatLabels, ease } from './anim';
-import { createFold, type FoldRun, type FoldOpts } from './fold';
+import { createFold, createPop, type FoldRun, type FoldOpts } from './fold';
 import { buildRoad, revealRoad, roadPointAt, type RoadGeo } from './roads';
 import { getTemplate, instantiate, variantFor, sizeFor, forEachPart, disposeTemplates, hatGeo, type ModelTemplate } from './models/index';
 import { CIZGI, hatMalzemesi } from './tarz';
@@ -319,7 +320,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
     }
     if (CIZGI) {
       // Çizgi film: ağaç/çiçek dış hattı aynı örnek matrislerini paylaşır (sayısı her karede eşitlenir).
-      const hat = new THREE.InstancedMesh(hatGeo(geo), hatMalzemesi(0.03), cap);
+      const hat = new THREE.InstancedMesh(hatGeo(geo), agacHatMalzemesi(), cap);
       hat.instanceMatrix = mesh.instanceMatrix;
       hat.count = mesh.count;
       hat.raycast = () => {};
@@ -539,7 +540,11 @@ export function createRenderer(container: HTMLElement): GameRenderer {
     e: Entry, tpl: ModelTemplate, reverse: boolean, speed: number, done: () => void, startT = 0,
     kind: FoldPlay['kind'] = reverse ? 'yik' : 'kur', opts?: FoldOpts,
   ): FoldPlay {
-    const run = createFold(tpl, dogaTuru(e.type) ? treeMaterial() : undefined, opts);
+    // Çizgi filmde bina büyüyerek çıkar; anıt aşamaları (opts) parça parça katlanmaya devam eder.
+    const doga = dogaTuru(e.type);
+    const run = CIZGI && !opts
+      ? createPop(tpl, doga ? treeMaterial() : modelMaterial('base'), new THREE.Mesh(hatGeo(tpl.body.geo), doga ? agacHatMalzemesi() : hatMalzemesi()))
+      : createFold(tpl, doga ? treeMaterial() : undefined, opts);
     e.holder.add(run.obj);
     const fp: FoldPlay = { run, t: startT, speed, reverse, done, kind };
     run.set(reverse ? run.dur - startT : startT);

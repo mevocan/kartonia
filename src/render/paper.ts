@@ -191,17 +191,60 @@ export type ModelMatKind = 'base' | 'ghost' | 'ghostBad' | 'secim' | 'yikim';
 export const gece = { value: 0 };
 const pencereIsik = { value: new THREE.Color(PALETTE.pencereIsik) };
 
+// ---- Çizgi film: elle çizilmiş yüzey çizgileri (dünya koordinatından, model dosyalarına dokunmadan) ----
+// Duvarlarda (dik yüzey) yatay tahta çizgileri; eğimli yüzeylerde (çatı) yükseklik eşi çizgiler kiremit
+// sıralarını, aralarındaki şaşırtmalı kısa çentikler kiremitleri verir. Düz yüzey (taban, düz dam) ve pencere
+// camı (isik) çizgisizdir. Çizgiler rengi koyulaştırır (siyah değil); uzakta hare yapmasın diye solar.
+const CIZIM_VERTEX_BAS = ['varying vec3 vCzPos;', 'varying vec3 vCzNor;'].join('\n');
+const CIZIM_VERTEX = [
+  'vec4 czWp = vec4(transformed, 1.0);',
+  '#ifdef USE_INSTANCING',
+  'czWp = instanceMatrix * czWp;',
+  '#endif',
+  'vCzPos = (modelMatrix * czWp).xyz;',
+  'vCzNor = normalize(mat3(modelMatrix) * objectNormal);',
+].join('\n');
+const CIZIM_FRAGMENT_BAS = [
+  'varying vec3 vCzPos;',
+  'varying vec3 vCzNor;',
+  'float czCizgi(float v, float en) {',
+  '  float d = min(fract(v), 1.0 - fract(v));',
+  '  float fw = fwidth(v);',
+  '  return (1.0 - smoothstep(en, en + fw * 1.2, d)) * (1.0 - smoothstep(0.22, 0.5, fw));',
+  '}',
+].join('\n');
+const CIZIM_FRAGMENT = [
+  '{',
+  '  vec3 czN = normalize(vCzNor);',
+  '  float czYat = abs(czN.y);',
+  '  if (vIsik < 0.5 && czYat < 0.93) {',
+  '    float czDalga = sin(vCzPos.x * 6.0 + vCzPos.z * 4.3) * 0.006;',
+  '    float czAra = czYat < 0.35 ? 0.12 : 0.085;',
+  '    float czV = (vCzPos.y + czDalga) / czAra;',
+  '    float czIz = czCizgi(czV, 0.05);',
+  '    if (czYat >= 0.35) {',
+  '      vec2 czT = normalize(vec2(-czN.z, czN.x) + 1e-5);',
+  '      float czU = dot(vCzPos.xz, czT) / 0.15 + floor(czV) * 0.5;',
+  '      czIz = max(czIz, czCizgi(czU, 0.035) * 0.75);',
+  '    }',
+  '    diffuseColor.rgb *= 1.0 - czIz * 0.34;',
+  '  }',
+  '}',
+].join('\n');
+
 /** Pencere ışığı: `isik` tepe niteliği olan yüzeylere gece ağırlığıyla sıcak ışık (emissive) ekler. */
 function pencereYak(m: THREE.MeshStandardMaterial): void {
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uGece = gece;
     sh.uniforms.uPencere = pencereIsik;
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', ['#include <common>', 'attribute float isik;', 'varying float vIsik;'].join('\n'))
+      .replace('#include <common>', ['#include <common>', 'attribute float isik;', 'varying float vIsik;', CIZGI ? CIZIM_VERTEX_BAS : ''].join('\n'))
       .replace('#include <begin_vertex>', ['#include <begin_vertex>', 'vIsik = isik;'].join('\n'))
-      .replace('#include <color_vertex>', CIZGI ? ['#include <color_vertex>', DOYGUNLUK_GLSL].join('\n') : '#include <color_vertex>');
+      .replace('#include <color_vertex>', CIZGI ? ['#include <color_vertex>', DOYGUNLUK_GLSL].join('\n') : '#include <color_vertex>')
+      .replace('#include <project_vertex>', CIZGI ? ['#include <project_vertex>', CIZIM_VERTEX].join('\n') : '#include <project_vertex>');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', ['#include <common>', 'uniform float uGece;', 'uniform vec3 uPencere;', 'varying float vIsik;'].join('\n'))
+      .replace('#include <common>', ['#include <common>', 'uniform float uGece;', 'uniform vec3 uPencere;', 'varying float vIsik;', CIZGI ? CIZIM_FRAGMENT_BAS : ''].join('\n'))
+      .replace('#include <color_fragment>', CIZGI ? ['#include <color_fragment>', CIZIM_FRAGMENT].join('\n') : '#include <color_fragment>')
       .replace(
         '#include <emissivemap_fragment>',
         ['#include <emissivemap_fragment>', 'totalEmissiveRadiance += uPencere * (vIsik * uGece);'].join('\n'),
@@ -316,6 +359,34 @@ export function treeGhostMaterial(kind: 'ghost' | 'ghostBad'): THREE.MeshStandar
   return m;
 }
 
+/** Rüzgâr eğimi (GLSL, begin_vertex sonrası): instanced ağaçta faz örneğin konumundan gelir. */
+const RUZGAR_GLSL = [
+  'float rzFaz = 0.0;',
+  '#ifdef USE_INSTANCING',
+  'rzFaz = instanceMatrix[3].x * 0.31 + instanceMatrix[3].z * 0.23;',
+  '#endif',
+  'float rzK = max(transformed.y - 0.15, 0.0);',
+  'transformed.x += sin(uRuzgar * 1.6 + rzFaz) * 0.035 * rzK;',
+  'transformed.z += sin(uRuzgar * 1.1 + rzFaz * 1.7) * 0.02 * rzK;',
+].join('\n');
+
+let agacHatMat: THREE.MeshBasicMaterial | null = null;
+
+/** Çizgi film: ağaç ve çiçek dış hattı; ağaçla aynı rüzgârla sallanır (yoksa hat gövdeden ayrılır). */
+export function agacHatMalzemesi(): THREE.MeshBasicMaterial {
+  if (agacHatMat) return agacHatMat;
+  const m = new THREE.MeshBasicMaterial({ color: HAT_RENGI, side: THREE.BackSide });
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uRuzgar = ruzgar;
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform float uRuzgar;')
+      .replace('#include <begin_vertex>', ['vec3 transformed = vec3(position) + normalize(normal) * 0.03;', RUZGAR_GLSL].join('\n'));
+  };
+  m.customProgramCacheKey = () => 'agac-hat';
+  agacHatMat = m;
+  return m;
+}
+
 /**
  * Ağaç malzemesi: taban malzemesi + vertex shader'da çok hafif, zamana bağlı rüzgâr eğimi.
  * Instanced ağaçlarda faz, örneğin konumundan gelir (her ağaç biraz farklı sallanır).
@@ -330,21 +401,9 @@ export function treeMaterial(): THREE.MeshStandardMaterial {
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nuniform float uRuzgar;\n' + MEVSIM_GLSL)
       .replace('#include <color_vertex>', MEVSIM_RENK_VERTEX)
-      .replace(
-        '#include <begin_vertex>',
-        [
-          '#include <begin_vertex>',
-          'float rzFaz = 0.0;',
-          '#ifdef USE_INSTANCING',
-          'rzFaz = instanceMatrix[3].x * 0.31 + instanceMatrix[3].z * 0.23;',
-          '#endif',
-          'float rzK = max(transformed.y - 0.15, 0.0);',
-          'transformed.x += sin(uRuzgar * 1.6 + rzFaz) * 0.035 * rzK;',
-          'transformed.z += sin(uRuzgar * 1.1 + rzFaz * 1.7) * 0.02 * rzK;',
-        ].join('\n'),
-      );
+      .replace('#include <begin_vertex>', ['#include <begin_vertex>', RUZGAR_GLSL].join('\n'));
   };
-  m.customProgramCacheKey = () => 'ruzgar-mevsim';
+  m.customProgramCacheKey = () => (CIZGI ? 'ruzgar-mevsim-cizgi' : 'ruzgar-mevsim');
   treeMat = m;
   return m;
 }

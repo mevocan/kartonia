@@ -1,5 +1,6 @@
-// Çizim tarzı (deneme): 'kagit' bugünkü kağıt maket, 'cizgi' çizgi film (toon gölgeleme + kalın dış hat).
-// Adres çubuğunda ?tarz=cizgi ya da ?tarz=kagit; seçim localStorage'da kalır. Varsayılan kağıt.
+// Çizim tarzı: 'cizgi' resimli kitap / çizgi film (toon gölgeleme, kalın dış hat, elle çizilmiş yüzey çizgileri),
+// 'kagit' eski kağıt maket. Varsayılan çizgi film. Karşılaştırma için adres çubuğunda ?tarz=kagit (ya da
+// ?tarz=cizgi); seçim localStorage'da kalır.
 import * as THREE from 'three';
 
 export type Tarz = 'kagit' | 'cizgi';
@@ -13,11 +14,11 @@ function oku(): Tarz {
       localStorage.setItem(ANAHTAR, q);
       return q;
     }
-    if (localStorage.getItem(ANAHTAR) === 'cizgi') return 'cizgi';
+    if (localStorage.getItem(ANAHTAR) === 'kagit') return 'kagit';
   } catch {
     /* tarayıcı dışı (testler) ya da depolama yok */
   }
-  return 'kagit';
+  return 'cizgi';
 }
 
 export const TARZ: Tarz = typeof window === 'undefined' ? 'kagit' : oku();
@@ -40,10 +41,10 @@ export function toonGradyan(): THREE.DataTexture {
   return gradyan;
 }
 
-/** Doygunluk artışı (GLSL, color_vertex sonrası): çizgi filmde renkler biraz daha canlı. */
+/** Doygunluk ayarı (GLSL, color_vertex sonrası): resimli kitap paleti biraz daha soluk pastel. */
 export const DOYGUNLUK_GLSL = [
   '#ifdef USE_COLOR',
-  'vColor.rgb = clamp(mix(vec3(dot(vColor.rgb, vec3(0.299, 0.587, 0.114))), vColor.rgb, 1.2), 0.0, 1.0);',
+  'vColor.rgb = clamp(mix(vec3(dot(vColor.rgb, vec3(0.299, 0.587, 0.114))), vColor.rgb, 0.92), 0.0, 1.0);',
   '#endif',
 ].join('\n');
 
