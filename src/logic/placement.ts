@@ -5,6 +5,7 @@ import { heightAt, isLake, isLand, lakeDistance } from './terrain';
 import { inTaslik } from '../data/map';
 import { nearestRoad, roadEdgeGap } from './roads';
 import { ayar } from './cards';
+import { binaSayaci, gunlukYaz } from './gunluk';
 
 export function isUnlockedAt(nufus: number, t: BuildingType): boolean {
   return nufus >= BUILDINGS[t].acilmaNufus;
@@ -61,7 +62,10 @@ export function placeBuilding(s: GameState, t: BuildingType, x: number, z: numbe
   const b: Building = { id: s.sonrakiId++, type: t, x, z, rot, seviye: 1, iyiGun: 0, kotuGun: 0 };
   if (BUILDINGS[t].anit) b.insaat = BALANCE.anit.asamalar.length; // iskeleyle başlar
   if (t === 'agac' && s.istek?.tur === 'agaclandirma') s.istek.ilerleme++; // ağaçlandırma isteği
-  if (!dogaTuru(t)) b.baglanti = linkFor(s, x, z);
+  if (!dogaTuru(t)) {
+    b.baglanti = linkFor(s, x, z);
+    binaSayaci(s); // yılın gazetesi: kurulan bina
+  }
   s.binalar.push(b);
   return b;
 }
@@ -219,6 +223,9 @@ export function advanceMonument(s: GameState, id: number): number | null {
   s.para -= m.para;
   for (const [g, n] of Object.entries(m.mal) as [Good, number][]) s.stok[g] = Math.max(0, s.stok[g] - n);
   b.insaat = (b.insaat ?? 1) - 1;
-  if (b.insaat <= 0) delete b.insaat; // tamam: eski kayıtlardaki kulelerle aynı biçim
+  if (b.insaat <= 0) {
+    delete b.insaat; // tamam: eski kayıtlardaki kulelerle aynı biçim
+    gunlukYaz(s, 'kuleTamam');
+  } else gunlukYaz(s, 'kule', monumentStage(b));
   return m.para;
 }

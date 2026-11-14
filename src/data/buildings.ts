@@ -158,8 +158,16 @@ export const BALANCE = {
   mutlulukMax: 100,
   /** Ev vergisi: floor(nüfus × (vergiTaban + mutluluk/100) × vergiSeviyeCarpani[seviye − 1]). */
   vergiTaban: 0.5,
-  /** Ev seviyesine göre vergi çarpanı (1–5). Büyük evler kalabalık ama kişi başı daha az öder. */
-  vergiSeviyeCarpani: [1, 1, 0.6, 0.55, 0.5],
+  /**
+   * Ev seviyesine göre vergi çarpanı (1–5). Büyük evler kişi başı biraz daha az öder, ama tam bir mahallede her
+   * seviye bir öncekinden en az %25 daha fazla net bırakır (tests/denge.test.ts denetler): evi büyütmek kârlıdır.
+   */
+  vergiSeviyeCarpani: [1, 1, 0.9, 0.85, 0.85],
+  /** Mutluluğu bunun altındaki ev büyüyemez (küçülmez de; yalnızca iyi gün saymaz). */
+  buyumeMutluluk: 35,
+  /** Kasabanın ortalama mutluluğu en az bu kadarsa "neşeli kasaba": istek para ödülleri neseliIstekCarpani katı. */
+  neseliMutluluk: 75,
+  neseliIstekCarpani: 1.5,
   seviyeGunEsigi: 2,
   borcSiniri: -50,
   borcGunSiniri: 3,

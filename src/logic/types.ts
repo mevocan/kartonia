@@ -210,6 +210,42 @@ export interface GameState {
   kararlar?: string[];
   /** Kart seçimi bekleyen seçim numaraları (0: 50. gün, 1: 100. gün, 2: 150. gün). Seçilene kadar oyun duraklar. */
   bekleyenKararlar?: number[];
+  /** Kasaba günlüğü (logic/gunluk.ts). Eski kayıtta yok: yüklenirken gunlukGocu ile başlar. */
+  gunluk?: GunlukKaydi[];
+  /** İçinde bulunulan yılın sayaçları (gazete için); yıl sonunda silinir. */
+  yil?: { yil: number; nufusBasi: number; kurulanBina: number; vergi: number; yemek: number };
+  /** Çıkan yıl sonu gazeteleri (yalnızca sayılar). */
+  gazeteler?: Gazete[];
+}
+
+export type GunlukTur =
+  | 'ilkEv' | 'ilkYemek' | 'ilkTuccar' | 'ilkKis' | 'nufus' | 'evSeviye' | 'kule' | 'kuleTamam' | 'kart' | 'senlik'
+  | 'hedef' | 'gazete' | 'gunlukBasladi';
+
+export interface GunlukKaydi {
+  gun: number;
+  tur: GunlukTur;
+  /** nufus: eşik; evSeviye: seviye; kule: tamamlanan aşama; kart: kart id; hedef: hedef indeksi; gazete: yıl. */
+  veri?: number | string;
+  /** Günlükten önce olmuş an (eski kayıt göçü): yalnızca tekrar yazılmasın diye durur, gösterilmez. */
+  gizli?: true;
+}
+
+/** Yıl sonu gazetesi (Kartonia Postası): yılın sayıları ve manşeti. */
+export interface Gazete {
+  yil: number;
+  /** Çıktığı gün (yılın son günü). */
+  gun: number;
+  nufusBasi: number;
+  nufusSon: number;
+  kurulanBina: number;
+  vergi: number;
+  yemek: number;
+  /** Yılın en önemli günlük kaydı (yoksa null). */
+  manset: GunlukKaydi | null;
+  enMutluEv: { id: number; seviye: number; mutluluk: number } | null;
+  /** Gazete çıktığında sıradaki hedefin indeksi (ipucu için). */
+  hedef: number;
 }
 
 export type PlaceFailReason =
@@ -258,6 +294,12 @@ export interface DayReport {
   seviyeDegisimleri: LevelChange[];
   /** Bu gün tamamlanan hedeflerin indeksleri. */
   yeniHedefler: number[];
+  /** Tamamlanan hedeflerin kasaya eklenen toplam ödülü (vergi ve net bunu içermez). */
+  hedefOdulu: number;
+  /** Mutluluğu büyüme eşiğinin altında olduğu için büyüyemeyen evler (en üst seviye hariç; harita iğneleri için). */
+  mutsuzEvler: number[];
+  /** Yılın son günüyse çıkan gazete. */
+  gazete?: Gazete;
   /** Bu gün sonunda gelen yeni sakin isteği. */
   yeniIstek?: IstekTuru;
   /** Bu gün sonunda tamamlanan istek (Şenlik hariç: o düğmeyle hemen tamamlanır). */
@@ -282,9 +324,13 @@ export interface UretimSorunu {
 
 /**
  * Haritada bina üstünde gösterilecek iğne. 'ihtiyac': evin mevcut seviyesinin karşılanmayan ihtiyacı
- * (sürerse ev küçülür). 'uretim': son gün sonundaki üretim sorunu.
+ * (sürerse ev küçülür). 'uretim': son gün sonundaki üretim sorunu. 'mutsuz': ev mutluluğu büyüme eşiğinin altında
+ * (son gün sonundan; ihtiyaç iğnesi olan evde gösterilmez).
  */
-export type BinaIgnesi = { id: number; tur: 'ihtiyac'; neden: Need } | { id: number; tur: 'uretim'; neden: UretimSorunu['neden'] };
+export type BinaIgnesi =
+  | { id: number; tur: 'ihtiyac'; neden: Need }
+  | { id: number; tur: 'uretim'; neden: UretimSorunu['neden'] }
+  | { id: number; tur: 'mutsuz' };
 
 export interface NeedStatus {
   ihtiyac: Need;
@@ -332,11 +378,15 @@ export interface BuildingInfo {
   kapsananEv?: number;
   /** Ev: üst seviye ihtiyaçlarının üst üste karşılandığı / mevcut seviyeninkilerin karşılanmadığı gün ve eşikleri. */
   evGun?: { iyi: number; kotu: number; buyumeEsik: number; kuculmeEsik: number };
+  /** Ev: mutluluğu büyüme eşiğinin altında, bu yüzden büyüyemez (en üst seviyede tanımsız). */
+  mutsuz?: boolean;
 }
 
 export interface GoalDef {
   ad: string;
   aciklama: string;
+  /** Tamamlanınca kasaya eklenen para. */
+  odul: number;
 }
 
 /*

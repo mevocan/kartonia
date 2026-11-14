@@ -2,7 +2,8 @@
 // Stok (yemek, odun + bütün stoklar paneli) · Kontrol (tüccar, ses, hız).
 // Sayı geçişleri arayüz zamanıyla (performance.now) çalışır: oyun 3x hızdayken de aynı hızdadır.
 import type { BuildingType, DayReport, GameState, Good } from '../logic/types';
-import { HOUSE_LEVELS } from '../data/buildings';
+import { BALANCE, HOUSE_LEVELS } from '../data/buildings';
+import { neseliMi } from '../logic/requests';
 import { isUnlocked, stockLimit } from '../logic/placement';
 import type { SesKanali } from '../audio/api';
 import { el, flash, tr } from './dom';
@@ -27,6 +28,8 @@ export interface Hud {
   setSpeed(speed: number): void;
   /** Ses düğmesi ve paneli: aç/kapa durumu ve düzeyler (0..1). */
   setSound(on: boolean, genel: number, muzik: number): void;
+  /** Geri al düğmesi: geri alınacak eylem varsa etkin; `ipucu` düğmenin başlığı (ne geri alınacak). */
+  setUndo(on: boolean, ipucu: string): void;
 }
 
 /** Bütün mallar (stok paneli). `uretici` verilmiş mal, stokta yokken o bina açılana kadar görünmez. */
@@ -73,6 +76,8 @@ export function createHud(
   onMerchant: () => void,
   onSound: () => void,
   onVolume: (kanal: SesKanali, v: number) => void,
+  onUndo: () => void = () => {},
+  onJournal: () => void = () => {},
 ): Hud {
   const box = el('div');
   box.id = 'hud';
@@ -167,6 +172,7 @@ export function createHud(
     satir(t('hud.binaGider'), -r.binaGider);
     satir(t('hud.yolGider'), -r.yolGider);
     satir(t('hud.net'), r.net, 'net');
+    if (r.hedefOdulu > 0) satir(t('hud.hedefOdulu'), r.hedefOdulu);
     dokum.appendChild(tablo);
   }
   const nufus = item(kasaba, '👥', t('hud.nufus'));
@@ -176,6 +182,9 @@ export function createHud(
   const mCubukIc = el('div');
   mCubuk.appendChild(mCubukIc);
   mutluluk.metin.appendChild(mCubuk);
+  // Neşeli kasaba: ortalama mutluluk eşiğin üstündeyken küçük çip (istek ödülleri artar).
+  const neseliCip = el('span', 'neseli-cip', t('hud.neseli'));
+  mutluluk.wrap.appendChild(neseliCip);
 
   // ---- Stok adası ----
   const stokAda = ada();
@@ -210,6 +219,19 @@ export function createHud(
 
   // ---- Kontrol adası ----
   const kontrol = ada();
+  // Geri al (Ctrl+Z ile de): aynı gün içindeki son eylem.
+  const geriDugme = el('button', 'hud-dugme geri-al', '↶');
+  geriDugme.id = 'geriAlDugme';
+  geriDugme.disabled = true;
+  geriDugme.title = t('hud.geriAlYok');
+  geriDugme.addEventListener('click', onUndo);
+  kontrol.appendChild(geriDugme);
+  // Kasaba günlüğü (ve eski gazeteler).
+  const gunlukDugme = el('button', 'hud-dugme', '📖');
+  gunlukDugme.id = 'gunlukDugme';
+  gunlukDugme.title = t('hud.gunluk');
+  gunlukDugme.addEventListener('click', onJournal);
+  kontrol.appendChild(gunlukDugme);
   // Gezgin tüccar yalnızca geldiği gün görünür; tıklayınca takas paneli açılır.
   const tuccarDugme = el('button', 'hud-dugme', t('hud.tuccar'));
   tuccarDugme.id = 'tuccarDugme';
@@ -304,6 +326,11 @@ export function createHud(
       mutlulukIkon.textContent = yuz(s.mutluluk);
       mCubukIc.style.width = `${Math.max(0, Math.min(100, s.mutluluk))}%`;
       mCubukIc.style.background = mutlulukRengi(s.mutluluk);
+      const neseli = neseliMi(s);
+      mutluluk.wrap.classList.toggle('neseli', neseli);
+      mutluluk.wrap.title = neseli
+        ? `${t('hud.mutluluk')} · ${t('hud.neseliAciklama', { n: Math.round((BALANCE.neseliIstekCarpani - 1) * 100) })}`
+        : t('hud.mutluluk');
 
       const gerekli = tuketilenMallar(s);
       const kritik = (g: Good): boolean => s.stok[g] < 1 && gerekli.has(g);
@@ -334,6 +361,10 @@ export function createHud(
     },
     setDayProgress(p) {
       cubukIc.style.width = `${Math.round(p * 100)}%`;
+    },
+    setUndo(on, ipucu) {
+      geriDugme.disabled = !on;
+      geriDugme.title = ipucu;
     },
     setSound(on, genel, muzik) {
       sesDugme.textContent = on ? (genel > 0 ? '🔊' : '🔈') : '🔇';

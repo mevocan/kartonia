@@ -3,6 +3,7 @@ import { emptyGoods } from './economy';
 import { haritayiAyarla } from '../data/map';
 import { ESKI_HEDEF_SAYISI, GOALS } from './goals';
 import { fillMeadows } from './doga';
+import { gunlukGocu } from './gunluk';
 
 export const SAVE_SURUM = 2; // 1: yolsuz eski sürüm, reddedilir
 
@@ -57,5 +58,7 @@ export function deserialize(json: string): GameState {
   haritayiAyarla(s.haritaTohum);
   // Çiçek öncesi kayıt: haritanın çayırları boş yerlere ekilir (binalara, yollara dokunmaz).
   if (!s.cayirlar) fillMeadows(s);
+  // Günlük öncesi kayıt: olmuş anlar gizli kayıtla işaretlenir, günlük bugünden başlar.
+  gunlukGocu(s);
   return s;
 }

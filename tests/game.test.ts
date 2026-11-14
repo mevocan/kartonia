@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BOSLUK, GOALS, GUN_SURESI, STOK_SINIR, ZEMIN_YARICAP, createGame, deserialize, endDay, placeBuilding, placeRoad,
-  serialize, tick, goalProgress, KASABA_TAMAM_HEDEFI,
+  serialize, tick, goalProgress, goalReward, KASABA_TAMAM_HEDEFI, ZENGIN_KASABA,
 } from '../src/logic/game';
 import { add } from './helpers';
 import { checkGoals } from '../src/logic/goals';
@@ -84,7 +84,9 @@ describe('hedefler', () => {
     s.stok.odun = 100;
     expect(checkGoals(s)).toEqual([9]);
 
-    s.para = 1000;
+    s.para = ZENGIN_KASABA - 1;
+    expect(checkGoals(s)).toEqual([]);
+    s.para = ZENGIN_KASABA;
     expect(checkGoals(s)).toEqual([10]);
     s.nufus = 300;
     expect(checkGoals(s)).toEqual([11]);
@@ -108,7 +110,34 @@ describe('hedefler', () => {
     const s = createGame();
     s.hedef = 10; // Zengin kasaba
     s.para = -40;
-    expect(goalProgress(s)).toEqual({ mevcut: 0, hedef: 1000 });
+    expect(goalProgress(s)).toEqual({ mevcut: 0, hedef: ZENGIN_KASABA });
+  });
+
+  it('tamamlanan hedef ödülünü kasaya ekler; gün raporu ödülü ayrıca taşır, net onu içermez', () => {
+    const s = createGame();
+    s.binalar = [];
+    s.para = 0;
+    s.nufus = 10;
+    expect(checkGoals(s)).toEqual([0]);
+    expect(s.para).toBe(GOALS[0].odul);
+    expect(goalReward([0, 1])).toBe(GOALS[0].odul + GOALS[1].odul);
+
+    // Aynı turda biten iki hedefin ödülü toplanır; gün raporunda hedefOdulu ayrı satırdır.
+    const t = createGame();
+    t.binalar = [];
+    t.yollar = [];
+    t.para = 100;
+    for (let i = 0; i < 4; i++) add(t, 'ev', i * 3, 0); // 12 kişi
+    t.toplamYemek = 1;
+    const r = endDay(t);
+    expect(r.yeniHedefler).toEqual([0, 1]);
+    expect(r.hedefOdulu).toBe(GOALS[0].odul + GOALS[1].odul);
+    expect(t.para).toBe(100 + r.net + r.hedefOdulu);
+  });
+
+  it('bütün hedeflerin ödülü var ve kasabanın ilerleyişiyle büyür', () => {
+    expect(GOALS.every((g) => g.odul > 0)).toBe(true);
+    expect(GOALS[0].odul).toBeLessThanOrEqual(GOALS[GOALS.length - 1].odul);
   });
 
   it('sırayla tamamlanır', () => {

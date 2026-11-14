@@ -11,6 +11,7 @@ import { mevsim } from './season';
 import { geciciMutlulukBugun, istekGunSonu } from './requests';
 import { ticaretGunSonu } from './trade';
 import { ayar, kartGunSonu } from './cards';
+import { gunlukGunSonu } from './gunluk';
 
 // Marangoz odunu kullandığı için oduncudan sonra gelir.
 // Ağıl buğdayı değirmenden sonra alır; dokumacı ağıldan sonra gelir.
@@ -272,7 +273,8 @@ export function runProduction(
 export function endDay(s: GameState): DayReport {
   const rapor: DayReport = {
     gun: s.gun, vergi: 0, gider: 0, binaGider: 0, yolGider: 0, net: 0, binaVergileri: [], uretilen: emptyGoods(), tuketilen: emptyGoods(),
-    seviyeDegisimleri: [], yeniHedefler: [], yeniAcilanlar: [], oyunBitti: s.bitti, uretimSorunlari: [], evStokEksikleri: [],
+    seviyeDegisimleri: [], yeniHedefler: [], hedefOdulu: 0, yeniAcilanlar: [], oyunBitti: s.bitti, uretimSorunlari: [],
+    evStokEksikleri: [], mutsuzEvler: [],
   };
   if (s.bitti) return rapor;
 
@@ -307,7 +309,10 @@ export function endDay(s: GameState): DayReport {
 
     const stokEksik = cur.ihtiyaclar.find((n) => isStockNeed(n) && !ok(n));
     if (stokEksik) rapor.evStokEksikleri.push({ id: h.id, neden: stokEksik });
-    if (next && next.ihtiyaclar.every(ok)) h.iyiGun++;
+    // Mutsuz ev büyüyemez (küçülmez de): iyi gün saymaz.
+    const mutlu = mutluluklar.get(h.id)! >= BALANCE.buyumeMutluluk;
+    if (next && !mutlu) rapor.mutsuzEvler.push(h.id);
+    if (next && mutlu && next.ihtiyaclar.every(ok)) h.iyiGun++;
     else h.iyiGun = 0;
     if (cur.ihtiyaclar.every(ok)) h.kotuGun = 0;
     else h.kotuGun++;
@@ -340,7 +345,10 @@ export function endDay(s: GameState): DayReport {
   if (s.borcGunu >= BALANCE.borcGunSiniri) s.bitti = true;
 
   // 7. Hedefler ve yeni açılan binalar.
+  const kasaOnce = s.para;
   rapor.yeniHedefler = checkGoals(s);
+  rapor.hedefOdulu = s.para - kasaOnce;
+  gunlukGunSonu(s, rapor, mutluluklar); // günlük, yılın sayaçları, yıl sonuysa gazete
   rapor.yeniAcilanlar = BUILDING_ORDER.filter((t) => !isUnlockedAt(oncekiNufus, t) && isUnlockedAt(s.nufus, t));
 
   // 8. Sakin istekleri ve gezgin tüccar (tüccar bir gün kalır).

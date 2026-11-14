@@ -2,7 +2,7 @@
 // Açık/kapalı tercihi localStorage'da (kagit-kasaba-panel) kalır. Kutlama animasyonu arayüz zamanıyla çalışır.
 import type { GameState } from '../logic/types';
 import { BALANCE, BUILDING_ORDER, BUILDINGS } from '../data/buildings';
-import { GOALS, goalProgress, istekHedefi, istekKalanGun } from '../logic/game';
+import { GOALS, goalProgress, istekHedefi, istekKalanGun, istekOdulu } from '../logic/game';
 import { townAlerts } from '../logic/pins';
 import { el, tr } from './dom';
 import { binaAd, hedefMetni, t } from './i18n';
@@ -42,8 +42,8 @@ export function createLeftColumn(root: HTMLElement): HTMLDivElement {
 
 export interface GoalCard {
   update(s: GameState): void;
-  /** Tamamlanan hedefi kutlar; kutlama bitince kart sıradaki hedefe geçer. */
-  kutla(ad: string): void;
+  /** Tamamlanan hedefi kutlar (`odul`: kasaya eklenen para); kutlama bitince kart sıradaki hedefe geçer. */
+  kutla(ad: string, odul: number): void;
 }
 
 /** Nüfusla açılacak ilk bina (yoksa null). */
@@ -63,7 +63,9 @@ export function createGoalCard(col: HTMLElement): GoalCard {
   box.tabIndex = 0;
   const ust = el('div', 'ust');
   const etiket = el('span', 'etiket', t('hedef.baslik'));
-  ust.append(etiket, el('span', 'ok', '▾'));
+  // Ödül kart kapalıyken de görünür.
+  const odulCip = el('span', 'odul-cip');
+  ust.append(etiket, odulCip, el('span', 'ok', '▾'));
   const baslik = el('h3');
   const aciklama = el('p', 'aciklama');
   const cubuk = el('div', 'ilerleme-cubuk');
@@ -102,12 +104,15 @@ export function createGoalCard(col: HTMLElement): GoalCard {
 
   function ciz(s: GameState): void {
     etiket.textContent = t('hedef.baslik');
+    odulCip.classList.remove('kazanildi');
     if (s.hedef >= GOALS.length) {
       baslik.textContent = t('hedef.efsane');
       aciklama.textContent = t('hedef.efsaneMetin');
       cubuk.style.display = 'none';
       sayi.textContent = '';
+      odulCip.textContent = '';
     } else {
+      odulCip.textContent = t('hedef.odul', { n: tr(GOALS[s.hedef].odul) });
       const g = hedefMetni(s.hedef);
       baslik.textContent = `🎯 ${g.ad}`;
       aciklama.textContent = g.aciklama;
@@ -127,12 +132,14 @@ export function createGoalCard(col: HTMLElement): GoalCard {
       son = s;
       if (!kutlaniyor) ciz(s);
     },
-    kutla(ad) {
+    kutla(ad, odul) {
       window.clearTimeout(kutlaniyor);
       box.classList.remove('kutlama');
       void box.offsetWidth; // animasyonu yeniden başlat
       box.classList.add('kutlama');
       etiket.textContent = t('hedef.tamam');
+      odulCip.textContent = odul > 0 ? `+${tr(odul)} 💰` : '';
+      odulCip.classList.add('kazanildi');
       baslik.textContent = `✓ ${ad}`;
       cubuk.style.display = '';
       cubukIc.style.width = '100%';
@@ -197,7 +204,7 @@ export function createRequestCard(col: HTMLElement, onFeast: () => void, onShowH
         box.classList.add('yeni');
       }
       baslik.textContent = istekAd(ist.tur);
-      aciklama.textContent = istekAciklama(ist.tur);
+      aciklama.textContent = istekAciklama(ist.tur, istekOdulu(s, ist.tur));
       const hedef = istekHedefi(ist.tur);
       const ilerleme = ist.tur === 'senlik' ? Math.min(Math.floor(s.stok.yemek), hedef) : Math.min(Math.floor(ist.ilerleme), hedef);
       const kalan = istekKalanGun(s);

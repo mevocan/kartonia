@@ -3,7 +3,7 @@ import type { BinaIgnesi, DayReport, GameState } from './types';
 import { hizmetIndeksi, hizmetVar, houseLevel, workerRatio } from './economy';
 
 /** Son gün sonunun iğnelerle ilgili kısmı (yeni oyunda ve kayıt yüklenince yok). */
-export type SonGun = Pick<DayReport, 'uretimSorunlari' | 'evStokEksikleri'>;
+export type SonGun = Pick<DayReport, 'uretimSorunlari' | 'evStokEksikleri'> & { mutsuzEvler?: number[] };
 
 /**
  * Ev iğnesi: mevcut seviyenin karşılanmayan ilk ihtiyacı.
@@ -30,6 +30,9 @@ export function buildingPins(s: GameState, son: SonGun | null = null): BinaIgnes
     if (eksik) out.push({ id: b.id, tur: 'ihtiyac', neden: eksik });
   }
   const var_ = new Set(s.binalar.map((b) => b.id));
+  // Mutsuz ev (büyüyemiyor, son gün sonundan): ihtiyaç iğnesi daha acil olduğu için o varsa gösterilmez.
+  const ihtiyacli = new Set(out.map((p) => p.id));
+  for (const id of son?.mutsuzEvler ?? []) if (var_.has(id) && !ihtiyacli.has(id)) out.push({ id, tur: 'mutsuz' });
   for (const p of son?.uretimSorunlari ?? []) if (var_.has(p.id)) out.push({ id: p.id, tur: 'uretim', neden: p.neden });
   return out;
 }

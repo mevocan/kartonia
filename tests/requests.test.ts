@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { BALANCE } from '../src/data/buildings';
-import { checkRequest, deliverFeast, deserialize, endDay, istekKalanGun, placeBuilding, serialize } from '../src/logic/game';
+import {
+  checkRequest, deliverFeast, deserialize, endDay, istekKalanGun, istekOdulu, neseliMi, placeBuilding, serialize,
+} from '../src/logic/game';
 import { evaluateNeeds, houseHappiness } from '../src/logic/economy';
 import { istekTuruSec } from '../src/logic/requests';
 import type { GameState, IstekTuru } from '../src/logic/types';
@@ -126,6 +128,24 @@ describe('istek türleri', () => {
     expect(checkRequest(s)).toEqual({ tur: 'agaclandirma', para: 40 });
     expect(s.para).toBe(para + 40);
     expect(s.istek).toBeUndefined();
+  });
+
+  it('neşeli kasaba (ortalama mutluluk ≥ 75): istek para ödülleri 1,5 katı', () => {
+    const s = kasaba();
+    s.mutluluk = BALANCE.neseliMutluluk - 1;
+    expect(neseliMi(s)).toBe(false);
+    expect(istekOdulu(s, 'kisHazirligi')).toBe(I.kisOdul);
+    s.mutluluk = BALANCE.neseliMutluluk;
+    expect(neseliMi(s)).toBe(true);
+    expect(istekOdulu(s, 'agaclandirma')).toBe(60);
+    expect(istekOdulu(s, 'kisHazirligi')).toBe(90);
+    expect(istekOdulu(s, 'susuzEv')).toBe(45);
+    expect(istekOdulu(s, 'senlik')).toBe(0);
+    istekKur(s, 'kisHazirligi');
+    s.stok.odun = 40;
+    const para = s.para;
+    expect(checkRequest(s)?.para).toBe(90);
+    expect(s.para).toBe(para + 90);
   });
 
   it('kış hazırlığı: stokta 40 odun olunca 60 para', () => {

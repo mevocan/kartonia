@@ -834,6 +834,74 @@ h1, h2, h3, h4 { font-weight: 400; letter-spacing: 0.01em; }
 .giris-dugme.tehlike { color: #fff; border-color: var(--hat); }
 .dil-secim button.secili { background: var(--altin); color: var(--metin); }
 
+/* Hedef ödülü: başlık satırında küçük hardal çip; kutlamada "+75 💰" olarak yeşile döner */
+#hedef .ust { gap: 6px; }
+#hedef .ust .etiket { margin-right: auto; }
+#hedef .odul-cip:empty { display: none; }
+#hedef .odul-cip {
+  font-size: 12.5px; padding: 0 7px; line-height: 1.5; white-space: nowrap;
+  background: var(--altin-acik); color: var(--metin); border: 1.5px solid var(--hat); border-radius: var(--el-kose-kucuk);
+  transform: rotate(2deg);
+}
+#hedef .odul-cip.kazanildi { background: var(--cayir); animation: vurgu var(--sure-yavas) var(--egri); }
+
+/* Neşeli kasaba: mutluluğun yanında küçük çip */
+.hud-oge .neseli-cip { display: none; }
+.hud-oge.neseli .neseli-cip {
+  display: inline-block; font-size: 12px; line-height: 1.4; padding: 0 6px; align-self: flex-start;
+  background: var(--cayir); color: var(--metin); border: 1.5px solid var(--hat); border-radius: var(--el-kose-kucuk);
+  transform: rotate(-3deg);
+}
+
+/* Geri al ve günlük düğmeleri */
+.hud-dugme.geri-al { font-size: 18px; padding: 3px 8px; }
+.hud-dugme:disabled { opacity: 0.35; cursor: default; }
+.hud-dugme:disabled:hover { background: transparent; }
+
+/* Günlük ve gazete: ortada kağıt pencere, arkada hafif perde */
+.perde {
+  position: absolute; inset: 0; z-index: 8; display: none; align-items: center; justify-content: center;
+  background: rgba(60, 45, 30, 0.32); animation: girisGir var(--sure) ease-out;
+}
+#gunluk {
+  position: relative; width: 440px; max-width: calc(100vw - 32px); max-height: calc(100vh - 140px);
+  display: flex; flex-direction: column; padding: 18px 18px 14px; transform: rotate(-0.5deg);
+  background-image: repeating-linear-gradient(0deg, transparent 0 27px, rgba(111, 147, 173, 0.18) 27px 28px);
+  box-shadow: var(--golge-buyuk);
+}
+#gunluk h3 { margin: 0 0 8px; font-size: 22px; }
+#gunluk .gunluk-liste { overflow-y: auto; padding-right: 6px; }
+#gunluk h4 { margin: 12px 0 4px; font-size: 15px; color: var(--toprak); border-bottom: 1.5px dashed var(--cizgi-guclu); }
+#gunluk .kayit { display: flex; align-items: baseline; gap: 8px; padding: 3px 4px; font-size: 15px; line-height: 1.35; border-radius: 6px; }
+#gunluk .kayit .gun { flex: none; width: 56px; color: var(--metin-soluk); font-size: 13px; }
+#gunluk .kayit .ikon { flex: none; }
+#gunluk .kayit.tiklanir { cursor: pointer; }
+#gunluk .kayit.tiklanir .metin { text-decoration: underline dotted; }
+#gunluk .kayit.tiklanir:hover { background: var(--yuzey-ic); }
+#gunluk .bos { color: var(--metin-soluk); }
+
+#gazete {
+  position: relative; width: 520px; max-width: calc(100vw - 32px); max-height: calc(100vh - 100px); overflow-y: auto;
+  padding: 18px 24px 16px; transform: rotate(0.7deg); background-color: #f7efdc; box-shadow: var(--golge-buyuk);
+  animation: kartGir var(--sure-giris) var(--egri);
+}
+#gazete::before {
+  display: block; content: ""; position: absolute; top: -10px; left: 50%;
+  width: 66px; height: 19px; margin-left: -33px; background: rgba(236, 214, 150, 0.8); transform: rotate(-3deg);
+}
+#gazete .manset-ust { text-align: center; border-bottom: 3px double var(--hat); padding-bottom: 6px; margin-bottom: 10px; }
+#gazete .gazete-ad { font-size: 34px; letter-spacing: 0.08em; line-height: 1.05; }
+#gazete .gazete-tarih { font-size: 13px; color: var(--metin-soluk); margin-top: 2px; }
+#gazete .manset { margin: 4px 0 12px; font-size: 25px; line-height: 1.15; text-align: center; }
+#gazete .gazete-sayilar { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 10px; }
+#gazete .kutu { padding: 6px 10px; border: 1.5px solid var(--cizgi-guclu); border-radius: var(--el-kose-kucuk); background: var(--yuzey-dolu); }
+#gazete .kutu .deger { font-size: 19px; }
+#gazete .kutu .etiket { font-size: 12.5px; color: var(--metin-soluk); }
+#gazete .gazete-sutun { columns: 2; column-gap: 18px; column-rule: 1px solid var(--cizgi-guclu); font-size: 15px; }
+#gazete .gazete-sutun p { margin: 0 0 6px; break-inside: avoid; }
+#gazete .gazete-alt { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+#gazete .secim { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--metin-soluk); cursor: pointer; }
+
 /* ---------- Hareket azaltma ---------- */
 
 @media (prefers-reduced-motion: reduce) {
