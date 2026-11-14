@@ -200,8 +200,6 @@ export interface GameState {
   cayirlar?: boolean;
   /** Gezgin tüccar: bu ziyarette kullanılan alım + satım birimi. Gün sonunda sıfırlanır. */
   tuccarKota?: number;
-  /** Gezgin tüccarın en son uğurlandığı (ziyaretin bittiği) gün. O gün tüccar yeniden gelmez. */
-  tuccarGitti?: number;
   /** Etkin sakin isteği (en fazla bir). */
   istek?: Istek;
   /** Bir sonraki isteğin en erken gelebileceği gün (bir istek bitince bekleme süresi). */

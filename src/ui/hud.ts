@@ -327,7 +327,7 @@ export function createHud(
       }
       stokAc.classList.toggle('uyari', digerKritik);
       cubukIc.style.width = `${Math.round(s.gunIlerleme * 100)}%`;
-      tuccarDugme.style.display = tuccarVarMi(s) ? 'inline-block' : 'none';
+      tuccarDugme.style.display = tuccarVarMi(s.gun) ? 'inline-block' : 'none';
     },
     setReport(r) {
       raporYaz(r);

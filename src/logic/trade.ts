@@ -1,34 +1,32 @@
-// Gezgin tüccar: her BALANCE.ticaret.aralik günde bir, başlangıç yolunun kenar ucuna gelir. Gelince takas
-// menüsü açılır ve oyun durur; oyuncu menüyü kapatınca tüccar yola çıkar (`tuccarUgurla`). Geliş günleri gün
-// sayısından türetilir; ziyaretin bittiği gün (`tuccarGitti`) ve ziyaretteki kota sayacı saklanır.
+// Gezgin tüccar: her BALANCE.ticaret.aralik günde bir, başlangıç yolunun kenar ucuna gelir ve `kalis` gün kalır.
+// Geliş günleri gün sayısından türetilir (durum alanı yok); yalnızca ziyaretteki kota sayacı saklanır.
 import { BALANCE } from '../data/buildings';
 import { HARITA } from '../data/map';
 import type { GameState, Good } from './types';
 import { stockLimit } from './placement';
 import { ayar } from './cards';
 
-/** Tüccarın geliş günü mü: aralik. günden başlayarak her aralik günde bir (8, 16, 24, ...). */
-export function tuccarGunu(gun: number): boolean {
-  const { aralik } = BALANCE.ticaret;
+/** Tüccar bu gün kasabada mı: aralik. günden başlayarak her ziyarette kalis gün (ör. 8–10, 16–18, ...). */
+export function tuccarVarMi(gun: number): boolean {
+  const { aralik, kalis } = BALANCE.ticaret;
   const g = Math.floor(gun);
-  return g >= aralik && g % aralik === 0;
+  return g >= aralik && g % aralik < kalis;
 }
 
-/** Tüccar şu an kasabada mı: geliş günü ve bu ziyaret henüz bitmedi (oyuncu menüyü kapatmadı). */
-export function tuccarVarMi(s: GameState): boolean {
-  return tuccarGunu(s.gun) && s.tuccarGitti !== Math.floor(s.gun);
+/** Ziyaretin ilk günü mü (geliş bildirimi için). */
+export function tuccarGeldiMi(gun: number): boolean {
+  return tuccarVarMi(gun) && Math.floor(gun) % BALANCE.ticaret.aralik === 0;
 }
 
-/** Ziyareti bitirir: tüccar yola çıkar, kota sayacı silinir. Tüccar yoksa bir şey yapmaz. */
-export function tuccarUgurla(s: GameState): void {
-  if (!tuccarVarMi(s)) return;
-  s.tuccarGitti = Math.floor(s.gun);
-  delete s.tuccarKota;
+/** Tüccar buradaysa bugün dahil kaç gün daha kalacak; değilse 0. */
+export function tuccarKalisGunu(gun: number): number {
+  if (!tuccarVarMi(gun)) return 0;
+  return BALANCE.ticaret.kalis - (Math.floor(gun) % BALANCE.ticaret.aralik);
 }
 
-/** Sıradaki gelişe kaç gün var (bugün geliş günüyse 0). */
+/** Sıradaki gelişe kaç gün var (bugün buradaysa 0). */
 export function tuccaraKalanGun(gun: number): number {
-  if (tuccarGunu(gun)) return 0;
+  if (tuccarVarMi(gun)) return 0;
   const a = BALANCE.ticaret.aralik;
   return a - (Math.floor(gun) % a);
 }
@@ -54,7 +52,7 @@ export type TicaretSebep = 'bitti' | 'kilitli' | 'kota' | 'para' | 'stok' | 'dep
 
 function denetle(s: GameState, g: Good, miktar: number, alim: boolean): { ok: boolean; sebep?: TicaretSebep } {
   if (s.bitti) return { ok: false, sebep: 'bitti' };
-  if (!tuccarVarMi(s)) return { ok: false, sebep: 'kilitli' };
+  if (!tuccarVarMi(s.gun)) return { ok: false, sebep: 'kilitli' };
   if (!(miktar > 0)) return { ok: false, sebep: 'kota' };
   if (miktar > kalanKota(s)) return { ok: false, sebep: 'kota' };
   if (alim) {
@@ -92,7 +90,7 @@ export function sellGood(s: GameState, g: Good, miktar: number): number | null {
   return tutar;
 }
 
-/** Gün sonu: ziyaret en geç gününde biter (menü açıkken zaman durduğu için normalde zaten bitmiştir). */
+/** Gün sonu: ziyaretin son günü bittiyse kota sayacı sıfırlanır (kota bütün ziyaret içindir). */
 export function ticaretGunSonu(s: GameState): void {
-  delete s.tuccarKota;
+  if (!tuccarVarMi(s.gun + 1)) delete s.tuccarKota;
 }
