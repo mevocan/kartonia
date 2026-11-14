@@ -24,6 +24,8 @@ export function createTradePanel(
   root: HTMLElement,
   onBuy: (g: Good, miktar: number) => void,
   onSell: (g: Good, miktar: number) => void,
+  /** Oyuncu menüyü kapattı (× ya da "Kapat ve devam et"): oyun önceki hızıyla sürer. */
+  onClose: () => void,
 ): TradePanel {
   const box = el('div', 'kagit');
   box.id = 'tuccar';
@@ -31,14 +33,16 @@ export function createTradePanel(
   kapat.title = t('genel.kapat');
   const ust = el('div', 'ust');
   const kalis = el('span', 'kalis-cip');
-  ust.append(el('h3', '', t('tuccar.baslik')), kalis);
+  ust.append(el('h3', '', t('tuccar.baslik')), kalis, el('span', 'kalis-cip', t('tuccar.durdu')));
+  const devam = el('button', 'dugme birincil', t('tuccar.devam'));
+  devam.addEventListener('click', () => onClose());
   // Kota bütün ziyaret içindir (birkaç gün), gün başına değil.
   const kota = el('div', 'kota');
   const kotaCubuk = el('div', 'ilerleme-cubuk');
   const kotaIc = el('div');
   kotaCubuk.appendChild(kotaIc);
   const liste = el('div', 'mallar');
-  box.append(kapat, ust, el('div', 'not', t('tuccar.fiyatNotu', { n: TICARET_ADIM })), kota, kotaCubuk, liste);
+  box.append(kapat, ust, el('div', 'not', t('tuccar.fiyatNotu', { n: TICARET_ADIM })), kota, kotaCubuk, liste, devam);
   root.appendChild(box);
 
   const satirlar = MALLAR.map((g) => {
@@ -60,7 +64,7 @@ export function createTradePanel(
   });
 
   let acik = false;
-  kapat.addEventListener('click', () => api.close());
+  kapat.addEventListener('click', () => onClose());
 
   const api: TradePanel = {
     open() {

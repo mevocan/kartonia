@@ -233,6 +233,8 @@
   "istek.tamamlandi": "✅ İstek tamamlandı: {ad} (+{para} para)",
 
   "tuccar.baslik": "🛒 Gezgin tüccar",
+  "tuccar.durdu": "⏸ zaman durdu",
+  "tuccar.devam": "Kapat ve devam et",
   "tuccar.fiyatNotu": "Fiyatlar sabit; satış fiyatı alıştan düşük. Her düğme {n} birim.",
   "tuccar.satIpucu": "{n} {mal} sat: +{para} para",
   "tuccar.alIpucu": "{n} {mal} al: −{para} para",
@@ -315,7 +317,7 @@
   "bildirim.tuccarGidiyor": "🛒 Tüccar yarın gidiyor: bugün son takas günü.",
   "bildirim.borc": "Kasa {sinir} altında! ({gun}/{toplam} gün) — iflas yaklaşıyor.",
   "uyari.borc": "Kasa {sinir} altında · {gun}/{toplam} gün",
-  "uyari.kuculen": "Küçülmek üzere olan ev: {n}",
+  "uyari.kuculen": "Küçülmek üzere: {n} ev",
   "uyari.kuculenIpucu": "Tıkla: sıradaki eve git",
   "uyari.isci": "İşçi yetmiyor · üretim %{n}",
   "bildirim.kisGeliyor": "🍂 Kış {n} gün sonra. Yemek ve odun biriktir.",

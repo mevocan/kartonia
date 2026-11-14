@@ -3,6 +3,11 @@ import { DIS_SINIR, OYUN_YARI_GENISLIK } from '../data/map';
 import { PALETTE } from './palette';
 import { createTerrain, type Terrain } from './terrain';
 import { gece } from './paper';
+import { CIZGI } from './tarz';
+
+/** Deneme (çizgi film): güçlü güneş, zayıf ortam ışığı; toon gölge basamakları belirginleşir. */
+const CIZGI_GUNES = 1.3;
+const CIZGI_GOK = 0.6;
 
 // Sahne: ekranı dolduran kağıt arazi, güneş + gök ışığı, araziye uyumlu sis.
 // Gölge frustumu kamera hedefini izler (texel'e kenetli). Sis uzağı, çizilen arazinin kenarından önce örter.
@@ -130,8 +135,8 @@ export function applyDayProgress(w: World, t: number): void {
   tmp.copy(cNoon).lerp(cWarm, (1 - tepe) * 0.35).lerp(cAksam, aksam * 0.6).lerp(cAy, g);
   w.sun.color.copy(tmp);
   const gunduzGunes = 2.1 + tepe * 0.2;
-  w.sun.intensity = gunduzGunes + (0.55 - gunduzGunes) * g;
-  w.hemi.intensity = 1.5 + tepe * 0.15 + (0.75 - 1.5) * g;
+  w.sun.intensity = (gunduzGunes + (0.55 - gunduzGunes) * g) * (CIZGI ? CIZGI_GUNES : 1);
+  w.hemi.intensity = (1.5 + tepe * 0.15 + (0.75 - 1.5) * g) * (CIZGI ? CIZGI_GOK : 1);
   w.hemi.color.copy(cGok).lerp(cGeceGok, g);
   w.hemi.groundColor.copy(cYer).lerp(cGeceYer, g);
   gece.value = g;

@@ -233,6 +233,8 @@
   "istek.tamamlandi": "✅ Request complete: {ad} (+{para} coins)",
 
   "tuccar.baslik": "🛒 Travelling merchant",
+  "tuccar.durdu": "⏸ time paused",
+  "tuccar.devam": "Close and resume",
   "tuccar.fiyatNotu": "Fixed prices; selling pays less than buying. Each button trades {n} units.",
   "tuccar.satIpucu": "Sell {n} {mal}: +{para} coins",
   "tuccar.alIpucu": "Buy {n} {mal}: −{para} coins",

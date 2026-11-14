@@ -95,7 +95,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   window.addEventListener('keydown', sesKilidiAc);
   const hud = createHud(
     ui, (v) => setSpeed(v), () => setSpeed(hiz === 0 ? duraklamadanOnce : 0),
-    () => (tuccar.isOpen() ? tuccar.close() : (tuccar.open(), tuccar.update(s), ses.play('secim'))),
+    () => (tuccar.isOpen() ? tuccarKapat() : tuccarAc()),
     () => sesAyarla(!ses.isEnabled()),
     (kanal, v) => sesDuzeyi(kanal, v),
   );
@@ -110,7 +110,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   const goal = createGoalCard(solSutun);
   const istekKarti = createRequestCard(solSutun, () => senlik(), (id) => binayaGit(id));
   const uyariListesi = createAlertList(solSutun, (id) => binayaGit(id));
-  const tuccar = createTradePanel(ui, (g, n) => ticaret(g, n, true), (g, n) => ticaret(g, n, false));
+  const tuccar = createTradePanel(ui, (g, n) => ticaret(g, n, true), (g, n) => ticaret(g, n, false), () => tuccarKapat());
   const secici = createCardPicker(ui, (id) => kartSecildi(id));
   const kasabaYolu = createCardList(ui);
   // Olumsuz bildirimler (yapılamayan işlem, küçülen ev, borç) kısa bir hata sesiyle gelir.
@@ -181,6 +181,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   function menuAc(): void {
     if (giris.isOpen()) return;
     if (girildi && hiz > 0) menuOncesiHiz = hiz;
+    else if (tuccar.isOpen()) menuOncesiHiz = tuccarOncesiHiz; // takas menüsü açıkken duraklıydı
     setTool(null);
     tuccar.close();
     setSpeed(0);
@@ -270,7 +271,8 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   }
 
   function setSpeed(v: number): void {
-    if (v > 0 && (secici.isOpen() || giris.isOpen())) return; // kart seçilene / menü kapanana kadar oyun duraklı
+    // Kart seçilene, menü kapanana, takas menüsü kapanana kadar oyun duraklı.
+    if (v > 0 && (secici.isOpen() || giris.isOpen() || tuccar.isOpen())) return;
     if (v > 0) duraklamadanOnce = v;
     hiz = v;
     hud.setSpeed(v);
@@ -358,6 +360,27 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     arayuzYenile();
     if (bekleyenSecim(s) !== null) kartSecimiAc(); // aynı gün birden çok kart hedefi
     else setSpeed(secimOncesiHiz);
+  }
+
+  /** Takas menüsü açılmadan önceki hız: menü kapanınca oyun bu hızla sürer. */
+  let tuccarOncesiHiz = 1;
+
+  /** Takas menüsünü açar ve oyunu durdurur (tüccar kasabadaysa; HUD'daki 🛒 düğmesi). */
+  function tuccarAc(): void {
+    if (!tuccarVarMi(s.gun) || tuccar.isOpen() || s.bitti) return;
+    tuccarOncesiHiz = hiz > 0 ? hiz : duraklamadanOnce;
+    setTool(null);
+    setSpeed(0);
+    tuccar.open();
+    tuccar.update(s);
+    ses.play('secim');
+  }
+
+  /** Takas menüsünü kapatır; oyun önceki hızıyla sürer. Tüccar kalış günleri boyunca kasabada kalır. */
+  function tuccarKapat(): void {
+    if (!tuccar.isOpen()) return;
+    tuccar.close();
+    setSpeed(tuccarOncesiHiz);
   }
 
   /** Gezgin tüccarla takas (panel düğmeleri). */

@@ -8,11 +8,13 @@ Bilgisayar tarayıcısında oynanan, 3D, kağıttan maket görünümlü bir kasa
 
 ## His
 
-- Ekranın tamamı arazi: masa, kenar ya da boşluk görünmez. Arazi kağıt maket dokusunda (katlanmış kağıt tepeler, kağıt ağaçlar).
-- Binalar düz renkli kağıttan katlanmış gibi: düz gölgelendirme (flat shading), hafif kağıt dokusu, koyu ince kenar çizgileri, yumuşak gölgeler, sıcak ışık.
-- Ağaçlar karton ayak üstünde duran kesik kağıt siluetler.
-- Bina konunca kağıt maket gibi parça parça katlanarak kurulur (aşağıya bak).
-- Renkler pastel ve sıcak. Palet tek dosyada: `src/render/palette.ts`.
+**Resimli kitap / çizgi film** (varsayılan tarz, `src/render/tarz.ts`): referans, mürekkep hatlı ve soluk pastel renkli çizgi roman kasaba çizimleri.
+- Ekranın tamamı arazi: masa, kenar ya da boşluk görünmez. Ufukta açık mavi gök (sis rengi).
+- Toon gölgeleme (3 keskin ton, `toonGradyan`), güçlü güneş ve zayıf ortam ışığı; kağıt dokusu yok.
+- Binalar, ağaçlar ve çiçekler kalın koyu mürekkep dış hatlıdır (ters kabuk, `hatMalzemesi`; ağaçlarınki rüzgârla sallanır, `agacHatMalzemesi`).
+- Yüzeyler elle çizilmiş gibi: duvarlarda yatay tahta çizgileri, çatılarda kiremit sıraları ve şaşırtmalı çentikler. Gölgelendiricide dünya koordinatından çizilir (`paper.ts` `CIZIM_*`), model dosyalarına dokunmaz; cam ve düz yüzeyler çizgisiz, uzakta solar.
+- Renkler soluk pastel (binalarda doygunluk ×0.92). Palet tek dosyada: `src/render/palette.ts`; çizgi film için arazi, gök ve su renkleri orada ayrıca ayarlanır.
+- Eski **kağıt maket** tarzı (kağıt dokusu, katlanma animasyonu, ince kenarlar) hâlâ kodda: adres çubuğunda `?tarz=kagit` (seçim `localStorage` `kagit-kasaba-tarz`; `?tarz=cizgi` geri döner).
 
 ## Arazi
 
@@ -40,7 +42,7 @@ Binaların altında daire/kaide yoktur; bina araziye gömülerek oturur.
 
 ## Kurulma animasyonu
 
-Bina kağıt maket gibi kurulur: önce düz bir kağıt açınım (taban izi) yere serilir, duvarlar sırayla alt kenarlarından menteşe gibi kalkar, çatı yarıları katlanarak kapanır, en son küçük detaylar (pencere, baca, tente) yerine oturur. Yol kağıt şerit gibi baştan sona açılarak serilir. Yıkımda tersi.
+Çizgi filmde bina yerden ezik çıkar, hafifçe uzayıp yerine oturur (`fold.ts` `createPop`, katlanmayla aynı `FoldRun` sözleşmesi: kurma, yıkma, seviye değişimi aynı yoldan oynar). Saat Kulesi'nin inşaat aşamaları parça parça katlanmaya devam eder. Kağıt maket tarzında bina katlanarak kurulur: önce düz bir kağıt açınım (taban izi) yere serilir, duvarlar sırayla alt kenarlarından menteşe gibi kalkar, çatı yarıları katlanarak kapanır, en son küçük detaylar yerine oturur. Yol baştan sona açılarak serilir. Yıkımda tersi.
 
 ## Zaman
 
@@ -48,7 +50,7 @@ Bina kağıt maket gibi kurulur: önce düz bir kağıt açınım (taban izi) ye
 - Her gün sonunda ekonomi işlenir (`endDay`).
 - **Mevsimler** (`logic/season.ts`, `BALANCE.mevsim`): yıl 18 gün = İlkbahar 5, Yaz 5, Sonbahar 5, Kış 3. Mevsim `gun`dan türetilir, durumda alan yok. Kışın Tarla ve Arılık üretmez (`kisinUretmez`), odun isteyen evlerin (3. seviye ve üstü) odun tüketimi 2 katı; başka hiçbir şey değişmez. Diğer mevsimler yalnızca görsel. HUD'da mevsim + "kışa X gün", sonbaharın ilk günü uyarı. Çizim: `GameRenderer.setSeason(m, anlik?)` (`render/season.ts`): sonbaharda yapraklar hardal/terrakota, kışın karlı zemin, buzlu göl, açık renkli ağaçlar, düşen kağıt kar (tek InstancedMesh), 3 sn yumuşak geçiş.
 - **Gece-gündüz** (yalnızca çizim, `render/scene.ts` `applyDayProgress`, `geceAgirligi`): her oyun günü kendi içinde döner. Günün ilk %80'i gündüz (güneş doğudan batıya), sonu akşam turuncusu ve gece (ay ışığı, soluk mavi gök ve sis); şafak yeni günün başında, böylece gün geçişinde ışık sıçramaz. Gece pencere camları sıcak ışıkla yanar: `ModelBuilder` `isik: true` parçalara `isik` tepe niteliği yazar (`windowAt` camı), model malzemesi `paper.ts` `gece` uniform'uyla parlatır. Renkler paletteki `gunesAksam`, `ayIsik`, `geceGok`, `geceYer`, `geceSis`, `pencereIsik`.
-- **Gezgin tüccar** (`logic/trade.ts`, `BALANCE.ticaret`): her 8 günde bir gelir ve 3 gün kalır (8–10, 16–18, ...; `aralik`, `kalis`), başlangıç yolunun kenar ucunda durur. Sabit fiyatlar (satış < alış), ziyaret başına 40 birim kota (bütün ziyaret için; `tuccarKota`, ziyaret bitince silinir). HUD'da 🛒 düğmesi → takas paneli (`ui/tradePanel.ts`). Çizim: `GameRenderer.setMerchant(konum, anlik?)`.
+- **Gezgin tüccar** (`logic/trade.ts`, `BALANCE.ticaret`): her 8 günde bir gelir ve 3 gün kalır (8–10, 16–18, ...; `aralik`, `kalis`), başlangıç yolunun kenar ucunda durur. Sabit fiyatlar (satış < alış), ziyaret başına 40 birim kota (bütün ziyaret için; `tuccarKota`, ziyaret bitince silinir). Üst bardaki 🛒 düğmesi takas panelini açar (`ui/tradePanel.ts`); panel kendiliğinden açılmaz. Panel açıkken oyun zamanı durur (hız düğmeleri de başlatamaz); × ya da "Kapat ve devam et" ile kapanınca oyun önceki hızıyla sürer, tüccar kalış günleri boyunca kasabada kalır. Çizim: `GameRenderer.setMerchant(konum, anlik?)`.
 - **Sakin istekleri** (`logic/requests.ts`, `BALANCE.istek`): nüfus > 10 iken en fazla bir istek, biri bitince 3 gün sonra yenisi, süre 4 gün, dolarsa cezasız kalkar. Tür tohum + günden deterministik. Şenlik (30 yemek → 3 gün +5 mutluluk), Ağaçlandırma (5 ağaç → 40 para), Kış hazırlığı (sonbaharda 40 odun → 60 para), Susuz ev (bir ev suya kavuşsun → 30 para). Sol panelde hedef kartının altında istek kartı.
 - **Karar kartları** (`data/cards.ts`, `logic/cards.ts`): 50, 100 ve 150. günlerin sonunda (`BALANCE.kartSecimi`, `kartGunSonu`; toplam 3 kart) oyun duraklar, tohum + seçim numarasından deterministik üç kart (seçilen tekrar gelmez); seçim kalıcı (`kararlar`), bekleyen seçim `bekleyenKararlar`. 8 kart, her birinin artısı ve eksisi var. Kartların etkilediği değerler ekonomide `ayar(s, anahtar)` ile okunur (taban + kart etkileri); karta özel `if` yazılmaz. Seçim ekranı `ui/cardPicker.ts`; seçilen kartlar sol alt köşedeki "Kasabanın yolu" kartında hep yazar (`ui/cardList.ts`).
 - **Öğretici** (`ui/tutorial.ts`): yalnızca ilk oyunda, atlanabilir, beş adım; eylemle ilerler, oyunu durdurmaz. Gösterildi bilgisi `localStorage` `kagit-kasaba-ogretici` (kayıttan ayrı).
@@ -75,7 +77,7 @@ Para (başlangıç 150), Nüfus, Mutluluk (0–100, nüfusa göre ağırlıklı 
 - **Kasaba uyarıları** (`logic/pins.ts` `townAlerts`): borç, küçülmek üzere evler (tıklayınca sıradaki eve gider), işçi eksikliği. Uyarı yoksa görünmez.
 - Hedef kartının ve sol alttaki "Kasabanın yolu" kartının açık/kapalı tercihi `localStorage` `kagit-kasaba-panel` (`{hedef, yol}`).
 
-**Tam ekran pencereler** aynı tasarım dilindedir: giriş ekranında sade yazı logosu (Fredoka, harfler sırayla yükselir; "ia" toprak renginde), karar kartlarında simge kutusu ve yeşil artı / kırmızı eksi blokları (kartlar sırayla belirir), tüccar panelinde mal satırları ("Sat 5 · +10", "Al 5 · −30"), kalış çipi ve kota çubuğu, oyun sonunda kutucuklu özet. Öğretici sağ altta, ilerleme noktalarla gösterilir.
+**Tam ekran pencereler** aynı tasarım dilindedir: giriş ekranında kesilmiş kağıt harfli logo (harfler sırayla yükselir; "ia" kiremit renginde kağıtta), karar kartlarında simge kutusu ve yeşil artı / kırmızı eksi blokları (kartlar sırayla belirir, hafif eğik), tüccar panelinde mal satırları ("Sat 5 · +10", "Al 5 · −30"), kalış çipi ve kota çubuğu, oyun sonunda kutucuklu özet. Öğretici sağ altta, ilerleme noktalarla gösterilir.
 
 **Bildirimler** (`ui/toast.ts`): üst ortada, en fazla üç; kötü haber 4,8 sn, diğerleri 3,2 sn kalır; aynı metin art arda gelmez.
 
@@ -145,7 +147,7 @@ Tanımlar `src/data/buildings.ts` içindedir; denge değerleri orada ayarlanır.
 ## Teknik mimari
 
 - **Araçlar:** Vite + TypeScript (strict) + Three.js + Vitest. Başka bağımlılık yok. UI framework yok.
-- **Arayüz tasarım sistemi** (`src/ui/stil.css`, `main.ts` içe aktarır): "Minimal Cozy". Renk, köşe, gölge, yazı tipi ve animasyon süreleri `:root` token'larıdır; bileşenler yalnızca token kullanır. Paneller düz, yumuşak köşeli (14–20 px), hafif saydam ve bulanık arka planlı (`.kagit` sınıfı); eğik kağıt, bant, raptiye yok. Yazı tipleri Google Fonts'tan: Nunito (metin), Fredoka (başlık ve sayılar); yüklenemezse sistem fontu. Palet: kağıt #F5EBD3, kum #D6B987, çayır #78966B, toprak #C97858, arduvaz #536F80, metin #514A3F. Arayüz hareketleri 150–260 ms (etkileşim), tam ekran girişleri `--sure-giris` (400 ms); opaklık + hafif kayma; zıplama yok; renk ve süreler token'dır; `prefers-reduced-motion` desteklenir. `index.html` yalnızca JS'ten önce görünen yükleme ekranının stilini taşır.
+- **Arayüz tasarım sistemi** (`src/ui/stil.css`, `main.ts` içe aktarır): **resimli kitap / eski kağıt**. Renk, köşe, gölge, yazı tipi ve animasyon süreleri `:root` token'larıdır; bileşenler yalnızca token kullanır. Dosyanın sonundaki "Resimli kitap katmanı" görünümü belirler: paneller (`.kagit`) krem kağıt, düzensiz köşeli (`--el-kose`) koyu mürekkep kenarlı, sert ofset gölgeli; cam / bulanıklık yok. Gazete hissi: kartlar hafif eğik, hedef kartında ve tüccar panelinde bant, bilgi panelinde raptiye; giriş logosu kesilmiş kağıt harfler. Yazı tipi Google Fonts'tan Patrick Hand (Türkçe harfler dahil); yüklenemezse Segoe Print / Comic Sans. Pastel palet: kağıt #F4E6C8, hardal #E9B949, kiremit #E08A6D, çayır #8CBF72, arduvaz #6F93AD, mürekkep #3F302A. Arayüz hareketleri 150–260 ms (etkileşim), tam ekran girişleri `--sure-giris` (400 ms); opaklık + hafif kayma; zıplama yok; `prefers-reduced-motion` desteklenir. `index.html` yalnızca JS'ten önce görünen yükleme ekranının stilini taşır.
 - **Mantık** `src/logic/`: saf TypeScript. Three.js, DOM, `window` yok. Bütün kurallar burada ve birim testli. Durum düz veridir, fonksiyonlar durumu yerinde değiştirir.
 - **Çizim** `src/render/`: Three.js. Bütün modeller kodla üretilir; görsel varlık dosyası yok (kağıt dokusu canvas ile üretilir). Mantığa yalnızca `types.ts` ve `data/` üzerinden bağlıdır. Dışarıya `src/render/api.ts` içindeki `GameRenderer` arayüzünü verir.
 - **Arayüz** `src/ui/` + `src/oyun.ts` (`src/main.ts` yalnızca dili yükleyip oyunu açar): HUD, bina menüsü, bilgi paneli, hedefler, hız düğmeleri düz HTML/CSS. Sol tık ve klavye girişi, oyun döngüsü (`requestAnimationFrame`), kayıt (`localStorage`, her gün sonu otomatik).
