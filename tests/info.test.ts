@@ -18,6 +18,7 @@ describe('üretim tahmini', () => {
 
   it('bonus çıktıyı artırır, girdiyi değil', () => {
     const s = blank();
+    s.gun = 11; // sonbahar: arılığın mevsim etkisi yok
     s.nufus = 100;
     const a = add(s, 'arilik', 20, 20);
     add(s, 'cicek', 22, 20);

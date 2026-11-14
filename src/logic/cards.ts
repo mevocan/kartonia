@@ -1,10 +1,12 @@
 // Karar kartları mantığı: değer okuma (ayar), kart çekme, seçim.
 // Ekonomi kartların etkilediği değerleri doğrudan BALANCE / BUILDINGS'ten değil ayar() ile okur.
 import { BALANCE, BUILDINGS } from '../data/buildings';
-import { KART_SECENEK, KARTLAR, type AyarAnahtari, type KararKarti } from '../data/cards';
+import { KART_SECENEK, KARTLAR, type AyarAnahtari, type KararKarti, type KartEtkisi } from '../data/cards';
+import { mevsim, type Mevsim } from './season';
 import { makeRng } from '../data/map';
-import type { BuildingType, GameState, Good } from './types';
+import type { BuildingType, GameState, GeciciEtki, Good } from './types';
 import { gunlukYaz } from './gunluk';
+import { SENLIK_SURE } from '../data/senlikler';
 
 /** Kartsız (taban) değer. */
 export function tabanDeger(a: AyarAnahtari): number {
@@ -22,6 +24,10 @@ export function tabanDeger(a: AyarAnahtari): number {
     case 'agacMutlulukSinir': return BALANCE.agacMutlulukSinir;
     case 'oduncuCarpani': return 1;
     case 'ticaretKota': return BALANCE.ticaret.kota;
+    case 'ticaretSatisCarpani': return 1;
+    case 'kisOdunCarpani': return BALANCE.mevsim.kisOdunCarpani;
+    case 'senlikSure': return SENLIK_SURE;
+    case 'senlikBedelCarpani': return 1;
   }
   throw new Error(`Bilinmeyen ayar: ${a}`);
 }
@@ -32,7 +38,10 @@ export function kartBul(id: string): KararKarti | undefined {
   return KART_BY_ID.get(id);
 }
 
-/** Taban değer + seçilmiş kartların etkileri (seçim sırasıyla). */
+/**
+ * Taban değer + seçilmiş kartların etkileri (seçim sırasıyla) + bugün süren geçici etkiler (şenlikler, ziyafet;
+ * `GameState.etkiler`, bitisGun dahil).
+ */
 export function ayar(s: GameState, a: AyarAnahtari): number {
   let v = tabanDeger(a);
   for (const id of s.kararlar ?? []) {
@@ -43,7 +52,47 @@ export function ayar(s: GameState, a: AyarAnahtari): number {
       v = e.islem === 'ekle' ? v + e.deger : v * e.deger;
     }
   }
+  for (const e of s.etkiler ?? []) {
+    if (e.anahtar !== a || s.gun > e.bitisGun) continue;
+    v = e.islem === 'ekle' ? v + e.deger : v * e.deger;
+  }
+  for (const e of MEVSIM_ETKILERI[mevsim(s.gun)]) {
+    if (e.anahtar === a) v = e.islem === 'ekle' ? v + e.deger : v * e.deger;
+  }
   return v;
+}
+
+/**
+ * Mevsimin üretim etkileri (ayar() her gün uygular): ilkbaharda arılık, yazın tarla, sonbaharda oduncu verimli.
+ * Kış kuralları (tarla ve arılık durur, odun tüketimi artar) economy.ts'tedir.
+ */
+export const MEVSIM_ETKILERI: Record<Mevsim, KartEtkisi[]> = {
+  ilkbahar: [{ anahtar: 'uretim.arilik.bal', islem: 'carp', deger: 1.25 }],
+  yaz: [{ anahtar: 'uretim.tarla.bugday', islem: 'carp', deger: 1.2 }],
+  sonbahar: [{ anahtar: 'oduncuCarpani', islem: 'carp', deger: 1.25 }],
+  kis: [],
+};
+
+/** Bu mevsimin üretim etkileri (arayüz). */
+export function mevsimEtkileri(m: Mevsim): KartEtkisi[] {
+  return MEVSIM_ETKILERI[m];
+}
+
+/** Bugün süren geçici etkiler. */
+export function suregenEtkiler(s: GameState): GeciciEtki[] {
+  return (s.etkiler ?? []).filter((e) => s.gun <= e.bitisGun);
+}
+
+/** Geçici etki ekler: bugünden başlayarak `sure` gün (bugün dahil). */
+export function etkiEkle(s: GameState, e: Omit<GeciciEtki, 'bitisGun'>, sure: number): void {
+  (s.etkiler ??= []).push({ ...e, bitisGun: s.gun + Math.max(1, Math.round(sure)) - 1 });
+}
+
+/** Gün sonu: son günü bugün olan etkiler kalkar. */
+export function etkilerGunSonu(s: GameState): void {
+  if (!s.etkiler) return;
+  s.etkiler = s.etkiler.filter((e) => e.bitisGun > s.gun);
+  if (s.etkiler.length === 0) delete s.etkiler;
 }
 
 /**

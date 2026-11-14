@@ -10,7 +10,7 @@ import { resample } from './geometry';
 import { bestRoadNear } from './roads';
 import { adjacencyBonus } from './adjacency';
 import { mevsim } from './season';
-import { ayar } from './cards';
+import { ayar, mevsimEtkileri } from './cards';
 import {
   emptyGoods, endDay, evaluateNeeds, houseHappiness, housePopulation, houseTax, housesInRange, isProducer, treesInRange, workerRatio,
 } from './economy';
@@ -28,10 +28,14 @@ export { adjacencyBonus, adjacencySources, bonusText } from './adjacency';
 export { mevsim, mevsimGunu, kisaKalanGun, MEVSIMLER, type Mevsim } from './season';
 export {
   tuccarVarMi, tuccarGeldiMi, tuccarKalisGunu, tuccaraKalanGun, kalanKota, tuccarKonumu, canBuy, canSell, buyGood, sellGood,
+  birimFiyat, ticaretTutari, gununFirsati, siparisDurumu, siparisTeslim, ziyaretNo,
   type TicaretSebep,
 } from './trade';
-export { checkRequest, deliverFeast, istekHedefi, istekKalanGun, istekOdulu, neseliMi, geciciMutlulukBugun } from './requests';
-export { ayar, kartCek, kartSec, kartBul, bekleyenSecim, secimGunu, toplamSecim } from './cards';
+export {
+  checkRequest, deliverFeast, deliverRequest, istekHedefi, istekKalanGun, istekOdulu, neseliMi, teslimMali,
+} from './requests';
+export { ayar, kartCek, kartSec, kartBul, bekleyenSecim, secimGunu, toplamSecim, suregenEtkiler, mevsimEtkileri } from './cards';
+export { senlikDurumu, senlikBaslat, senlikBedeli, type SenlikDurumu } from './senlik';
 export { serialize, deserialize } from './save';
 export { GOALS, goalProgress, goalReward, KASABA_TAMAM_HEDEFI, ZENGIN_KASABA } from './goals';
 export { YIL_GUN, yilNo, yilSonuMu } from './gunluk';
@@ -147,6 +151,11 @@ export function getBuildingInfo(s: GameState, id: number): BuildingInfo | null {
   }
   if (info.etki > 0 && b.type !== 'ev' && !dogaTuru(b.type)) info.kapsananEv = housesInRange(s, b.id).length;
   if (BUILDINGS[b.type].kisinUretmez && mevsim(s.gun) === 'kis') info.kisinDurdu = true;
+  // Bu mevsimin üretim etkisi (ilkbahar arılık, yaz tarla, sonbahar oduncu).
+  for (const e of mevsimEtkileri(mevsim(s.gun))) {
+    const bu = e.anahtar.startsWith(`uretim.${b.type}.`) || (b.type === 'oduncu' && e.anahtar === 'oduncuCarpani');
+    if (bu && e.islem === 'carp') info.mevsimCarpani = e.deger;
+  }
   if (BUILDINGS[b.type].anit) {
     const m = nextMonumentCost(b);
     info.anit = { asama: monumentStage(b), toplam: BALANCE.anit.asamalar.length, sonraki: m ? { para: m.para, mal: { ...m.mal } } : null };

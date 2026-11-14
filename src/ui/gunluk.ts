@@ -3,7 +3,12 @@
 import type { Gazete, GameState, GunlukKaydi } from '../logic/types';
 import { GOALS, kartBul, mevsim, yilNo } from '../logic/game';
 import { el, panelAc, panelKapat, tr } from './dom';
-import { evSeviyeAd, hedefMetni, kartMetni, kucuk, mevsimAd, t } from './i18n';
+import { evSeviyeAd, hedefMetni, kartMetni, kucuk, mevsimAd, t, type Anahtar } from './i18n';
+import { SENLIKLER } from '../data/senlikler';
+import type { Mevsim } from '../logic/season';
+
+/** Mevsim şenliğinin adı. */
+export const senlikAd = (m: Mevsim): string => t(`senlik.${m}.ad` as Anahtar);
 
 const GAZETE_ANAHTARI = 'kagit-kasaba-gazete';
 
@@ -43,6 +48,7 @@ export function gunlukMetni(k: GunlukKaydi): string {
     case 'hedef': return t('gunluk.hedef', { ad: hedefMetni(Number(k.veri)).ad });
     case 'gazete': return t('gunluk.gazete', { yil: Number(k.veri) });
     case 'gunlukBasladi': return t('gunluk.basladi');
+    case 'festival': return t('gunluk.festival', { ad: senlikAd(String(k.veri) as Mevsim) });
   }
 }
 
@@ -60,6 +66,7 @@ function ikon(k: GunlukKaydi): string {
     case 'hedef': return '🎯';
     case 'gazete': return '📰';
     case 'gunlukBasladi': return '📖';
+    case 'festival': return SENLIKLER[k.veri as Mevsim]?.ikon ?? '🎪';
   }
 }
 

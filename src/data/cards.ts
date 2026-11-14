@@ -16,7 +16,11 @@ export type AyarAnahtari =
   | 'yukseltmeTasCarpani' // hizmet yükseltmesinin taş maliyeti çarpanı (taban 1)
   | 'agacMutlulukSinir'
   | 'oduncuCarpani' // oduncu üretim çarpanı (taban 1)
-  | 'ticaretKota';
+  | 'ticaretKota'
+  | 'ticaretSatisCarpani' // tüccara satış fiyatı çarpanı (taban 1)
+  | 'kisOdunCarpani' // kışın odun isteyen evlerin odun tüketimi çarpanı (taban BALANCE.mevsim.kisOdunCarpani)
+  | 'senlikSure' // mevsim şenliği etkisinin süresi, gün (taban BALANCE.senlik.sure)
+  | 'senlikBedelCarpani'; // mevsim şenliği bedeli çarpanı (taban 1)
 
 export interface KartEtkisi {
   anahtar: AyarAnahtari;
@@ -97,6 +101,73 @@ export const KARTLAR: KararKarti[] = [
     etkiler: [
       { anahtar: 'depo.ambar', islem: 'ekle', deger: 100 },
       { anahtar: 'gider.ambar', islem: 'ekle', deger: 2 },
+    ],
+  },
+  // ---- Faz 3: 8 yeni kart (toplam 16) ----
+  {
+    id: 'bahcivanlar', ad: 'Bahçıvanlar', ikon: '🌷',
+    arti: 'Çiçek mutluluğu +1', eksi: 'Park gideri +2',
+    etkiler: [
+      { anahtar: 'mutluluk.cicek', islem: 'ekle', deger: 1 },
+      { anahtar: 'gider.park', islem: 'ekle', deger: 2 },
+    ],
+  },
+  {
+    id: 'zanaatLoncasi', ad: 'Zanaat loncası', ikon: '🧰',
+    arti: 'Marangoz ve Dokumacı +1 çıktı', eksi: 'Marangoz ve Dokumacı gideri +2',
+    etkiler: [
+      { anahtar: 'uretim.marangoz.mobilya', islem: 'ekle', deger: 1 },
+      { anahtar: 'uretim.dokumaci.kumas', islem: 'ekle', deger: 1 },
+      { anahtar: 'gider.marangoz', islem: 'ekle', deger: 2 },
+      { anahtar: 'gider.dokumaci', islem: 'ekle', deger: 2 },
+    ],
+  },
+  {
+    id: 'erkenKalkanlar', ad: 'Erken kalkanlar', ikon: '🐓',
+    arti: 'Tarla +1 buğday', eksi: 'Bütün evlere −3 mutluluk',
+    etkiler: [
+      { anahtar: 'uretim.tarla.bugday', islem: 'ekle', deger: 1 },
+      { anahtar: 'evMutluluk', islem: 'ekle', deger: -3 },
+    ],
+  },
+  {
+    id: 'tasEvler', ad: 'Taş evler', ikon: '🧱',
+    arti: 'Kışın odun tüketimi 2 yerine 1,5 katı', eksi: 'Bütün evlere −2 mutluluk',
+    etkiler: [
+      { anahtar: 'kisOdunCarpani', islem: 'ekle', deger: -0.5 },
+      { anahtar: 'evMutluluk', islem: 'ekle', deger: -2 },
+    ],
+  },
+  {
+    id: 'acikPazar', ad: 'Açık pazar', ikon: '🧺',
+    arti: 'Pazar mutluluğu +3', eksi: 'Pazar gideri +4',
+    etkiler: [
+      { anahtar: 'mutluluk.pazar', islem: 'ekle', deger: 3 },
+      { anahtar: 'gider.pazar', islem: 'ekle', deger: 4 },
+    ],
+  },
+  {
+    id: 'ariDostu', ad: 'Arı dostu', ikon: '🐝',
+    arti: 'Arılık +2 bal', eksi: 'Arılık yakın evlere −2 mutluluk (arılar sokar)',
+    etkiler: [
+      { anahtar: 'uretim.arilik.bal', islem: 'ekle', deger: 2 },
+      { anahtar: 'mutluluk.arilik', islem: 'ekle', deger: -2 },
+    ],
+  },
+  {
+    id: 'misafirperver', ad: 'Misafirperver', ikon: '🤝',
+    arti: 'Tüccar takas hakkı +20', eksi: 'Tüccara satış fiyatı −%10',
+    etkiler: [
+      { anahtar: 'ticaretKota', islem: 'ekle', deger: 20 },
+      { anahtar: 'ticaretSatisCarpani', islem: 'carp', deger: 0.9 },
+    ],
+  },
+  {
+    id: 'senlikci', ad: 'Şenlikçi', ikon: '🎪',
+    arti: 'Mevsim şenlikleri 2 gün uzun sürer', eksi: 'Şenlik bedeli +%30',
+    etkiler: [
+      { anahtar: 'senlikSure', islem: 'ekle', deger: 2 },
+      { anahtar: 'senlikBedelCarpani', islem: 'carp', deger: 1.3 },
     ],
   },
 ];

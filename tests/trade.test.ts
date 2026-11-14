@@ -5,6 +5,7 @@ import {
   buyGood, canBuy, canSell, deserialize, endDay, kalanKota, sellGood, serialize, stockLimit, tuccaraKalanGun,
   tuccarGeldiMi, tuccarKalisGunu,
   tuccarKonumu, tuccarVarMi,
+  ticaretTutari,
 } from '../src/logic/game';
 import { add, blank } from './helpers';
 
@@ -71,8 +72,9 @@ describe('tüccar: fiyatlar', () => {
     expect(s.para).toBe(960);
     expect(s.stok.tas).toBe(5);
     s.stok.mobilya = 10;
-    expect(sellGood(s, 'mobilya', 4)).toBe(24);
-    expect(s.para).toBe(984);
+    const tutar = ticaretTutari(s, 'mobilya', 4, false); // günün fırsatına göre 24 ya da 48
+    expect(sellGood(s, 'mobilya', 4)).toBe(tutar);
+    expect(s.para).toBe(960 + tutar);
     expect(s.stok.mobilya).toBe(6);
   });
 });

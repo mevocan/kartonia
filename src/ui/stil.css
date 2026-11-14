@@ -853,6 +853,45 @@ h1, h2, h3, h4 { font-weight: 400; letter-spacing: 0.01em; }
   transform: rotate(-3deg);
 }
 
+/* İstek kartında isteyen sakin */
+#istek .sakin { margin: -2px 0 3px; font-size: 13px; color: var(--toprak); }
+
+/* Mevsim şenliği kartı (sol panel): istek kartıyla aynı biçim, hardal kenar */
+#senlik {
+  display: none; padding: 11px 14px 12px; font-size: 12.5px; transform: rotate(-0.7deg);
+  border-left-width: 6px; border-left-color: var(--altin);
+}
+#senlik.aktif { border-left-color: var(--cayir); }
+#senlik .ust { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
+#senlik .etiket { font-size: 12.5px; color: var(--metin-soluk); }
+#senlik .gun-cip { font-size: 12px; padding: 0 7px; border: 1.5px solid currentColor; border-radius: var(--el-kose-kucuk); color: var(--metin-soluk); }
+#senlik.aktif .gun-cip { color: var(--arti); }
+#senlik h4 { margin: 0 0 3px; font-size: 15px; }
+#senlik p { margin: 0 0 4px; color: var(--metin-soluk); line-height: 1.35; }
+#senlik .bedel { font-size: 13px; }
+#senlik .sart { font-size: 12.5px; color: var(--metin-soluk); }
+#senlik .sart.eksik { color: var(--eksi); }
+#senlik .dugme { width: 100%; margin-top: 8px; }
+
+/* Üst bar: süren etkiler (şenlik, ziyafet) */
+.etki-serit { display: flex; flex-wrap: wrap; gap: 4px; }
+.etki-serit:empty { display: none; }
+.etki-cip { font-size: 12px; line-height: 1.4; padding: 0 6px; border: 1.5px solid var(--hat); border-radius: var(--el-kose-kucuk); background: var(--cayir); }
+
+/* Tüccar: sipariş kutusu ve fırsat rozeti */
+#tuccar .siparis {
+  display: none; align-items: center; gap: 8px; margin: 6px 0 8px; padding: 6px 8px; font-size: 13px;
+  border: 1.5px dashed var(--hat); border-radius: var(--el-kose-kucuk); background: var(--altin-acik);
+}
+#tuccar .siparis .metin { flex: 1; }
+#tuccar .mal-satir.firsat { background: rgba(140, 191, 114, 0.22); }
+#tuccar .mal-satir .ad { flex-wrap: wrap; row-gap: 0; min-width: 0; }
+#tuccar .firsat-rozet:empty { display: none; }
+#tuccar .firsat-rozet {
+  font-size: 11.5px; font-weight: 400; padding: 0 5px; white-space: nowrap; color: var(--metin);
+  background: var(--cayir); border: 1.5px solid var(--hat); border-radius: var(--el-kose-kucuk); transform: rotate(-2deg);
+}
+
 /* Geri al ve günlük düğmeleri */
 .hud-dugme.geri-al { font-size: 18px; padding: 3px 8px; }
 .hud-dugme:disabled { opacity: 0.35; cursor: default; }

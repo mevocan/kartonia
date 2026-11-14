@@ -59,6 +59,7 @@ describe('hayvancılık zinciri', () => {
 describe('arılık', () => {
   it('bal üretir; çiçek yakınındaysa +%25 (ağaç saymaz); kışın üretmez', () => {
     const s = blank();
+    s.gun = 11; // sonbahar: arılığın mevsim etkisi yok
     s.nufus = 100;
     const a = add(s, 'arilik', 20, 20);
     expect(uret(s).bal).toBeCloseTo(3);

@@ -8,9 +8,9 @@ import { checkGoals } from './goals';
 import { bestRoadNear, roadUpkeep } from './roads';
 import { adjacencyBonus } from './adjacency';
 import { mevsim } from './season';
-import { geciciMutlulukBugun, istekGunSonu } from './requests';
+import { istekGunSonu } from './requests';
 import { ticaretGunSonu } from './trade';
-import { ayar, kartGunSonu } from './cards';
+import { ayar, etkilerGunSonu, kartGunSonu } from './cards';
 import { gunlukGunSonu } from './gunluk';
 
 // Marangoz odunu kullandığı için oduncudan sonra gelir.
@@ -122,7 +122,7 @@ export function isStockNeed(n: Need): n is StokIhtiyaci {
 function perCapita(s: GameState, n: StokIhtiyaci): number {
   switch (n) {
     case 'yemek': return BALANCE.yemekKisiBasi;
-    case 'odun': return ayar(s, 'odunKisiBasi') * (mevsim(s.gun) === 'kis' ? BALANCE.mevsim.kisOdunCarpani : 1);
+    case 'odun': return ayar(s, 'odunKisiBasi') * (mevsim(s.gun) === 'kis' ? ayar(s, 'kisOdunCarpani') : 1);
     case 'mobilya': return BALANCE.mobilyaKisiBasi;
     case 'kumas': return BALANCE.kumasKisiBasi;
     case 'bal': return BALANCE.balKisiBasi;
@@ -179,8 +179,7 @@ export function houseHappiness(s: GameState, h: Building, st: NeedStatus[]): num
   if (yol) toplam += ROADS[yol.tur].mutluluk;
   toplam += currentNeedsMet(h, st) * BALANCE.ihtiyacMutluluk;
   toplam += adjacencyBonus(s, h.type, h.x, h.z, h.id).mutluluk; // göl manzarası
-  toplam += geciciMutlulukBugun(s); // şenlik
-  toplam += ayar(s, 'evMutluluk'); // karar kartları (ör. odun tasarrufu)
+  toplam += ayar(s, 'evMutluluk'); // karar kartları (ör. odun tasarrufu) ve süreli etkiler (ziyafet, şenlikler)
   return Math.min(BALANCE.mutlulukMax, Math.max(BALANCE.mutlulukMin, toplam));
 }
 
@@ -356,7 +355,8 @@ export function endDay(s: GameState): DayReport {
   if (ist.tamamlanan) rapor.tamamlananIstek = ist.tamamlanan;
   if (ist.yeni) rapor.yeniIstek = ist.yeni;
   ticaretGunSonu(s);
-  kartGunSonu(s); // 50, 100, 150. gün: karar kartı seçimi
+  kartGunSonu(s); // 30, 60, …, 240. gün: karar kartı seçimi
+  etkilerGunSonu(s); // son günü bugün olan süreli etkiler kalkar
 
   rapor.oyunBitti = s.bitti;
   s.gun++;

@@ -64,6 +64,7 @@ function oncelik(k: GunlukKaydi): number {
     case 'kule': return 22;
     case 'kart': return 20;
     case 'senlik': return 15;
+    case 'festival': return 45;
     case 'hedef': return 10;
     default: return 0;
   }

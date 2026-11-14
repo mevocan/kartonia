@@ -25,18 +25,18 @@ function uret(s: GameState) {
 }
 
 describe('karar kartları: veri', () => {
-  it('8 kartlık havuz, her kartın bir artısı ve bir eksisi var', () => {
-    expect(KARTLAR).toHaveLength(8);
+  it('16 kartlık havuz, her kartın bir artısı ve bir eksisi var', () => {
+    expect(KARTLAR).toHaveLength(16);
     for (const k of KARTLAR) {
       expect(k.arti.length).toBeGreaterThan(0);
       expect(k.eksi.length).toBeGreaterThan(0);
-      expect(k.etkiler.length).toBe(2);
+      expect(k.etkiler.length).toBeGreaterThanOrEqual(2);
     }
-    expect(new Set(KARTLAR.map((k) => k.id)).size).toBe(8);
+    expect(new Set(KARTLAR.map((k) => k.id)).size).toBe(16);
   });
 
-  it('kart seçimi 50 günde bir, son seçim 150. gün', () => {
-    expect(BALANCE.kartSecimi).toEqual({ aralik: 50, son: 150 });
+  it('kart seçimi 30 günde bir, son seçim 240. gün (8 seçim)', () => {
+    expect(BALANCE.kartSecimi).toEqual({ aralik: 30, son: 240 });
   });
 
   it('kartsızken ayar taban değeri verir', () => {
@@ -144,11 +144,11 @@ describe('karar kartları: etkiler', () => {
 });
 
 describe('karar kartları: çekiliş ve seçim', () => {
-  it('seçim 50, 100 ve 150. günlerin sonunda kuyruğa girer; toplam 3 seçim', () => {
+  it('seçim 30, 60, …, 240. günlerin sonunda kuyruğa girer; toplam 8 seçim', () => {
     const s = blank();
     s.haritaTohum = 3;
     const kuyruk: number[] = [];
-    for (let g = 1; g <= 220; g++) {
+    for (let g = 1; g <= 300; g++) {
       s.gun = g;
       kartGunSonu(s);
       const b = bekleyenSecim(s);
@@ -157,14 +157,14 @@ describe('karar kartları: çekiliş ve seçim', () => {
         kartSec(s, kartCek(s, b)[0].id);
       }
     }
-    expect(kuyruk).toEqual([50, 100, 150]);
-    expect(s.kararlar).toHaveLength(3);
-    expect([secimGunu(0), secimGunu(1), secimGunu(2), toplamSecim()]).toEqual([50, 100, 150, 3]);
+    expect(kuyruk).toEqual([30, 60, 90, 120, 150, 180, 210, 240]);
+    expect(s.kararlar).toHaveLength(8);
+    expect([secimGunu(0), secimGunu(1), secimGunu(7), toplamSecim()]).toEqual([30, 60, 240, 8]);
   });
 
   it('gün sonu seçim gününde kart seçimini açar; hedefler artık kart açmaz', () => {
     const s = blank();
-    s.gun = 50;
+    s.gun = 30;
     endDay(s);
     expect(bekleyenSecim(s)).toBe(0);
     const t = blank();
@@ -173,14 +173,14 @@ describe('karar kartları: çekiliş ve seçim', () => {
     expect(bekleyenSecim(t)).toBeNull();
   });
 
-  it('eski kayıtta hedeflerden gelmiş kartlar toplam 3 sınırına sayılır', () => {
+  it('önceden seçilmiş kartlar toplam 8 sınırına sayılır', () => {
     const s = blank();
-    s.kararlar = ['agirVergi', 'buyukAmbar'];
-    s.gun = 50;
+    s.kararlar = ['agirVergi', 'buyukAmbar', 'bahcivanlar', 'tasEvler', 'acikPazar', 'ariDostu', 'misafirperver'];
+    s.gun = 30;
     kartGunSonu(s);
     expect(bekleyenSecim(s)).toBe(0);
     kartSec(s, kartCek(s, 0)[0].id);
-    s.gun = 100;
+    s.gun = 60;
     kartGunSonu(s);
     expect(bekleyenSecim(s)).toBeNull();
   });
@@ -213,15 +213,15 @@ describe('karar kartları: çekiliş ve seçim', () => {
     expect(kartSec(s, KARTLAR[0].id)).toBe(false); // bekleyen yok
   });
 
-  it('üç seçimin hepsinde üç farklı kart çıkar (havuz 8)', () => {
+  it('sekiz seçimin hepsinde üç farklı kart çıkar (havuz 16)', () => {
     const s = blank();
-    for (const h of [0, 1, 2]) {
+    for (const h of [0, 1, 2, 3, 4, 5, 6, 7]) {
       s.bekleyenKararlar = [h];
       const c = kartCek(s, h);
       expect(c).toHaveLength(3);
       kartSec(s, c[0].id);
     }
-    expect(new Set(s.kararlar).size).toBe(3);
+    expect(new Set(s.kararlar).size).toBe(8);
   });
 
   it('kayıt: seçilen kartlar ve bekleyen seçim korunur; eski kayıtta kart yok', () => {

@@ -67,7 +67,22 @@ export function istekAciklama(tur: IstekTuru, odul: number): string {
     case 'agaclandirma': return t('istek.agaclandirma.aciklama', { sayi: I.agacSayisi, odul });
     case 'kisHazirligi': return t('istek.kisHazirligi.aciklama', { odun: I.kisOdun, odul });
     case 'susuzEv': return t('istek.susuzEv.aciklama', { odul });
+    case 'park': return t('istek.park.aciklama', { odul });
+    case 'golEvi': return t('istek.golEvi.aciklama', { odul });
+    case 'cicekDik': return t('istek.cicekDik.aciklama', { sayi: I.cicekSayisi, odul });
+    case 'gurultu': return t('istek.gurultu.aciklama', { odul });
+    case 'mobilya': return t('istek.mobilya.aciklama', { n: I.mobilyaTeslim, odul });
+    case 'asfaltEv': return t('istek.asfaltEv.aciklama', { odul });
+    case 'erzak': return t('istek.erzak.aciklama', { n: I.erzakYemek, odul });
+    case 'yukseltme': return t('istek.yukseltme.aciklama', { odul });
   }
+}
+
+/** İsteyen sakinin adı (eski kayıtta istek.sakin yoksa boş). */
+export function sakinAdi(sira: number | undefined): string {
+  if (sira === undefined) return '';
+  const adlar = t('sakin.adlar').split(',').map((x) => x.trim()).filter(Boolean);
+  return adlar.length ? adlar[sira % adlar.length] : '';
 }
 
 /** Tamamlanan istek bildirimi. */

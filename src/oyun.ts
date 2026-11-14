@@ -5,12 +5,13 @@ import { igneGorunumu } from './ui/ikonlar';
 import {
   canPlace, canUpgrade, createGame, upgradeBuilding, demolish, demolishRoad, deserialize, getBuildingInfo, getRoadInfo, GOALS, KASABA_TAMAM_HEDEFI, placeBuilding,
   placeRoad, planRoad, serialize, tick, mevsim, monumentStage, canAdvanceMonument, advanceMonument,
-  tuccarVarMi, tuccarGeldiMi, tuccarKalisGunu, tuccarKonumu, buyGood, sellGood, canBuy, canSell, checkRequest, deliverFeast,
+  tuccarVarMi, tuccarGeldiMi, tuccarKalisGunu, tuccarKonumu, buyGood, sellGood, canBuy, canSell, checkRequest, deliverRequest,
+  senlikBaslat, senlikDurumu, suregenEtkiler, siparisTeslim,
   bekleyenSecim, kartCek, kartSec, kartBul, secimGunu, toplamSecim,
   anlikGoruntu, geriAl, geriAlEkle, geriAlinabilir, geriAlTemizle, geriAlYigini, type GeriAlTur,
 } from './logic/game';
 import type { Gazete } from './logic/types';
-import { createJournal, createNewspaper, gazeteGosterilsin } from './ui/gunluk';
+import { createJournal, createNewspaper, gazeteGosterilsin, senlikAd } from './ui/gunluk';
 import { BALANCE, BUILDINGS } from './data/buildings';
 import { createRenderer } from './render/renderer';
 import type { GameRenderer } from './render/api';
@@ -21,7 +22,7 @@ import { createInfoPanel } from './ui/infoPanel';
 import {
   createToasts, istekAd, type ToastKind, istekTamamMetni, mevsimBildirimi, yerlestirmeSebebi,
 } from './ui/toast';
-import { createAlertList, createGoalCard, createLeftColumn, createRequestCard } from './ui/solPanel';
+import { createAlertList, createFestivalCard, createGoalCard, createLeftColumn, createRequestCard } from './ui/solPanel';
 import { createTradePanel } from './ui/tradePanel';
 import { createCardPicker } from './ui/cardPicker';
 import { createCardList } from './ui/cardList';
@@ -116,8 +117,11 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   const solSutun = createLeftColumn(ui);
   const goal = createGoalCard(solSutun);
   const istekKarti = createRequestCard(solSutun, () => senlik(), (id) => binayaGit(id));
+  const senlikKarti = createFestivalCard(solSutun, () => senlikYap());
   const uyariListesi = createAlertList(solSutun, (id) => binayaGit(id));
-  const tuccar = createTradePanel(ui, (g, n) => ticaret(g, n, true), (g, n) => ticaret(g, n, false), () => tuccarKapat());
+  const tuccar = createTradePanel(
+    ui, (g, n) => ticaret(g, n, true), (g, n) => ticaret(g, n, false), () => tuccarKapat(), () => siparisVer(),
+  );
   const secici = createCardPicker(ui, (id) => kartSecildi(id));
   const kasabaYolu = createCardList(ui);
   const gunlukP = createJournal(ui, () => pencereKapat(), (g) => gazeteAc(g));
@@ -516,15 +520,62 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     arayuzYenile();
   }
 
-  /** Şenlik isteği: stoktan yemeği teslim et. */
+  /** Tüccarın siparişini teslim et (takas panelindeki düğme). */
+  function siparisVer(): void {
+    const p = siparisTeslim(s);
+    if (p === null) {
+      toasts.show(t('bildirim.siparisYok'), 'kotu');
+      return;
+    }
+    geriAlSifirla();
+    ses.play('vergi');
+    toasts.show(t('bildirim.siparisTeslim', { para: p }), 'iyi');
+    bilgiYenile();
+    arayuzYenile();
+  }
+
+  /** Teslim isteği (ziyafet: yemek, mobilya): stoktan malı teslim et. */
   function senlik(): void {
-    const r = deliverFeast(s);
+    const tur = s.istek?.tur;
+    const r = deliverRequest(s);
     if (!r) {
-      toasts.show(t('bildirim.senlikYemekYok'), 'kotu');
+      toasts.show(t(tur === 'mobilya' ? 'bildirim.mobilyaYok' : 'bildirim.senlikYemekYok'), 'kotu');
       return;
     }
     geriAlSifirla();
     toasts.show(istekTamamMetni(r), 'iyi');
+    bilgiYenile();
+    arayuzYenile();
+  }
+
+  /** Şenlik sürerken konfeti atılacak meydanlar (pazar, park, saat kulesi; yoksa evler). */
+  function senlikNoktalari(): Vec2[] {
+    const m = s.binalar.filter((b) => b.type === 'pazar' || b.type === 'park' || b.type === 'saatKulesi');
+    const liste = m.length ? m : s.binalar.filter((b) => b.type === 'ev').slice(0, 6);
+    return liste.map((b) => ({ x: b.x, z: b.z }));
+  }
+
+  /** Bir mevsim şenliğinin etkisi sürüyorsa kasabada ara ara konfeti. */
+  let senlikImza = '';
+  function senlikGorseli(): void {
+    const aktif = suregenEtkiler(s).some((e) => e.kaynak.startsWith('senlik.'));
+    const imza = aktif ? String(s.binalar.length) : '';
+    if (imza === senlikImza) return;
+    senlikImza = imza;
+    renderer.setFestival(aktif ? senlikNoktalari() : null);
+  }
+
+  /** Bu mevsimin şenliğini başlatır (sol paneldeki kart). */
+  function senlikYap(): void {
+    const d = senlikDurumu(s);
+    if (!senlikBaslat(s)) {
+      toasts.show(d.sebep === 'yapildi' ? t('senlik.yapildi') : t('senlik.yapilamaz'), 'kotu');
+      return;
+    }
+    geriAlSifirla();
+    ses.play('hedef');
+    for (const p of senlikNoktalari()) renderer.celebrate(p.x, p.z);
+    toasts.show(t('bildirim.senlikBasladi', { ad: senlikAd(d.mevsim), gun: d.sure }), 'iyi');
     bilgiYenile();
     arayuzYenile();
   }
@@ -664,7 +715,9 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     menu.update(s);
     goal.update(s);
     istekKarti.update(s);
+    senlikKarti.update(s);
     uyariListesi.update(s);
+    senlikGorseli();
     kasabaYolu.update(s);
     tuccar.update(s);
   }

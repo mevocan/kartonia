@@ -1,4 +1,4 @@
-import type { BuildingDef, BuildingType, Good, HouseLevelDef, RoadDef, RoadType } from '../logic/types';
+import type { BuildingDef, BuildingType, Good, HouseLevelDef, IstekTuru, RoadDef, RoadType } from '../logic/types';
 
 // Denge değerleri. Hepsi ayarlanabilir.
 export const BUILDINGS: Record<BuildingType, BuildingDef> = {
@@ -222,6 +222,13 @@ export const BALANCE = {
     aralik: 8,
     kalis: 3,
     kota: 40,
+    /** Günün fırsatı: bir malın satış fiyatı bu kat, bir malın alış fiyatı bu kat. */
+    firsatSatis: 2,
+    firsatAlis: 0.6,
+    /** Sipariş: tüccar giderken bir sonraki ziyareti için bırakır; normal satış fiyatının siparisCarpani katı ödenir. */
+    siparisCarpani: 1.6,
+    siparisMin: 15,
+    siparisMaks: 30,
     fiyat: {
       bugday: { sat: 1, al: 3 },
       un: { sat: 2, al: 5 },
@@ -250,11 +257,20 @@ export const BALANCE = {
     kisOdun: 40,
     kisOdul: 60,
     suOdul: 30,
+    cicekSayisi: 8,
+    erzakYemek: 100,
+    mobilyaTeslim: 15,
+    /** Para ödülü: taban × (1 + nüfus / odulNufusOlcek); ziyafet (senlik) para vermez. */
+    odulNufusOlcek: 100,
+    odul: {
+      agaclandirma: 40, kisHazirligi: 60, susuzEv: 30, park: 50, golEvi: 40, cicekDik: 30, gurultu: 50,
+      mobilya: 80, asfaltEv: 40, erzak: 60, yukseltme: 60,
+    } as Partial<Record<IstekTuru, number>>,
   },
-  /** Karar kartı seçimi (logic/cards.ts): her `aralik` günün sonunda, en son `son`. günde (50, 100, 150 → 3 kart). */
+  /** Karar kartı seçimi (logic/cards.ts): her `aralik` günün sonunda, en son `son`. günde (30, 60, …, 240 → 8 kart). */
   kartSecimi: {
-    aralik: 50,
-    son: 150,
+    aralik: 30,
+    son: 240,
   },
   /** Mevsimler (logic/season.ts): yıl = İlkbahar, Yaz, Sonbahar, Kış gün sayıları. */
   mevsim: {
