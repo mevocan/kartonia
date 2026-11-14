@@ -12,6 +12,7 @@ import { bestRoadNear } from './roads';
 import { adjacencyBonus } from './adjacency';
 import { mevsim } from './season';
 import { ayar, mevsimEtkileri } from './cards';
+import { kapsayanMeydan, karakterEtkisi } from './meydan';
 import {
   emptyGoods, endDay, evaluateNeeds, houseHappiness, housePopulation, houseTax, housesInRange, isProducer, treesInRange, workerRatio,
 } from './economy';
@@ -40,6 +41,9 @@ export { senlikDurumu, senlikBaslat, senlikBedeli, type SenlikDurumu } from './s
 export { serialize, deserialize } from './save';
 export { GOALS, goalProgress, goalReward, KASABA_TAMAM_HEDEFI, EFSANE_HEDEFI, ZENGIN_KASABA } from './goals';
 export { kasabaUnvani, UNVAN_SAYISI } from './gunluk';
+export {
+  KARAKTERLER, karakterDurumu, karakterSec, gorselSeviye, kapsayanMeydan, type Karakter, type KarakterSebep,
+} from './meydan';
 export { YIL_GUN, yilNo, yilSonuMu } from './gunluk';
 export {
   anlikGoruntu, geriAl, geriAlEkle, geriAlinabilir, geriAlTemizle, geriAlYigini, type GeriAlTur, type GeriAlYigini,
@@ -123,7 +127,7 @@ export function getBuildingInfo(s: GameState, id: number): BuildingInfo | null {
     const m = houseHappiness(s, b, st);
     info.nufus = housePopulation(b);
     info.mutluluk = m;
-    info.tahminiVergi = houseTax(info.nufus, m, b.seviye, ayar(s, 'vergiCarpani'));
+    info.tahminiVergi = houseTax(info.nufus, m, b.seviye, ayar(s, 'vergiCarpani') * karakterEtkisi(s, b.x, b.z).vergi);
     info.ihtiyaclar = st;
     info.yol = bestRoadNear(s, b)?.tur ?? null;
     info.evGun = { iyi: b.iyiGun, kotu: b.kotuGun, buyumeEsik: ayar(s, 'seviyeAtlamaGun'), kuculmeEsik: BALANCE.seviyeGunEsigi };
@@ -135,7 +139,7 @@ export function getBuildingInfo(s: GameState, id: number): BuildingInfo | null {
     const d = BUILDINGS[b.type];
     const kis = !!d.kisinUretmez && mevsim(s.gun) === 'kis';
     if (d.uretim) {
-      const carpan = 1 + (d.komsuluk ? adjacencyBonus(s, b.type, b.x, b.z, b.id).oran : 0);
+      const carpan = (1 + (d.komsuluk ? adjacencyBonus(s, b.type, b.x, b.z, b.id).oran : 0)) * karakterEtkisi(s, b.x, b.z).uretim;
       const sinir = stockLimit(s);
       const cikti = (Object.keys(d.uretim.cikti) as Good[]).map((mal): [Good, number] => [mal, ayar(s, `uretim.${b.type}.${mal}`)]);
       // runProduction ile aynı sınır: çıktı deposu dolarsa üretim (ve girdi) o oranda düşer. Girdi stoğu ayrıca
@@ -147,7 +151,10 @@ export function getBuildingInfo(s: GameState, id: number): BuildingInfo | null {
         cikti: cikti.map(([mal, n]) => ({ mal, miktar: n * carpan * k })),
       };
     } else if (d.agacBasinaOdun !== undefined) {
-      const miktar = Math.max(0, Math.min(treesInRange(s, b) * d.agacBasinaOdun * ayar(s, 'oduncuCarpani') * oran, stockLimit(s) - s.stok.odun));
+      const miktar = Math.max(0, Math.min(
+        treesInRange(s, b) * d.agacBasinaOdun * ayar(s, 'oduncuCarpani') * oran * karakterEtkisi(s, b.x, b.z).uretim,
+        stockLimit(s) - s.stok.odun,
+      ));
       info.uretimTahmini = { girdi: [], cikti: [{ mal: 'odun', miktar }] };
     }
   }
@@ -163,5 +170,15 @@ export function getBuildingInfo(s: GameState, id: number): BuildingInfo | null {
     info.anit = { asama: monumentStage(b), toplam: anitAsamalari(b.type).length, sonraki: m ? { para: m.para, mal: { ...m.mal } } : null };
   }
   if (b.type === 'oduncu') info.agacSayisi = treesInRange(s, b);
+  if (b.type === 'meydan') {
+    info.meydan = {
+      degisim: b.karakter ? BALANCE.meydan.degisim : 0,
+      kapsananBina: s.binalar.filter((x) => x.id !== b.id && !x.dogal && Math.hypot(x.x - b.x, x.z - b.z) <= info.etki).length,
+    };
+    if (b.karakter) info.meydan.karakter = b.karakter;
+  } else if (b.type === 'ev' || isProducer(b.type)) {
+    const m = kapsayanMeydan(s, b.x, b.z);
+    if (m?.karakter) info.mahalle = m.karakter;
+  }
   return info;
 }

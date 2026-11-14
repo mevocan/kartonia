@@ -25,6 +25,8 @@ export interface InfoPanel {
 
 type Durum = { ikon: string; metin: string; tur: 'iyi' | 'uyari' | 'kotu' | 'notr' };
 
+const KARAKTER_IKON = { carsi: '🧺', bahceli: '🌳', zanaat: '🔨' } as const;
+
 export function createInfoPanel(
   root: HTMLElement,
   onDemolish: (id: number) => void,
@@ -37,6 +39,8 @@ export function createInfoPanel(
   onAdvanceMonument: (id: number) => void,
   /** Binanın küçük resmi (yoksa null). */
   binaResmi: (t: BuildingType) => string | null = () => null,
+  /** Meydan: mahalle karakteri seç. */
+  onCharacter: (id: number, k: 'carsi' | 'bahceli' | 'zanaat') => void = () => {},
 ): InfoPanel {
   const box = el('div', 'kagit');
   box.id = 'bilgi';
@@ -137,6 +141,7 @@ export function createInfoPanel(
     const tb = tablo();
     satir(tb, t('bilgi.yol'), info.yol ? yolAd(info.yol) : t('genel.yok'));
     bonusSatiri(tb, info);
+    if (info.mahalle) satir(tb, t('meydan.mahalle'), `${KARAKTER_IKON[info.mahalle]} ${t(`meydan.${info.mahalle}.ad` as Anahtar)}`, 'arti');
 
     const st = info.ihtiyaclar ?? [];
     const mevcut = new Set<Need>(HOUSE_LEVELS[info.seviye - 1]?.ihtiyaclar ?? []);
@@ -187,6 +192,7 @@ export function createInfoPanel(
     if (info.isciOrani !== undefined) satir(tb, t('bilgi.isci'), t('bilgi.yuzde', { n: Math.round(info.isciOrani * 100) }), info.isciOrani < 1 ? 'eksi' : '');
     if (info.agacSayisi !== undefined) satir(tb, t('bilgi.agac'), String(info.agacSayisi));
     bonusSatiri(tb, info);
+    if (info.mahalle) satir(tb, t('meydan.mahalle'), `${KARAKTER_IKON[info.mahalle]} ${t(`meydan.${info.mahalle}.ad` as Anahtar)}`, 'arti');
     if (info.mevsimCarpani !== undefined) {
       satir(tb, t('bilgi.mevsimEtkisi'), t('bilgi.yuzdeArti', { n: Math.round((info.mevsimCarpani - 1) * 100) }), 'arti');
     }
@@ -212,6 +218,28 @@ export function createInfoPanel(
     if (d.depo) satir(tb, t('menu.stokSiniri'), `+${d.depo}`);
     if (d.yukseltilebilir) satir(tb, t('bilgi.seviye'), `${info.seviye} / 3`);
     bonusSatiri(tb, info);
+    if (info.mahalle) satir(tb, t('meydan.mahalle'), `${KARAKTER_IKON[info.mahalle]} ${t(`meydan.${info.mahalle}.ad` as Anahtar)}`, 'arti');
+  }
+
+  /** Meydan: karakter, kapsadığı binalar ve üç karakter düğmesi (seçili olan işaretli). */
+  function meydan(info: BuildingInfo, para: number): void {
+    const m = info.meydan!;
+    const durum: Durum | null = m.karakter
+      ? { ikon: KARAKTER_IKON[m.karakter], metin: t(`meydan.${m.karakter}.ad` as Anahtar), tur: 'iyi' }
+      : { ikon: '❔', metin: t('meydan.secilmedi'), tur: 'uyari' };
+    bas(binaAd(info.type), binaAciklama(info.type), binaResmi(info.type), durum);
+    const tb = tablo();
+    satir(tb, t('bilgi.etki'), yuvarla(info.etki));
+    satir(tb, t('meydan.kapsanan'), String(m.kapsananBina));
+    bolum(m.karakter ? t('meydan.degistir', { para: m.degisim }) : t('meydan.sec'));
+    for (const k of ['carsi', 'bahceli', 'zanaat'] as const) {
+      const secili = m.karakter === k;
+      const d = el('button', `dugme karakter${secili ? ' secili' : ''}`);
+      d.append(el('span', 'ad', `${KARAKTER_IKON[k]} ${t(`meydan.${k}.ad` as Anahtar)}`), el('span', 'alt', t(`meydan.${k}.etki` as Anahtar)));
+      d.disabled = secili || (m.degisim > 0 && para < m.degisim);
+      d.addEventListener('click', () => onCharacter(info.id, k));
+      box.appendChild(d);
+    }
   }
 
   function anit(info: BuildingInfo, para: number, stok: Partial<Record<Good, number>>): void {
@@ -270,6 +298,7 @@ export function createInfoPanel(
         bas(t(cicek ? 'bilgi.kirCicegi' : 'bilgi.ormanAgaci'), t(cicek ? 'bilgi.kirCicegiMetin' : 'bilgi.ormanAgaciMetin'), binaResmi(info.type));
       } else if (info.type === 'ev') ev(info);
       else if (info.anit) anit(info, para, stok);
+      else if (info.meydan) meydan(info, para);
       else if (info.isciOrani !== undefined) uretim(info, sorun);
       else if (info.type === 'agac' || info.type === 'cicek') {
         bas(binaAd(info.type), binaAciklama(info.type), binaResmi(info.type));

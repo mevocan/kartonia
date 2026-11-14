@@ -282,7 +282,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
   // Bütün şablonları baştan üret (oyun sırasında takılma olmasın).
   for (const t of BUILDING_ORDER) {
     const vars = t === 'ev' ? EV_DUVAR.length : t === 'agac' ? TREE_VARIANTS : t === 'cicek' ? FLOWER_VARIANTS : 1;
-    const levels = t === 'ev' ? HOUSE_LEVELS.length : BUILDINGS[t].yukseltilebilir ? 3 : 1;
+    const levels = t === 'ev' ? HOUSE_LEVELS.length : t === 'meydan' ? 4 : BUILDINGS[t].yukseltilebilir ? 3 : 1;
     for (let l = 1; l <= levels; l++) for (let v = 0; v < vars; v++) getTemplate(t, l, v);
   }
   for (const t of BUILDING_ORDER) if (BUILDINGS[t].anit) for (let a = 0; a < ANIT_ASAMA; a++) getTemplate(t, 1, 0, a);
@@ -820,7 +820,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
         world.root.remove(old.root);
         dropEntry(old);
       }
-      const level = type === 'ev' || BUILDINGS[type].yukseltilebilir ? seviye : 1;
+      const level = type === 'ev' || type === 'meydan' || BUILDINGS[type].yukseltilebilir ? seviye : 1;
       const variant = variantFor(type, id);
       const tpl = getTemplate(type, level, variant);
       const taban = BUILDINGS[type].taban;
@@ -911,7 +911,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
 
     setBuildingLevel(id, seviye) {
       const e = entries.get(id);
-      if (!e || (e.type !== 'ev' && !BUILDINGS[e.type].yukseltilebilir) || e.level === seviye) return;
+      if (!e || (e.type !== 'ev' && e.type !== 'meydan' && !BUILDINGS[e.type].yukseltilebilir) || e.level === seviye) return;
       const up = seviye > e.level;
       const oldTpl = e.tpl;
       stopFold(e);

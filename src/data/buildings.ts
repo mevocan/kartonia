@@ -157,6 +157,11 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
       { anahtar: 'uretim.arilik.bal', islem: 'carp', deger: 1.25 },
     ],
   },
+  // ---- Mahalle meydanı: karakteri (logic/meydan.ts) etki alanındaki binalara uygulanır ----
+  meydan: {
+    type: 'meydan', ad: 'Meydan', aciklama: 'Mahallenin kalbi. Kurunca bir karakter seç: Çarşı, Bahçeli ya da Zanaat; etki alanındaki binalara uygulanır.',
+    maliyet: 80, gider: 3, taban: 1.4, etki: 8, mutluluk: 2, isci: 0, acilmaNufus: 60,
+  },
 };
 
 /** Yol istemeyen, patikası olmayan parçalar: doğa (ağaç, çiçek) ve süsler. */
@@ -172,7 +177,7 @@ export function dogaTuru(t: BuildingType): boolean {
 export const BUILDING_ORDER: BuildingType[] = [
   'ev', 'agac', 'cicek', 'tarla', 'cesme', 'degirmen', 'firin', 'oduncu', 'balikci', 'tasOcagi', 'marangoz', 'agil', 'dokumaci',
   'arilik', 'ambar', 'pazar', 'okul', 'hastane', 'park', 'hamam', 'tiyatro', 'saatKulesi',
-  'cit', 'bank', 'ciceklik', 'lamba', 'heykel', 'kervansaray', 'botanik',
+  'cit', 'bank', 'ciceklik', 'lamba', 'heykel', 'kervansaray', 'botanik', 'meydan',
 ];
 
 export const HOUSE_LEVELS: HouseLevelDef[] = [
@@ -208,6 +213,15 @@ export const BALANCE = {
   mutlulukTaban: 45,
   /** Bir evi kapsayan ağaçların mutluluk toplamı en fazla bu kadar sayılır. */
   agacMutlulukSinir: 9,
+  /** Mahalle meydanı (logic/meydan.ts): karakter etkileri ve sonradan değiştirme bedeli. */
+  meydan: {
+    degisim: 100,
+    karakter: {
+      carsi: { vergi: 1.15, mutluluk: -2, agacSinir: 0, uretim: 1 },
+      bahceli: { vergi: 1, mutluluk: 0, agacSinir: 4, uretim: 1 },
+      zanaat: { vergi: 1, mutluluk: -3, agacSinir: 0, uretim: 1.15 },
+    },
+  },
   /** Bir evi kapsayan süslerin mutluluk toplamı en fazla bu kadar sayılır. */
   susMutlulukSinir: 6,
   /** Evin mevcut seviyesinde karşılanan ihtiyaç başına mutluluk. */

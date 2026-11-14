@@ -6,6 +6,7 @@ import { inTaslik } from '../data/map';
 import { nearestRoad, roadEdgeGap } from './roads';
 import { ayar } from './cards';
 import { binaSayaci, gunlukYaz } from './gunluk';
+import { meydanEngeli } from './meydan';
 
 export function isUnlockedAt(nufus: number, t: BuildingType): boolean {
   return nufus >= BUILDINGS[t].acilmaNufus;
@@ -46,6 +47,8 @@ export function checkSite(s: GameState, t: BuildingType, x: number, z: number): 
   if (d.yer === 'gol' && lakeDistance(x, z) - d.taban > BALANCE.golKiyisi) {
     return 'golYok';
   }
+  const meydan = meydanEngeli(s, t, x, z); // Meydan alanları çakışmaz; Bahçeli Meydan'a üretim binası konmaz
+  if (meydan) return meydan;
   for (const b of s.binalar) {
     if (circlesOverlap(x, z, d.taban, b.x, b.z, BUILDINGS[b.type].taban, BALANCE.bosluk)) return 'cakisiyor';
   }

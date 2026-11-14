@@ -606,5 +606,25 @@
   "unvan.4": "Efsane kasaba",
   "gunluk.projeTamam": "{ad} tamamlandı!",
   "gunluk.unvan": "Kasabanın yeni unvanı: {ad}.",
-  "gazete.unvan": "{unvan} · {yil}. yıl · Gün {gun} · Yıl sonu sayısı"
+  "gazete.unvan": "{unvan} · {yil}. yıl · Gün {gun} · Yıl sonu sayısı",
+
+  "bina.meydan.ad": "Meydan",
+  "bina.meydan.aciklama": "Mahallenin kalbi. Kurunca bir karakter seç: Çarşı, Bahçeli ya da Zanaat; etki alanındaki binalara uygulanır.",
+  "sebep.meydanCakisiyor": "Başka bir Meydan'ın alanıyla çakışıyor. Meydanlar birbirinden uzak olmalı.",
+  "sebep.bahceli": "Bahçeli Meydan'ın alanına üretim binası konamaz.",
+  "meydan.secilmedi": "Karakter seçilmedi",
+  "meydan.sec": "Mahalle karakterini seç (ilk seçim bedava)",
+  "meydan.degistir": "Karakteri değiştir ({para} para)",
+  "meydan.kapsanan": "Alanındaki bina",
+  "meydan.mahalle": "Mahalle",
+  "meydan.carsi.ad": "Çarşı",
+  "meydan.carsi.etki": "Evlerin vergisi +%15, kalabalık: evlere −2 mutluluk.",
+  "meydan.bahceli.ad": "Bahçeli",
+  "meydan.bahceli.etki": "Evlerde ağaç/çiçek tavanı +4; alana üretim binası konamaz.",
+  "meydan.zanaat.ad": "Zanaat",
+  "meydan.zanaat.etki": "Üretim binaları +%15, tezgâh gürültüsü: evlere −3 mutluluk.",
+  "meydan.secildi": "🏘️ Mahalle karakteri: {ad}",
+  "meydan.paraYok": "Karakteri değiştirmek için para yetmiyor.",
+  "meydan.uretimVar": "Alanda üretim binası varken mahalle Bahçeli olamaz.",
+  "meydan.olmaz": "Bu karakter seçilemez."
 }
