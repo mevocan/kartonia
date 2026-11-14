@@ -1,8 +1,8 @@
 /*
- * Kartonia arayüzü — tasarım sistemi (Minimal Cozy).
+ * Kartonia arayüzü — tasarım sistemi. Taban bileşenler aşağıda; görünümü dosyanın sonundaki
+ * "Resimli kitap katmanı" belirler (eski kağıt / gazete hissi, pastel, el yazısı) ve buradaki token'ları ezer.
  * Renkler, köşeler, gölgeler, yazı tipleri ve animasyon süreleri burada token olarak tanımlıdır;
  * bileşenler yalnızca token kullanır. Yükleme ekranının stili index.html içindedir (JS'ten önce görünür).
- * Eğik kağıt, bant ve raptiye kullanılmaz: paneller düz, yumuşak köşeli ve hafif saydamdır.
  */
 
 :root {

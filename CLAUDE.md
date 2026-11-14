@@ -8,11 +8,13 @@ Bilgisayar tarayıcısında oynanan, 3D, kağıttan maket görünümlü bir kasa
 
 ## His
 
-- Ekranın tamamı arazi: masa, kenar ya da boşluk görünmez. Arazi kağıt maket dokusunda (katlanmış kağıt tepeler, kağıt ağaçlar).
-- Binalar düz renkli kağıttan katlanmış gibi: düz gölgelendirme (flat shading), hafif kağıt dokusu, koyu ince kenar çizgileri, yumuşak gölgeler, sıcak ışık.
-- Ağaçlar karton ayak üstünde duran kesik kağıt siluetler.
-- Bina konunca kağıt maket gibi parça parça katlanarak kurulur (aşağıya bak).
-- Renkler pastel ve sıcak. Palet tek dosyada: `src/render/palette.ts`.
+**Resimli kitap / çizgi film** (varsayılan tarz, `src/render/tarz.ts`): referans, mürekkep hatlı ve soluk pastel renkli çizgi roman kasaba çizimleri.
+- Ekranın tamamı arazi: masa, kenar ya da boşluk görünmez. Ufukta açık mavi gök (sis rengi).
+- Toon gölgeleme (3 keskin ton, `toonGradyan`), güçlü güneş ve zayıf ortam ışığı; kağıt dokusu yok.
+- Binalar, ağaçlar ve çiçekler kalın koyu mürekkep dış hatlıdır (ters kabuk, `hatMalzemesi`; ağaçlarınki rüzgârla sallanır, `agacHatMalzemesi`).
+- Yüzeyler elle çizilmiş gibi: duvarlarda yatay tahta çizgileri, çatılarda kiremit sıraları ve şaşırtmalı çentikler. Gölgelendiricide dünya koordinatından çizilir (`paper.ts` `CIZIM_*`), model dosyalarına dokunmaz; cam ve düz yüzeyler çizgisiz, uzakta solar.
+- Renkler soluk pastel (binalarda doygunluk ×0.92). Palet tek dosyada: `src/render/palette.ts`; çizgi film için arazi, gök ve su renkleri orada ayrıca ayarlanır.
+- Eski **kağıt maket** tarzı (kağıt dokusu, katlanma animasyonu, ince kenarlar) hâlâ kodda: adres çubuğunda `?tarz=kagit` (seçim `localStorage` `kagit-kasaba-tarz`; `?tarz=cizgi` geri döner).
 
 ## Arazi
 
@@ -40,7 +42,7 @@ Binaların altında daire/kaide yoktur; bina araziye gömülerek oturur.
 
 ## Kurulma animasyonu
 
-Bina kağıt maket gibi kurulur: önce düz bir kağıt açınım (taban izi) yere serilir, duvarlar sırayla alt kenarlarından menteşe gibi kalkar, çatı yarıları katlanarak kapanır, en son küçük detaylar (pencere, baca, tente) yerine oturur. Yol kağıt şerit gibi baştan sona açılarak serilir. Yıkımda tersi.
+Çizgi filmde bina yerden ezik çıkar, hafifçe uzayıp yerine oturur (`fold.ts` `createPop`, katlanmayla aynı `FoldRun` sözleşmesi: kurma, yıkma, seviye değişimi aynı yoldan oynar). Saat Kulesi'nin inşaat aşamaları parça parça katlanmaya devam eder. Kağıt maket tarzında bina katlanarak kurulur: önce düz bir kağıt açınım (taban izi) yere serilir, duvarlar sırayla alt kenarlarından menteşe gibi kalkar, çatı yarıları katlanarak kapanır, en son küçük detaylar yerine oturur. Yol baştan sona açılarak serilir. Yıkımda tersi.
 
 ## Zaman
 
@@ -75,7 +77,7 @@ Para (başlangıç 150), Nüfus, Mutluluk (0–100, nüfusa göre ağırlıklı 
 - **Kasaba uyarıları** (`logic/pins.ts` `townAlerts`): borç, küçülmek üzere evler (tıklayınca sıradaki eve gider), işçi eksikliği. Uyarı yoksa görünmez.
 - Hedef kartının ve sol alttaki "Kasabanın yolu" kartının açık/kapalı tercihi `localStorage` `kagit-kasaba-panel` (`{hedef, yol}`).
 
-**Tam ekran pencereler** aynı tasarım dilindedir: giriş ekranında sade yazı logosu (Fredoka, harfler sırayla yükselir; "ia" toprak renginde), karar kartlarında simge kutusu ve yeşil artı / kırmızı eksi blokları (kartlar sırayla belirir), tüccar panelinde mal satırları ("Sat 5 · +10", "Al 5 · −30"), kalış çipi ve kota çubuğu, oyun sonunda kutucuklu özet. Öğretici sağ altta, ilerleme noktalarla gösterilir.
+**Tam ekran pencereler** aynı tasarım dilindedir: giriş ekranında kesilmiş kağıt harfli logo (harfler sırayla yükselir; "ia" kiremit renginde kağıtta), karar kartlarında simge kutusu ve yeşil artı / kırmızı eksi blokları (kartlar sırayla belirir, hafif eğik), tüccar panelinde mal satırları ("Sat 5 · +10", "Al 5 · −30"), kalış çipi ve kota çubuğu, oyun sonunda kutucuklu özet. Öğretici sağ altta, ilerleme noktalarla gösterilir.
 
 **Bildirimler** (`ui/toast.ts`): üst ortada, en fazla üç; kötü haber 4,8 sn, diğerleri 3,2 sn kalır; aynı metin art arda gelmez.
 
@@ -145,7 +147,7 @@ Tanımlar `src/data/buildings.ts` içindedir; denge değerleri orada ayarlanır.
 ## Teknik mimari
 
 - **Araçlar:** Vite + TypeScript (strict) + Three.js + Vitest. Başka bağımlılık yok. UI framework yok.
-- **Arayüz tasarım sistemi** (`src/ui/stil.css`, `main.ts` içe aktarır): "Minimal Cozy". Renk, köşe, gölge, yazı tipi ve animasyon süreleri `:root` token'larıdır; bileşenler yalnızca token kullanır. Paneller düz, yumuşak köşeli (14–20 px), hafif saydam ve bulanık arka planlı (`.kagit` sınıfı); eğik kağıt, bant, raptiye yok. Yazı tipleri Google Fonts'tan: Nunito (metin), Fredoka (başlık ve sayılar); yüklenemezse sistem fontu. Palet: kağıt #F5EBD3, kum #D6B987, çayır #78966B, toprak #C97858, arduvaz #536F80, metin #514A3F. Arayüz hareketleri 150–260 ms (etkileşim), tam ekran girişleri `--sure-giris` (400 ms); opaklık + hafif kayma; zıplama yok; renk ve süreler token'dır; `prefers-reduced-motion` desteklenir. `index.html` yalnızca JS'ten önce görünen yükleme ekranının stilini taşır.
+- **Arayüz tasarım sistemi** (`src/ui/stil.css`, `main.ts` içe aktarır): **resimli kitap / eski kağıt**. Renk, köşe, gölge, yazı tipi ve animasyon süreleri `:root` token'larıdır; bileşenler yalnızca token kullanır. Dosyanın sonundaki "Resimli kitap katmanı" görünümü belirler: paneller (`.kagit`) krem kağıt, düzensiz köşeli (`--el-kose`) koyu mürekkep kenarlı, sert ofset gölgeli; cam / bulanıklık yok. Gazete hissi: kartlar hafif eğik, hedef kartında ve tüccar panelinde bant, bilgi panelinde raptiye; giriş logosu kesilmiş kağıt harfler. Yazı tipi Google Fonts'tan Patrick Hand (Türkçe harfler dahil); yüklenemezse Segoe Print / Comic Sans. Pastel palet: kağıt #F4E6C8, hardal #E9B949, kiremit #E08A6D, çayır #8CBF72, arduvaz #6F93AD, mürekkep #3F302A. Arayüz hareketleri 150–260 ms (etkileşim), tam ekran girişleri `--sure-giris` (400 ms); opaklık + hafif kayma; zıplama yok; `prefers-reduced-motion` desteklenir. `index.html` yalnızca JS'ten önce görünen yükleme ekranının stilini taşır.
 - **Mantık** `src/logic/`: saf TypeScript. Three.js, DOM, `window` yok. Bütün kurallar burada ve birim testli. Durum düz veridir, fonksiyonlar durumu yerinde değiştirir.
 - **Çizim** `src/render/`: Three.js. Bütün modeller kodla üretilir; görsel varlık dosyası yok (kağıt dokusu canvas ile üretilir). Mantığa yalnızca `types.ts` ve `data/` üzerinden bağlıdır. Dışarıya `src/render/api.ts` içindeki `GameRenderer` arayüzünü verir.
 - **Arayüz** `src/ui/` + `src/oyun.ts` (`src/main.ts` yalnızca dili yükleyip oyunu açar): HUD, bina menüsü, bilgi paneli, hedefler, hız düğmeleri düz HTML/CSS. Sol tık ve klavye girişi, oyun döngüsü (`requestAnimationFrame`), kayıt (`localStorage`, her gün sonu otomatik).
