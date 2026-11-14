@@ -34,7 +34,7 @@
   "giris.is.yikim": "Demolish tool",
   "giris.is.birak": "Cancel selection",
   "giris.is.hiz": "Pause, speed",
-  "giris.dokunmatik": "🖱️ Kartonia is designed for mouse and keyboard. Play on a computer for the best experience.",
+  "giris.dokunmatik": "📱 Drag with one finger to move, pinch and twist with two fingers to zoom and rotate. Tap to place or select a building.",
   "giris.kayitNotu": "Your town is saved automatically in this browser.",
 
   "genel.menu": "☰ Menu",
@@ -626,5 +626,12 @@
   "meydan.secildi": "🏘️ Neighbourhood character: {ad}",
   "meydan.paraYok": "Not enough coins to change the character.",
   "meydan.uretimVar": "A neighbourhood with production buildings can't become a Garden.",
-  "meydan.olmaz": "This character can't be chosen."
+  "meydan.olmaz": "This character can't be chosen.",
+
+  "hud.tamEkran": "Full screen",
+  "hud.tamEkranCik": "Exit full screen",
+  "mobil.cevir": "Turn your phone sideways",
+  "mobil.cevirAlt": "Kartonia is played in landscape. The game is paused until you turn your phone.",
+  "mobil.tamEkran": "Play full screen",
+  "mobil.iosIpucu": "For full screen: Share → Add to Home Screen, then open the game from your home screen."
 }

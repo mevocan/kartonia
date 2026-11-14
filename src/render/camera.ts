@@ -3,6 +3,7 @@ import * as THREE from 'three';
 // Elle yazılmış yörünge kamerası.
 // Sol sürükle (5 px eşikten sonra): kaydır. Sağ sürükle: döndür. Orta / Shift+sağ: kaydır.
 // WASD / ok tuşları: kaydır. Tekerlek: yakınlaş. Hedef oynanabilir alanda kalır.
+// Dokunmatik: tek parmak kaydırır; iki parmak sıkıştırınca yakınlaşır, çevirince döner, birlikte kayınca kaydırır.
 // Açı ve mesafe sınırları ufkun hiç görünmemesini sağlar (üst ışın her zaman yere bakar);
 // uzak kenarı renderer'daki dinamik sis örter.
 
@@ -31,7 +32,10 @@ export class OrbitCamera {
   private tEl = this.el;
   private tDist = this.dist;
 
-  private drag: 'rotate' | 'pan' | 'left' | null = null;
+  private drag: 'rotate' | 'pan' | 'left' | 'pinch' | null = null;
+  /** Ekrandaki dokunuşlar (pointerType touch). */
+  private touches = new Map<number, { x: number; y: number }>();
+  private pinch: { d: number; a: number; cx: number; cy: number } | null = null;
   private pointerId = -1;
   private startX = 0;
   private startY = 0;
@@ -124,6 +128,19 @@ export class OrbitCamera {
   private onBlur = () => this.keys.clear();
 
   private onDown = (e: PointerEvent) => {
+    if (e.pointerType === 'touch') {
+      this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (this.touches.size === 2) {
+        // İkinci parmak: tek parmak kaydırması bırakılır, iki parmak hareketi başlar (yol fırçasında da).
+        this.drag = 'pinch';
+        this.pointerId = -1;
+        this.leftPanning = true;
+        for (const id of this.touches.keys()) this.capture(id);
+        this.pinch = this.pinchOlc();
+        return;
+      }
+      if (this.touches.size > 2) return;
+    }
     if (this.drag) return;
     if (e.button === 2) this.drag = e.shiftKey ? 'pan' : 'rotate';
     else if (e.button === 1) this.drag = 'pan';
@@ -145,7 +162,38 @@ export class OrbitCamera {
     }
   }
 
+  private pinchOlc(): { d: number; a: number; cx: number; cy: number } {
+    const [p, q] = [...this.touches.values()];
+    return { d: Math.max(1, Math.hypot(q.x - p.x, q.y - p.y)), a: Math.atan2(q.y - p.y, q.x - p.x), cx: (p.x + q.x) / 2, cy: (p.y + q.y) / 2 };
+  }
+
+  private panPiksel(dx: number, dy: number): void {
+    const h = this.el_.clientHeight || 1;
+    const k = (2 * this.tDist * Math.tan((this.camera.fov * DEG) / 2)) / h;
+    const fy = k / Math.max(0.35, Math.sin(this.tEl));
+    this.panBy(-dx * k, dy * fy);
+  }
+
   private onMove = (e: PointerEvent) => {
+    const tp = this.touches.get(e.pointerId);
+    if (tp) {
+      tp.x = e.clientX;
+      tp.y = e.clientY;
+    }
+    if (this.drag === 'pinch') {
+      if (!tp || !this.pinch || this.touches.size < 2) return;
+      const n = this.pinchOlc();
+      let da = n.a - this.pinch.a;
+      if (da > Math.PI) da -= 2 * Math.PI;
+      if (da < -Math.PI) da += 2 * Math.PI;
+      this.tDist = THREE.MathUtils.clamp((this.tDist * this.pinch.d) / n.d, MIN_DIST, MAX_DIST);
+      this.tEl = Math.max(this.tEl, this.minEl(this.tDist));
+      this.tAz += da;
+      this.panPiksel(n.cx - this.pinch.cx, n.cy - this.pinch.cy);
+      this.pinch = n;
+      this.moving = true;
+      return;
+    }
     if (!this.drag || e.pointerId !== this.pointerId) return;
     if (this.drag === 'left' && !this.leftPanning) {
       if (Math.hypot(e.clientX - this.startX, e.clientY - this.startY) < DRAG_ESIK) return;
@@ -160,15 +208,26 @@ export class OrbitCamera {
       this.tAz -= dx * 0.006;
       this.tEl = THREE.MathUtils.clamp(this.tEl + dy * 0.005, this.minEl(this.tDist), MAX_EL);
     } else {
-      const h = this.el_.clientHeight || 1;
-      const k = (2 * this.tDist * Math.tan((this.camera.fov * DEG) / 2)) / h;
-      const fy = k / Math.max(0.35, Math.sin(this.tEl));
-      this.panBy(-dx * k, dy * fy);
+      this.panPiksel(dx, dy);
     }
     this.moving = true;
   };
 
   private onUp = (e: PointerEvent) => {
+    if (this.touches.delete(e.pointerId) && this.drag === 'pinch') {
+      if (this.touches.size < 2) {
+        // Parmaklar kalkana dek tıklama sayılmaz; kalan parmak yeni bir kaydırma başlatmaz.
+        this.drag = null;
+        this.pinch = null;
+      }
+      if (this.touches.size === 0) setTimeout(() => (this.leftPanning = false), 0);
+      try {
+        this.el_.releasePointerCapture(e.pointerId);
+      } catch {
+        /* yok say */
+      }
+      return;
+    }
     if (e.pointerId !== this.pointerId) return;
     this.drag = null;
     this.pointerId = -1;

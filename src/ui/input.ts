@@ -47,6 +47,14 @@ export function createInput(deps: InputDeps): Input {
   const etiket = el('div', 'kagit');
   etiket.id = 'fircaEtiket';
   deps.ui.appendChild(etiket);
+  /** Etiketi ekran noktasına koyar; küçük ekranda #arayuz CSS zoom ile ölçeklidir (ui/mobil.ts), konum ona bölünür. */
+  function etiketKonum(x: number, y: number): void {
+    const k = Number(deps.ui.style.getPropertyValue('zoom')) || 1;
+    etiket.style.left = `${x / k}px`;
+    etiket.style.top = `${y / k}px`;
+  }
+  /** Ekrandaki dokunuşlar: ikinci parmak (iki parmakla yakınlaştırma/döndürme) tıklamayı ve yol çizimini iptal eder. */
+  const dokunuslar = new Set<number>();
 
   let fare: { x: number; y: number } | null = null;
   let basma: { x: number; y: number; id: number; kaydirdi: boolean } | null = null;
@@ -79,8 +87,7 @@ export function createInput(deps: InputDeps): Input {
     etiket.classList.toggle('kotu', !plan.ok);
     etiket.classList.remove('soluk', 'iyi');
     if (fare) {
-      etiket.style.left = `${fare.x + 16}px`;
-      etiket.style.top = `${fare.y + 16}px`;
+      etiketKonum(fare.x + 16, fare.y + 16);
     }
     etiket.style.display = 'block';
   }
@@ -100,8 +107,7 @@ export function createInput(deps: InputDeps): Input {
     etiket.classList.remove('kotu');
     etiket.classList.toggle('soluk', aktif.length === 0);
     etiket.classList.toggle('iyi', aktif.length > 0);
-    etiket.style.left = `${fare.x + 16}px`;
-    etiket.style.top = `${fare.y - 40}px`;
+    etiketKonum(fare.x + 16, fare.y - 40);
     etiket.style.display = 'block';
   }
 
@@ -111,8 +117,7 @@ export function createInput(deps: InputDeps): Input {
     etiket.textContent = sebep;
     etiket.classList.add('kotu');
     etiket.classList.remove('soluk', 'iyi');
-    etiket.style.left = `${fare.x + 16}px`;
-    etiket.style.top = `${fare.y - 40}px`;
+    etiketKonum(fare.x + 16, fare.y - 40);
     etiket.style.display = 'block';
   }
 
@@ -236,6 +241,14 @@ export function createInput(deps: InputDeps): Input {
   }
 
   const onDown = (e: PointerEvent): void => {
+    if (e.pointerType === 'touch') {
+      dokunuslar.add(e.pointerId);
+      if (dokunuslar.size > 1) {
+        if (firca) fircaIptal();
+        basma = null;
+        return;
+      }
+    }
     if (e.button === 2) {
       sagBasma = { x: e.clientX, y: e.clientY, id: e.pointerId };
       return;
@@ -259,6 +272,7 @@ export function createInput(deps: InputDeps): Input {
   };
 
   const onUp = (e: PointerEvent): void => {
+    dokunuslar.delete(e.pointerId);
     if (e.button === 2) {
       const sb = sagBasma;
       sagBasma = null;
@@ -291,8 +305,7 @@ export function createInput(deps: InputDeps): Input {
         firca.noktalar.push(p);
         fircaGuncelle();
       } else {
-        etiket.style.left = `${e.clientX + 16}px`;
-        etiket.style.top = `${e.clientY + 16}px`;
+        etiketKonum(e.clientX + 16, e.clientY + 16);
       }
       return;
     }
@@ -313,6 +326,7 @@ export function createInput(deps: InputDeps): Input {
   };
 
   const onCancel = (e: PointerEvent): void => {
+    dokunuslar.delete(e.pointerId);
     if (firca && firca.id === e.pointerId) fircaIptal();
     basma = null;
   };

@@ -2,7 +2,12 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <!-- Telefonda ana ekrana eklenince tam ekran ve yatay açılır (ui/mobil.ts tarayıcıda da tam ekran + yatay kilit dener). -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Kartonia — kağıttan kasaba kurma oyunu</title>
   <meta name="description" content="Kartonia: tarayıcıda oynanan, kağıttan maket görünümlü, sakin bir 3D kasaba kurma oyunu. Yol çiz, evler kur, sakinlerini mutlu et. Ücretsiz, kurulum yok." />
   <meta name="theme-color" content="#e9dcc3" />
