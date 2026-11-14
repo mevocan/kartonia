@@ -9,6 +9,8 @@ export interface KayitOzeti {
   nufus: number;
   mevsim: string;
   bitti: boolean;
+  /** Kasaba unvanı (Mezra … Efsane kasaba). */
+  unvan?: string;
 }
 
 export interface TitleScreen {
@@ -159,7 +161,7 @@ export function createTitleScreen(ui: HTMLElement, deps: TitleDeps): TitleScreen
         devamUst.textContent = t(ozet.bitti ? 'giris.kasabayaBak' : 'giris.devam');
         devamAlt.textContent = ozet.bitti
           ? t('giris.iflasOzet', { gun: ozet.gun })
-          : t('giris.ozet', { gun: ozet.gun, mevsim: ozet.mevsim, nufus: ozet.nufus });
+          : `${ozet.unvan ? `${ozet.unvan} · ` : ''}${t('giris.ozet', { gun: ozet.gun, mevsim: ozet.mevsim, nufus: ozet.nufus })}`;
         devamDugme.style.display = '';
         yeniDugme.classList.remove('birincil');
       } else {

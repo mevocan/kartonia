@@ -26,7 +26,9 @@ export function yilSonuMu(gun: number): boolean {
 }
 
 /** Bir kez yazılan türler: silinmez, tekrar yazılmaz (nüfus ve ev seviyesi veriyle birlikte tekildir). */
-const TEKIL: GunlukTur[] = ['ilkEv', 'ilkYemek', 'ilkTuccar', 'ilkKis', 'kuleTamam', 'nufus', 'evSeviye', 'gunlukBasladi'];
+const TEKIL: GunlukTur[] = [
+  'ilkEv', 'ilkYemek', 'ilkTuccar', 'ilkKis', 'kuleTamam', 'nufus', 'evSeviye', 'gunlukBasladi', 'projeTamam', 'unvan',
+];
 
 function varMi(s: GameState, tur: GunlukTur, veri?: number | string): boolean {
   return (s.gunluk ?? []).some((k) => k.tur === tur && (veri === undefined || k.veri === veri));
@@ -65,6 +67,8 @@ function oncelik(k: GunlukKaydi): number {
     case 'kart': return 20;
     case 'senlik': return 15;
     case 'festival': return 45;
+    case 'projeTamam': return 95;
+    case 'unvan': return 70 + Number(k.veri);
     case 'hedef': return 10;
     default: return 0;
   }
@@ -89,6 +93,10 @@ export function gunlukGunSonu(s: GameState, rapor: DayReport, mutluluklar: Map<n
     if (c.yeni > c.eski && c.yeni >= 3 && !varMi(s, 'evSeviye', c.yeni)) gunlukYaz(s, 'evSeviye', c.yeni);
   }
   for (const i of rapor.yeniHedefler) gunlukYaz(s, 'hedef', i);
+  // Unvan yükseldiyse (daha önce yazılmış en yüksek unvanın üstüne çıktıysa) günlüğe yazılır.
+  const unvan = kasabaUnvani(s);
+  const enYuksek = (s.gunluk ?? []).reduce((m, k) => (k.tur === 'unvan' ? Math.max(m, Number(k.veri)) : m), 0);
+  if (unvan > enYuksek) gunlukYaz(s, 'unvan', unvan);
 
   if (!yilSonuMu(s.gun)) return;
   // Yıl sonu: gazete. Manşet bu yılın en önemli kaydı.
@@ -108,12 +116,28 @@ export function gunlukGunSonu(s: GameState, rapor: DayReport, mutluluklar: Map<n
   }
   const gazete: Gazete = {
     yil: y.yil, gun: s.gun, nufusBasi: y.nufusBasi, nufusSon: s.nufus, kurulanBina: y.kurulanBina,
-    vergi: y.vergi, yemek: Math.round(y.yemek), manset, enMutluEv: enMutlu, hedef: s.hedef,
+    vergi: y.vergi, yemek: Math.round(y.yemek), manset, enMutluEv: enMutlu, hedef: s.hedef, unvan: kasabaUnvani(s),
   };
   (s.gazeteler ??= []).push(gazete);
   gunlukYaz(s, 'gazete', y.yil);
   rapor.gazete = gazete;
   delete s.yil; // yeni yıl ilk kullanımda başlar (nüfus başı o günün nüfusu)
+}
+
+/** Unvan sayısı (0 Mezra … 4 Efsane kasaba). */
+export const UNVAN_SAYISI = 5;
+
+/**
+ * Kasaba unvanı (durumda saklanmaz, türetilir): 0 Mezra, 1 Köy (30 nüfus), 2 Kasaba (100), 3 Şirin kasaba
+ * (Saat Kulesi tamam, 250 nüfus, mutluluk ≥ 70), 4 Efsane kasaba (Kervansaray ve Botanik Bahçesi tamam, 400 nüfus).
+ */
+export function kasabaUnvani(s: GameState): number {
+  const tamam = (t: string): boolean => s.binalar.some((b) => b.type === t && !b.insaat);
+  if (s.nufus >= 400 && tamam('kervansaray') && tamam('botanik')) return 4;
+  if (s.nufus >= 250 && s.mutluluk >= 70 && tamam('saatKulesi')) return 3;
+  if (s.nufus >= 100) return 2;
+  if (s.nufus >= 30) return 1;
+  return 0;
 }
 
 /** Yerleştirilen bina yılın sayacına eklenir (ağaç ve çiçek hariç). */
@@ -139,6 +163,7 @@ export function gunlukGocu(s: GameState): void {
   const enUst = s.binalar.reduce((m, b) => (b.type === 'ev' ? Math.max(m, b.seviye) : m), 0);
   for (let sev = 3; sev <= enUst; sev++) gizli('evSeviye', sev);
   if (s.binalar.some((b) => b.type === 'saatKulesi' && !b.insaat)) gizli('kuleTamam');
+  for (let u = 1; u <= kasabaUnvani(s); u++) gizli('unvan', u);
   g.push({ gun: s.gun, tur: 'gunlukBasladi' });
   s.gunluk = g;
 }

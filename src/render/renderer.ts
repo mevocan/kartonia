@@ -285,7 +285,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
     const levels = t === 'ev' ? HOUSE_LEVELS.length : BUILDINGS[t].yukseltilebilir ? 3 : 1;
     for (let l = 1; l <= levels; l++) for (let v = 0; v < vars; v++) getTemplate(t, l, v);
   }
-  for (let a = 0; a < ANIT_ASAMA; a++) getTemplate('saatKulesi', 1, 0, a);
+  for (const t of BUILDING_ORDER) if (BUILDINGS[t].anit) for (let a = 0; a < ANIT_ASAMA; a++) getTemplate(t, 1, 0, a);
 
   // ---------- Doğa havuzları (ağaç ve çiçek; tür + çeşit başına tek InstancedMesh) ----------
   /** Havuz anahtarı: ağaç çeşitleri 0.., çiçek çeşitleri CICEK_HAVUZ + çeşit. */
@@ -940,7 +940,7 @@ export function createRenderer(container: HTMLElement): GameRenderer {
 
     setMonumentStage(id, asama, anim = true) {
       const e = entries.get(id);
-      if (!e || e.type !== 'saatKulesi') return;
+      if (!e || !BUILDINGS[e.type].anit) return;
       const yeni = Math.max(0, Math.min(ANIT_ASAMA, Math.round(asama)));
       if (yeni === e.asama) return;
       const eski = e.asama;

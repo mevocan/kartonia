@@ -1,7 +1,7 @@
 // Sol tık, yol fırçası ve klavye girişi. Sağ/orta tuş ve tekerlek renderer'ın kamerasına aittir.
 import type { BuildingType, GameState, RoadType, Vec2 } from '../logic/types';
 import type { GameRenderer } from '../render/api';
-import { BUILDINGS, dogaTuru } from '../data/buildings';
+import { BUILDINGS, yolsuz } from '../data/buildings';
 import { adjacencyBonus, adjacencySources, canPlace, effectRadius, nearestRoad, planRoad } from '../logic/game';
 import { isBuildingTool, isRoadTool, type Tool } from './buildMenu';
 import { yerlestirmeSebebi } from './toast';
@@ -56,7 +56,7 @@ export function createInput(deps: InputDeps): Input {
 
   /** Bina yol kenarındaysa önü (+z) en yakın yola bakar; üstüne kullanıcı ofseti eklenir. */
   function donus(t: BuildingType, x: number, z: number): number {
-    if (dogaTuru(t)) return ofset;
+    if (yolsuz(t)) return ofset;
     const yol = nearestRoad(deps.getState(), x, z);
     if (!yol) return ofset;
     return Math.atan2(yol.x - x, yol.z - z) + ofset;

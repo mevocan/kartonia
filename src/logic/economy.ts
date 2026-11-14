@@ -3,7 +3,7 @@ import type {
   Building, BuildingType, DayReport, GameState, Good, HouseLevelDef, Need, NeedStatus, UretimSorunu,
 } from './types';
 import { dist } from './geometry';
-import { buildingUpkeep, effectRadius, isUnlockedAt, stockLimit } from './placement';
+import { buildingUpkeep, effectRadius, isUnlocked, isUnlockedAt, stockLimit } from './placement';
 import { checkGoals } from './goals';
 import { bestRoadNear, roadUpkeep } from './roads';
 import { adjacencyBonus } from './adjacency';
@@ -168,13 +168,16 @@ function currentNeedsMet(h: Building, st: NeedStatus[]): number {
 export function houseHappiness(s: GameState, h: Building, st: NeedStatus[]): number {
   let toplam: number = BALANCE.mutlulukTaban;
   let agac = 0;
+  let sus = 0;
   for (const b of s.binalar) {
     if (b.type === 'ev' || !inRange(b, h)) continue;
     const m = ayar(s, `mutluluk.${b.type}`);
     if (dogaTuru(b.type)) agac += m; // ağaç ve çiçek ortak sınırı paylaşır
+    else if (BUILDINGS[b.type].sus) sus += m; // süsler ayrı sınır
     else toplam += m;
   }
   toplam += Math.min(agac, ayar(s, 'agacMutlulukSinir'));
+  toplam += Math.min(sus, BALANCE.susMutlulukSinir);
   const yol = bestRoadNear(s, h); // yakın yollardan yalnızca en iyisi sayılır
   if (yol) toplam += ROADS[yol.tur].mutluluk;
   toplam += currentNeedsMet(h, st) * BALANCE.ihtiyacMutluluk;
@@ -348,7 +351,7 @@ export function endDay(s: GameState): DayReport {
   rapor.yeniHedefler = checkGoals(s);
   rapor.hedefOdulu = s.para - kasaOnce;
   gunlukGunSonu(s, rapor, mutluluklar); // günlük, yılın sayaçları, yıl sonuysa gazete
-  rapor.yeniAcilanlar = BUILDING_ORDER.filter((t) => !isUnlockedAt(oncekiNufus, t) && isUnlockedAt(s.nufus, t));
+  rapor.yeniAcilanlar = BUILDING_ORDER.filter((t) => !isUnlockedAt(oncekiNufus, t) && isUnlocked(s, t));
 
   // 8. Sakin istekleri ve gezgin tüccar (tüccar bir gün kalır).
   const ist = istekGunSonu(s);
