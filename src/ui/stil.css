@@ -667,6 +667,173 @@ kbd {
   .kapak-baslik { font-size: 48px; }
 }
 
+/* ==========================================================================
+ * Resimli kitap katmanı: eski kağıt / gazete hissi, pastel tonlar, elle çizilmiş kenarlar.
+ * Yukarıdaki bileşenlerin yapısı aynı; burada yalnızca görünüm değişir. Dünya (render/tarz.ts, çizgi film)
+ * ile aynı dil: koyu mürekkep hat, sert ofset gölge, krem kağıt.
+ * ========================================================================== */
+
+:root {
+  /* Pastel palet */
+  --kagit-zemin: #f4e6c8;
+  --kum: #e3c690;
+  --cayir: #8cbf72;
+  --toprak: #e08a6d;
+  --arduvaz: #6f93ad;
+  --metin: #3f302a;
+  --metin-soluk: #8a7866;
+  --altin: #e9b949;
+  --altin-koyu: #b8862a;
+  --altin-acik: #f1c968;
+  --altin-metin: #8a5f12;
+  --arti: #5f9a5a;
+  --eksi: #c9544a;
+  --eksi-koyu: #8e2f28;
+  --logo-vurgu: #e08a6d;
+
+  /* Kağıt yüzeyler (opak; cam/bulanıklık yok) */
+  --yuzey: #fbf3e2;
+  --yuzey-dolu: #fffaf0;
+  --yuzey-ic: #f1e4c8;
+  --cizgi: rgba(63, 48, 42, 0.16);
+  --cizgi-guclu: rgba(63, 48, 42, 0.3);
+  --hat: #3f302a;
+
+  /* Elle çizilmiş biçim: düzensiz köşeler, sert ofset gölge */
+  --r-kucuk: 6px;
+  --r: 10px;
+  --r-buyuk: 14px;
+  --el-kose: 14px 6px 12px 5px / 5px 12px 6px 14px;
+  --el-kose-kucuk: 8px 4px 7px 3px / 3px 7px 4px 8px;
+  --golge: 2px 3px 0 rgba(63, 48, 42, 0.22);
+  --golge-buyuk: 4px 6px 0 rgba(63, 48, 42, 0.24);
+
+  --font: "Patrick Hand", "Segoe Print", "Comic Sans MS", system-ui, sans-serif;
+  --font-baslik: "Patrick Hand", "Segoe Print", "Comic Sans MS", system-ui, sans-serif;
+}
+
+html, body { font-size: 15px; }
+h1, h2, h3, h4 { font-weight: 400; letter-spacing: 0.01em; }
+
+/* Kağıt panel: krem zemin + çok hafif kağıt lifi, mürekkep kenar, sert gölge */
+.kagit {
+  background-color: var(--yuzey);
+  background-image:
+    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.55) 0, transparent 55%),
+    repeating-linear-gradient(0deg, rgba(120, 90, 50, 0.028) 0 2px, transparent 2px 5px);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border: 2px solid var(--hat);
+  outline: none;
+  border-radius: var(--el-kose);
+  box-shadow: var(--golge);
+}
+
+/* Etiket yazıları: büyük harf yerine el yazısında küçük kapitaller okunmaz; düz ve biraz büyük */
+.hud-oge .etiket, #hedef .etiket, #istek .etiket, #ogretici .etiket, #binaKarti h4, #bilgi h4, #tuccar th {
+  text-transform: none; letter-spacing: 0; font-size: 12.5px; font-weight: 400;
+}
+.hud-oge .deger, .hud-zaman .gun, #bilgi .kutucuk .deger, #sonEkran .kutu .deger { font-weight: 400; font-size: 19px; }
+
+/* Düğmeler: kağıt + mürekkep kenar, basınca oturur */
+.dugme {
+  border: 2px solid var(--hat); border-radius: var(--el-kose-kucuk); font-weight: 400; font-size: 14px;
+  background: var(--yuzey-dolu); box-shadow: 0 2px 0 rgba(63, 48, 42, 0.35);
+}
+.dugme:hover { transform: rotate(-1deg) translateY(-1px); background: #fff; box-shadow: 0 3px 0 rgba(63, 48, 42, 0.35); }
+.dugme:active { transform: translateY(2px); box-shadow: none; }
+.dugme.tehlike { border-color: var(--eksi); }
+.dugme.birincil { background: var(--altin); border-color: var(--hat); color: var(--metin); }
+.dugme.birincil:hover { background: var(--altin-acik); }
+
+/* Gazete hissi: kartlar hafif eğik; hedefte bant, bilgi panelinde raptiye */
+#hedef { transform: rotate(-1.2deg); }
+#istek { transform: rotate(0.8deg); box-shadow: var(--golge); border-left-width: 6px; border-left-color: var(--toprak); }
+#kasabaYolu { transform: rotate(-0.8deg); }
+#bilgi, #binaKarti { transform: rotate(0.6deg); }
+#ogretici { transform: rotate(1deg); box-shadow: var(--golge-buyuk); border-left-width: 6px; border-left-color: var(--altin); }
+#hedef::before, #tuccar::before, #kartSecim .baslik::before, #sonEkran .kagit::before {
+  display: block; content: ""; position: absolute; top: -10px; left: 50%;
+  width: 66px; height: 19px; margin-left: -33px;
+  background: rgba(236, 214, 150, 0.8); transform: rotate(-3deg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+#bilgi::after, #binaKarti::after {
+  content: ""; position: absolute; top: 7px; left: 50%;
+  width: 13px; height: 13px; margin-left: -6px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffb4a6, var(--eksi) 60%, var(--eksi-koyu));
+  box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.3);
+}
+#bilgi, #binaKarti { padding-top: 22px; }
+#hedef { padding-top: 16px; overflow: visible; } /* bant ve kutlama parıltıları kartın dışına taşabilir */
+
+/* Üst bar: adalar kağıt şeritler gibi hafif eğik */
+#hud .ada:nth-child(odd) { transform: rotate(-0.6deg); }
+#hud .ada:nth-child(even) { transform: rotate(0.5deg); }
+.hizlar { background: var(--yuzey-ic); border: 1.5px solid var(--cizgi-guclu); }
+.hizlar button.secili { background: var(--yuzey-dolu); box-shadow: 0 1px 0 var(--hat); }
+.hizlar button.durdur.secili { background: var(--altin); color: var(--metin); }
+
+/* Alt menü: kategori ve bina kartları kağıt, kartlar sırayla hafif eğik */
+.kagit.kategori { border: 2px solid var(--hat); background-color: var(--yuzey); }
+.kagit.kategori::after { left: 10px; right: 10px; bottom: 4px; height: 4px; border-radius: 2px; }
+.kategori:nth-child(odd) { transform: rotate(-1deg); }
+.kategori:nth-child(even) { transform: rotate(1deg); }
+.kategori:hover, .kategori.acik { transform: translateY(-4px) rotate(0deg); }
+.bina-kart { border: 2px solid var(--hat); border-radius: var(--el-kose-kucuk); outline: none; box-shadow: var(--golge); }
+.bina-kart:nth-child(odd) { transform: rotate(-1.4deg); }
+.bina-kart:nth-child(even) { transform: rotate(1.1deg); }
+.bina-kart:hover { transform: translateY(-5px) rotate(0deg); }
+.bina-kart.secili { transform: translateY(-10px) rotate(-2deg); outline: 2px dashed var(--altin-koyu); outline-offset: -6px; box-shadow: var(--golge-buyuk); }
+.bina-kart::before { height: 5px; }
+
+/* Bildirimler: kağıt şerit */
+.bildirim { border: 2px solid var(--hat); border-radius: var(--el-kose-kucuk); font-weight: 400; font-size: 15px; box-shadow: var(--golge); }
+.bildirim:nth-child(odd) { transform: rotate(-0.8deg); }
+.bildirim:nth-child(even) { transform: rotate(0.8deg); }
+
+/* İç kutular ve çipler: ince mürekkep kenar */
+#bilgi .kutucuk, #sonEkran .kutu, #bilgi .akis { border: 1.5px solid var(--cizgi-guclu); border-radius: var(--el-kose-kucuk); }
+#bilgi .cip, .uyari-cip, #istek .gun-cip, #tuccar .kalis-cip { border: 1.5px solid currentColor; }
+.uyari-cip { border: 2px solid var(--hat); border-radius: var(--el-kose-kucuk); background: var(--yuzey); font-weight: 400; font-size: 14px; }
+#bilgi .durum { border: 1.5px solid currentColor; border-radius: var(--el-kose-kucuk); font-weight: 400; font-size: 14px; }
+.ilerleme-cubuk, .gun-cubuk, .mutluluk-cubuk { border: 1px solid var(--cizgi-guclu); }
+
+/* Karar kartları ve oyun sonu: eğik kağıt kartlar */
+#kartSecim .kart:nth-child(1) { transform: rotate(-2.5deg); }
+#kartSecim .kart:nth-child(3) { transform: rotate(2.5deg); }
+#kartSecim .kart:hover { transform: translateY(-8px) rotate(0deg) scale(1.03); }
+#kartSecim .baslik { transform: rotate(-1deg); }
+#sonEkran .kagit { transform: rotate(-1.5deg); }
+#tuccar { transform: rotate(-0.6deg); }
+#tuccar .ust { flex-wrap: wrap; row-gap: 4px; }
+#tuccar h3, #tuccar .kalis-cip, #istek .gun-cip { white-space: nowrap; }
+#tuccar { width: 420px; margin-left: -210px; }
+
+/* Giriş ekranı: kesilmiş kağıt harfli logo (gazete kupürü), kağıt düğmeler */
+.kapak-baslik { font-size: 60px; gap: 16px; }
+.kapak-baslik .kelime { gap: 0; }
+.kapak-baslik .harf {
+  padding: 4px 9px 2px; margin: 0 -1px; color: var(--metin); text-shadow: none;
+  background: var(--yuzey-dolu); border: 2px solid var(--hat); border-radius: var(--el-kose-kucuk);
+  box-shadow: var(--golge);
+}
+.kapak-baslik .harf.kirmizi { background: var(--toprak); color: var(--yuzey-dolu); }
+.kapak-baslik .harf:nth-child(odd) { rotate: -4deg; }
+.kapak-baslik .harf:nth-child(even) { rotate: 3deg; translate: 0 3px; }
+.kapak-baslik .harf:nth-child(3n) { rotate: 1deg; translate: 0 -2px; }
+.kapak-alt { background: rgba(236, 214, 150, 0.85); border-radius: 2px; rotate: -1deg; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); }
+.giris-kart { rotate: -0.8deg; }
+.giris-dugme {
+  font-weight: 400; font-size: 19px; border: 2px solid var(--hat); border-radius: var(--el-kose-kucuk);
+  box-shadow: 0 3px 0 rgba(63, 48, 42, 0.35);
+}
+.giris-dugme.birincil { background: var(--altin); color: var(--metin); border-color: var(--hat); font-size: 22px; }
+.giris-dugme.birincil:hover { background: var(--altin-acik); }
+.giris-dugme .alt { font-size: 13px; font-weight: 400; }
+.giris-dugme.tehlike { color: #fff; border-color: var(--hat); }
+.dil-secim button.secili { background: var(--altin); color: var(--metin); }
+
 /* ---------- Hareket azaltma ---------- */
 
 @media (prefers-reduced-motion: reduce) {

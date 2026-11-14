@@ -12,10 +12,10 @@
   <meta property="og:locale" content="tr_TR" />
   <meta name="twitter:card" content="summary" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23fbf3e2'/%3E%3Cpath d='M12 30 32 13l20 17z' fill='%23c9544a' stroke='%234a3b2e' stroke-width='2.5' stroke-linejoin='round'/%3E%3Crect x='17' y='30' width='30' height='22' fill='%23f1e4c8' stroke='%234a3b2e' stroke-width='2.5'/%3E%3Crect x='28' y='38' width='8' height='14' fill='%23d9a13b' stroke='%234a3b2e' stroke-width='2'/%3E%3C/svg%3E" />
-  <!-- Yazı tipleri: Nunito (metin) ve Fredoka (başlık, sayılar). Yüklenemezse sistem fontuna düşer. -->
+  <!-- Yazı tipi: Patrick Hand (elle yazılmış görünüm, Türkçe harfler dahil). Yüklenemezse sistem el yazısı fontuna düşer. -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" />
   <style>
     /* Yalnızca JS gelmeden görünenler. Arayüzün tasarım sistemi: src/ui/stil.css */
     :root {
@@ -27,7 +27,7 @@
     html, body {
       margin: 0; height: 100%; overflow: hidden;
       background: #e9dcc3; color: var(--metin);
-      font-family: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif; font-size: 14px;
+      font-family: "Patrick Hand", "Segoe Print", "Comic Sans MS", system-ui, sans-serif; font-size: 15px;
       user-select: none; -webkit-user-select: none;
     }
     #sahne { position: fixed; inset: 0; }
@@ -46,7 +46,7 @@
       width: 270px; padding: 28px 24px 22px; text-align: center; border-radius: 20px;
       background: var(--yuzey-dolu); box-shadow: var(--golge-buyuk);
     }
-    .yukleme-kart h1 { margin: 12px 0 4px; font-family: "Fredoka", "Nunito", sans-serif; font-weight: 600; font-size: 28px; }
+    .yukleme-kart h1 { margin: 12px 0 4px; font-family: "Patrick Hand", "Segoe Print", sans-serif; font-weight: 400; font-size: 32px; }
     .yukleme-kart p { margin: 0 0 16px; color: var(--metin-soluk); font-size: 13px; font-weight: 700; }
     .yukleme-ev { width: 54px; height: 46px; margin: 0 auto; position: relative; animation: evSalla 1.4s ease-in-out infinite; }
     .yukleme-ev::before { /* çatı */
