@@ -6,6 +6,7 @@ import type { Building, GameState, Istek, IstekSonuc, IstekTuru } from './types'
 import { dist } from './geometry';
 import { effectRadius } from './placement';
 import { mevsim } from './season';
+import { gunlukYaz } from './gunluk';
 
 const I = BALANCE.istek;
 
@@ -109,6 +110,7 @@ export function deliverFeast(s: GameState): IstekSonuc | null {
   s.stok.yemek = Math.max(0, s.stok.yemek - I.senlikYemek);
   // Bugün dahil senlikGun gün bütün evlere geçici mutluluk.
   s.geciciMutluluk = { deger: I.senlikMutluluk, bitisGun: s.gun + I.senlikGun - 1 };
+  gunlukYaz(s, 'senlik');
   bitir(s);
   return { tur: 'senlik', para: 0 };
 }

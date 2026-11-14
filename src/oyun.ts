@@ -7,7 +7,10 @@ import {
   placeRoad, planRoad, serialize, tick, mevsim, monumentStage, canAdvanceMonument, advanceMonument,
   tuccarVarMi, tuccarGeldiMi, tuccarKalisGunu, tuccarKonumu, buyGood, sellGood, canBuy, canSell, checkRequest, deliverFeast,
   bekleyenSecim, kartCek, kartSec, kartBul, secimGunu, toplamSecim,
+  anlikGoruntu, geriAl, geriAlEkle, geriAlinabilir, geriAlTemizle, geriAlYigini, type GeriAlTur,
 } from './logic/game';
+import type { Gazete } from './logic/types';
+import { createJournal, createNewspaper, gazeteGosterilsin } from './ui/gunluk';
 import { BALANCE, BUILDINGS } from './data/buildings';
 import { createRenderer } from './render/renderer';
 import type { GameRenderer } from './render/api';
@@ -98,7 +101,11 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     () => (tuccar.isOpen() ? tuccarKapat() : tuccarAc()),
     () => sesAyarla(!ses.isEnabled()),
     (kanal, v) => sesDuzeyi(kanal, v),
+    () => geriAlYap(),
+    () => (gunlukP.isOpen() ? pencereKapat() : gunlukAc()),
   );
+  /** Geri al yığını: aynı gün içindeki son oyuncu eylemleri (gün sonunda boşalır). */
+  const geriAlY = geriAlYigini();
   /** Binayı seçer ve kamerayı ona götürür (istek kartı, uyarılar). */
   function binayaGit(id: number): void {
     setTool(null);
@@ -113,6 +120,8 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   const tuccar = createTradePanel(ui, (g, n) => ticaret(g, n, true), (g, n) => ticaret(g, n, false), () => tuccarKapat());
   const secici = createCardPicker(ui, (id) => kartSecildi(id));
   const kasabaYolu = createCardList(ui);
+  const gunlukP = createJournal(ui, () => pencereKapat(), (g) => gazeteAc(g));
+  const gazeteP = createNewspaper(ui, () => pencereKapat());
   // Olumsuz bildirimler (yapılamayan işlem, küçülen ev, borç) kısa bir hata sesiyle gelir.
   const toastlar = createToasts(ui);
   const toasts = {
@@ -182,8 +191,11 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     if (giris.isOpen()) return;
     if (girildi && hiz > 0) menuOncesiHiz = hiz;
     else if (tuccar.isOpen()) menuOncesiHiz = tuccarOncesiHiz; // takas menüsü açıkken duraklıydı
+    else if (pencereAcik()) menuOncesiHiz = pencereOncesiHiz;
     setTool(null);
     tuccar.close();
+    gunlukP.hide();
+    gazeteP.hide();
     setSpeed(0);
     // Yeni (kaydedilmemiş, hiç girilmemiş) kasabada "Devam et" yok: oyuncu "Yeni kasaba" ile başlar.
     const ozet = yuklenen.yeni && !girildi
@@ -272,7 +284,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
 
   function setSpeed(v: number): void {
     // Kart seçilene, menü kapanana, takas menüsü kapanana kadar oyun duraklı.
-    if (v > 0 && (secici.isOpen() || giris.isOpen() || tuccar.isOpen())) return;
+    if (v > 0 && (secici.isOpen() || giris.isOpen() || tuccar.isOpen() || pencereAcik())) return;
     if (v > 0) duraklamadanOnce = v;
     hiz = v;
     hud.setSpeed(v);
@@ -319,9 +331,11 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
       toasts.show(m, 'kotu');
       return;
     }
+    const onceki = anlikGoruntu(s);
     const m = upgradeBuilding(s, id);
     const b = s.binalar.find((x) => x.id === id);
     if (m === null || !b) return;
+    geriAlKaydet(onceki, 'yukseltme', b.type);
     renderer.setBuildingLevel(id, b.seviye);
     renderer.floatText(b.x, b.z, `−${m}`, KIRMIZI);
     toasts.show(t('bildirim.yukseldi', { bina: binaAd(b.type), seviye: b.seviye }), 'iyi');
@@ -348,6 +362,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
 
   function kartSecildi(id: string): void {
     if (!kartSec(s, id)) return;
+    geriAlSifirla();
     const k = kartBul(id);
     if (k) {
       const km = kartMetni(k);
@@ -360,6 +375,107 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     arayuzYenile();
     if (bekleyenSecim(s) !== null) kartSecimiAc(); // aynı gün birden çok kart hedefi
     else setSpeed(secimOncesiHiz);
+  }
+
+  // ---- Günlük ve gazete: açıkken oyun durur, kapanınca önceki hızla (duraklıysa duraklı) sürer ----
+  let pencereOncesiHiz = 1;
+  const pencereAcik = (): boolean => gunlukP.isOpen() || gazeteP.isOpen();
+
+  function pencereDurdur(): void {
+    if (!pencereAcik()) pencereOncesiHiz = hiz;
+    setTool(null);
+    tuccarKapat();
+    setSpeed(0);
+  }
+
+  function gunlukAc(): void {
+    if (giris.isOpen() || secici.isOpen()) return;
+    pencereDurdur();
+    gazeteP.hide();
+    gunlukP.show(s);
+    ses.play('secim');
+  }
+
+  function gazeteAc(g: Gazete): void {
+    if (giris.isOpen()) return;
+    pencereDurdur();
+    gunlukP.hide();
+    gazeteP.show(g);
+    ses.play('hedef');
+  }
+
+  function pencereKapat(): void {
+    if (!pencereAcik()) return;
+    gunlukP.hide();
+    gazeteP.hide();
+    setSpeed(pencereOncesiHiz);
+    kartSecimiAc(); // gazete yıl sonunda açıldıysa bekleyen kart seçimi sonra gelir
+  }
+
+  // ---- Geri al ----
+  /** Geri al düğmesinin durumu ve başlığı (ne geri alınacak). */
+  function geriAlGuncelle(): void {
+    const k = geriAlY.kayitlar[geriAlY.kayitlar.length - 1];
+    hud.setUndo(!!k && !s.bitti, k ? t('hud.geriAl', { ne: geriAlAdi(k.tur, k.binaTur) }) : t('hud.geriAlYok'));
+  }
+
+  function geriAlAdi(tur: GeriAlTur, binaTur?: BuildingType): string {
+    const bina = binaTur ? binaAd(binaTur) : '';
+    switch (tur) {
+      case 'bina': return t('geriAl.bina', { bina });
+      case 'yikim': return t('geriAl.yikim', { bina });
+      case 'yukseltme': return t('geriAl.yukseltme', { bina });
+      case 'yol': return t('geriAl.yol');
+      case 'yolYikim': return t('geriAl.yolYikim');
+    }
+  }
+
+  /** Geri alınamayan eylem (takas, kart, istek teslimi, anıt aşaması) ve gün sonu yığını boşaltır. */
+  function geriAlSifirla(): void {
+    geriAlTemizle(geriAlY);
+    geriAlGuncelle();
+  }
+
+  /** Eylem başarılı oldu: eylemden önceki durum yığına girer. */
+  function geriAlKaydet(onceki: GameState, tur: GeriAlTur, binaTur?: BuildingType): void {
+    geriAlEkle(geriAlY, onceki, tur, binaTur);
+    geriAlGuncelle();
+  }
+
+  function geriAlYap(): void {
+    if (s.bitti || giris.isOpen() || secici.isOpen() || !geriAlinabilir(geriAlY)) return;
+    const r = geriAl(geriAlY, s);
+    if (!r) return;
+    const eski = s;
+    s = r.durum;
+    sahneFarkiniUygula(eski, s);
+    ses.play('kurulum');
+    toasts.show(t('bildirim.geriAlindi', { ne: geriAlAdi(r.kayit.tur, r.kayit.binaTur) }), 'bilgi');
+    geriAlGuncelle();
+    bilgiYenile();
+    arayuzYenile();
+    input.refresh();
+  }
+
+  /** Geri alınan durumla sahne arasındaki farkı çizer: giden binalar yıkılır, gelenler kurulur, seviye ve patikalar güncellenir. */
+  function sahneFarkiniUygula(eski: GameState, yeni: GameState): void {
+    const eskiB = new Map(eski.binalar.map((b) => [b.id, b]));
+    const yeniB = new Set(yeni.binalar.map((b) => b.id));
+    for (const b of eski.binalar) if (!yeniB.has(b.id)) renderer.removeBuilding(b.id);
+    for (const b of yeni.binalar) {
+      const o = eskiB.get(b.id);
+      if (!o) {
+        renderer.addBuilding(b.id, b.type, b.x, b.z, b.rot, b.seviye, true, b.baglanti ?? null);
+        if (b.insaat) renderer.setMonumentStage(b.id, monumentStage(b), false);
+        continue;
+      }
+      if (o.seviye !== b.seviye) renderer.setBuildingLevel(b.id, b.seviye);
+      if (JSON.stringify(o.baglanti ?? null) !== JSON.stringify(b.baglanti ?? null)) renderer.setBuildingLink(b.id, b.baglanti ?? null);
+    }
+    const yeniY = new Set(yeni.yollar.map((r) => r.id));
+    const eskiY = new Set(eski.yollar.map((r) => r.id));
+    for (const r of eski.yollar) if (!yeniY.has(r.id)) renderer.removeRoad(r.id);
+    for (const r of yeni.yollar) if (!eskiY.has(r.id)) renderer.addRoad(r.id, r.tur, r.noktalar);
   }
 
   /** Takas menüsü açılmadan önceki hız: menü kapanınca oyun bu hızla sürer. */
@@ -394,6 +510,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     }
     if (alim) buyGood(s, g, miktar);
     else sellGood(s, g, miktar);
+    geriAlSifirla();
     istekKontrol(); // ör. kış hazırlığı için odun alındı
     bilgiYenile();
     arayuzYenile();
@@ -406,6 +523,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
       toasts.show(t('bildirim.senlikYemekYok'), 'kotu');
       return;
     }
+    geriAlSifirla();
     toasts.show(istekTamamMetni(r), 'iyi');
     bilgiYenile();
     arayuzYenile();
@@ -429,6 +547,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     const m = advanceMonument(s, id);
     const b = s.binalar.find((x) => x.id === id);
     if (m === null || !b) return;
+    geriAlSifirla();
     const asama = monumentStage(b);
     renderer.setMonumentStage(id, asama);
     ses.play(asama >= 4 ? 'hedef' : 'seviye');
@@ -444,8 +563,10 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
       toasts.show(yerlestirmeSebebi(c.sebep ?? 'cakisiyor'), 'kotu');
       return;
     }
+    const onceki = anlikGoruntu(s);
     const b = placeBuilding(s, tur, x, z, rot);
     if (!b) return;
+    geriAlKaydet(onceki, 'bina', tur);
     renderer.addBuilding(b.id, b.type, b.x, b.z, b.rot, b.seviye, true, b.baglanti ?? null);
     ses.play('kurulum');
     if (tur === 'ev' || tur === 'cesme') ogretici.olay(tur);
@@ -461,11 +582,13 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     if (!b) return;
     const { x, z } = b;
     const odun = b.dogal ? getBuildingInfo(s, id)?.kesimOdun ?? 0 : 0;
+    const onceki = anlikGoruntu(s);
     const iade = demolish(s, id);
     if (iade === null) {
       if (b.dogal) toasts.show(t('bildirim.agacParaYok'), 'kotu');
       return;
     }
+    geriAlKaydet(onceki, 'yikim', b.type);
     renderer.removeBuilding(id);
     if (iade < 0) renderer.floatText(x, z, `−${-iade} 💰  +${odun} 🪵`, KIRMIZI);
     else if (odun > 0) renderer.floatText(x, z, `+${odun} 🪵`, ALTIN);
@@ -483,8 +606,10 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
       toasts.show(yerlestirmeSebebi(plan.sebep ?? 'kisa'), 'kotu');
       return;
     }
+    const onceki = anlikGoruntu(s);
     const r = placeRoad(s, tur, noktalar);
     if (!r) return;
+    geriAlKaydet(onceki, 'yol');
     renderer.addRoad(r.id, r.tur, r.noktalar);
     ses.play('yol');
     ogretici.olay('yol');
@@ -499,11 +624,13 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     if (!r) return;
     const m = ortaNokta(r.noktalar);
     const eskiBag = new Map(s.binalar.map((b) => [b.id, b.baglanti?.yol]));
+    const onceki = anlikGoruntu(s);
     const iade = demolishRoad(s, id);
     if (iade === null) {
       toasts.show(t('bildirim.yolBagli'), 'kotu');
       return;
     }
+    geriAlKaydet(onceki, 'yolYikim');
     renderer.removeRoad(id);
     // Bağlı olduğu yol yıkılan binaların patikası en yakın kalan yola taşınır.
     for (const b of s.binalar) {
@@ -558,6 +685,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
 
   function gunSonu(r: DayReport): void {
     if (r.vergi > 0) ses.play('vergi');
+    geriAlSifirla(); // ekonomi işlendi: bugünün eylemleri artık geri alınamaz
     ogretici.olay('gunSonu');
     hud.setReport(r);
     sonGun = { uretimSorunlari: r.uretimSorunlari, evStokEksikleri: r.evStokEksikleri, mutsuzEvler: r.mutsuzEvler };
@@ -608,7 +736,11 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     input.refresh();
     kaydet(s);
     if (r.oyunBitti || s.bitti) bitisGoster();
-    else kartSecimiAc();
+    else if (r.gazete && gazeteGosterilsin()) gazeteAc(r.gazete); // kart seçimi gazete kapanınca
+    else {
+      if (r.gazete) toasts.show(t('bildirim.gazete', { yil: r.gazete.yil }), 'bilgi');
+      kartSecimiAc();
+    }
   }
 
   function bitisGoster(): void {
@@ -642,6 +774,9 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     }
     s = createGame(rastgeleTohum());
     sonGun = null;
+    geriAlSifirla();
+    gunlukP.hide();
+    gazeteP.hide();
     hud.setReport(null);
     renderer.rebuildTerrain();
     secili = null;
@@ -673,6 +808,13 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   window.setTimeout(() => document.getElementById('yukleme')?.remove(), 600);
 
   window.addEventListener('resize', () => renderer.resize());
+  // Ctrl+Z / Cmd+Z: geri al. Esc: günlük / gazete penceresini kapatır.
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.code === 'KeyZ') {
+      e.preventDefault();
+      if (!e.repeat) geriAlYap();
+    } else if (e.code === 'Escape' && pencereAcik()) pencereKapat();
+  });
   // Gün ortasında kapatılırsa son yerleştirmeler kaybolmasın.
   // Hiç girilmemiş yeni kasaba kaydedilmez: oyuncu başlamadan çıkarsa "Devam et" çıkmasın.
   window.addEventListener('pagehide', () => {

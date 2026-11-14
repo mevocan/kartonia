@@ -34,6 +34,10 @@ export { checkRequest, deliverFeast, istekHedefi, istekKalanGun, istekOdulu, nes
 export { ayar, kartCek, kartSec, kartBul, bekleyenSecim, secimGunu, toplamSecim } from './cards';
 export { serialize, deserialize } from './save';
 export { GOALS, goalProgress, goalReward, KASABA_TAMAM_HEDEFI, ZENGIN_KASABA } from './goals';
+export { YIL_GUN, yilNo, yilSonuMu } from './gunluk';
+export {
+  anlikGoruntu, geriAl, geriAlEkle, geriAlinabilir, geriAlTemizle, geriAlYigini, type GeriAlTur, type GeriAlYigini,
+} from './undo';
 
 export const GUN_SURESI = BALANCE.gunSuresi;
 // Oynanabilir alanın yarı genişliği (artık yuvarlatılmış kare; kurallarda isLand kullanılır).
@@ -63,6 +67,7 @@ export function createGame(haritaTohum?: number): GameState {
     bitti: false,
     hedef: 0,
     toplamYemek: 0,
+    gunluk: [],
   };
   if (haritaTohum !== undefined) s.haritaTohum = haritaTohum;
   s.yollar.push({ id: s.sonrakiId++, tur: 'toprak', noktalar: resample(HARITA.baslangicYolu, BALANCE.yolOrnekAraligi) });

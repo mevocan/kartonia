@@ -210,6 +210,42 @@ export interface GameState {
   kararlar?: string[];
   /** Kart seçimi bekleyen seçim numaraları (0: 50. gün, 1: 100. gün, 2: 150. gün). Seçilene kadar oyun duraklar. */
   bekleyenKararlar?: number[];
+  /** Kasaba günlüğü (logic/gunluk.ts). Eski kayıtta yok: yüklenirken gunlukGocu ile başlar. */
+  gunluk?: GunlukKaydi[];
+  /** İçinde bulunulan yılın sayaçları (gazete için); yıl sonunda silinir. */
+  yil?: { yil: number; nufusBasi: number; kurulanBina: number; vergi: number; yemek: number };
+  /** Çıkan yıl sonu gazeteleri (yalnızca sayılar). */
+  gazeteler?: Gazete[];
+}
+
+export type GunlukTur =
+  | 'ilkEv' | 'ilkYemek' | 'ilkTuccar' | 'ilkKis' | 'nufus' | 'evSeviye' | 'kule' | 'kuleTamam' | 'kart' | 'senlik'
+  | 'hedef' | 'gazete' | 'gunlukBasladi';
+
+export interface GunlukKaydi {
+  gun: number;
+  tur: GunlukTur;
+  /** nufus: eşik; evSeviye: seviye; kule: tamamlanan aşama; kart: kart id; hedef: hedef indeksi; gazete: yıl. */
+  veri?: number | string;
+  /** Günlükten önce olmuş an (eski kayıt göçü): yalnızca tekrar yazılmasın diye durur, gösterilmez. */
+  gizli?: true;
+}
+
+/** Yıl sonu gazetesi (Kartonia Postası): yılın sayıları ve manşeti. */
+export interface Gazete {
+  yil: number;
+  /** Çıktığı gün (yılın son günü). */
+  gun: number;
+  nufusBasi: number;
+  nufusSon: number;
+  kurulanBina: number;
+  vergi: number;
+  yemek: number;
+  /** Yılın en önemli günlük kaydı (yoksa null). */
+  manset: GunlukKaydi | null;
+  enMutluEv: { id: number; seviye: number; mutluluk: number } | null;
+  /** Gazete çıktığında sıradaki hedefin indeksi (ipucu için). */
+  hedef: number;
 }
 
 export type PlaceFailReason =
@@ -262,6 +298,8 @@ export interface DayReport {
   hedefOdulu: number;
   /** Mutluluğu büyüme eşiğinin altında olduğu için büyüyemeyen evler (en üst seviye hariç; harita iğneleri için). */
   mutsuzEvler: number[];
+  /** Yılın son günüyse çıkan gazete. */
+  gazete?: Gazete;
   /** Bu gün sonunda gelen yeni sakin isteği. */
   yeniIstek?: IstekTuru;
   /** Bu gün sonunda tamamlanan istek (Şenlik hariç: o düğmeyle hemen tamamlanır). */

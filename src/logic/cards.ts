@@ -4,6 +4,7 @@ import { BALANCE, BUILDINGS } from '../data/buildings';
 import { KART_SECENEK, KARTLAR, type AyarAnahtari, type KararKarti } from '../data/cards';
 import { makeRng } from '../data/map';
 import type { BuildingType, GameState, Good } from './types';
+import { gunlukYaz } from './gunluk';
 
 /** Kartsız (taban) değer. */
 export function tabanDeger(a: AyarAnahtari): number {
@@ -72,6 +73,7 @@ export function kartSec(s: GameState, id: string): boolean {
   if (secim === null) return false;
   if (!kartCek(s, secim).some((k) => k.id === id)) return false;
   s.kararlar = [...(s.kararlar ?? []), id];
+  gunlukYaz(s, 'kart', id);
   s.bekleyenKararlar = s.bekleyenKararlar!.slice(1);
   if (s.bekleyenKararlar.length === 0) delete s.bekleyenKararlar;
   return true;

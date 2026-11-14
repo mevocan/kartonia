@@ -11,6 +11,7 @@ import { mevsim } from './season';
 import { geciciMutlulukBugun, istekGunSonu } from './requests';
 import { ticaretGunSonu } from './trade';
 import { ayar, kartGunSonu } from './cards';
+import { gunlukGunSonu } from './gunluk';
 
 // Marangoz odunu kullandığı için oduncudan sonra gelir.
 // Ağıl buğdayı değirmenden sonra alır; dokumacı ağıldan sonra gelir.
@@ -347,6 +348,7 @@ export function endDay(s: GameState): DayReport {
   const kasaOnce = s.para;
   rapor.yeniHedefler = checkGoals(s);
   rapor.hedefOdulu = s.para - kasaOnce;
+  gunlukGunSonu(s, rapor, mutluluklar); // günlük, yılın sayaçları, yıl sonuysa gazete
   rapor.yeniAcilanlar = BUILDING_ORDER.filter((t) => !isUnlockedAt(oncekiNufus, t) && isUnlockedAt(s.nufus, t));
 
   // 8. Sakin istekleri ve gezgin tüccar (tüccar bir gün kalır).
