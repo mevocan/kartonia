@@ -2,7 +2,7 @@
 // yer şartını ve yerleşim bonusunu (komşuluk kuralları) düz cümleyle anlatır; oyuncunun binayı haritada
 // gezdirip denemesi gerekmez. Araç seçili kaldıkça açık durur. Kilitli kart da açılır (yalnızca önizleme).
 import type { BuildingType, Good, RoadType } from '../logic/types';
-import { BUILDINGS, HOUSE_LEVELS, ROADS } from '../data/buildings';
+import { BALANCE, BUILDINGS, HOUSE_LEVELS, ROADS } from '../data/buildings';
 import { el, panelAc, panelKapat } from './dom';
 import {
   binaAciklama, binaAd, evSeviyeAd, ihtiyacAd, komsulukEtiket, komsulukSart, malAdKucuk, t, yolAciklama, yolAd,
@@ -116,7 +116,11 @@ export function createBuildingCard(root: HTMLElement, onClose: () => void): Buil
     }
 
     if (d.yukseltilebilir) box.appendChild(el('p', 'not', t('detay.yukseltilebilir')));
+    if (d.sus) box.appendChild(el('p', 'not', t('detay.sus', { n: BALANCE.susMutlulukSinir })));
+    if (d.anit && d.anitAsamalar) box.appendChild(el('p', 'not', t('detay.proje', { n: d.anitAsamalar.length })));
+    if (d.tek) box.appendChild(el('p', 'not', t('detay.tek')));
     if (kilitli) box.appendChild(el('p', 'kilit', t('detay.kilitli', { n: d.acilmaNufus })));
+    if (kilitli && d.acilmaAnit) box.appendChild(el('p', 'kilit', t('detay.kilitliAnit', { bina: binaAd(d.acilmaAnit) })));
   }
 
   function yol(tur: RoadType, kilitli: boolean, resim: string | null): void {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BOSLUK, GOALS, GUN_SURESI, STOK_SINIR, ZEMIN_YARICAP, createGame, deserialize, endDay, placeBuilding, placeRoad,
-  serialize, tick, goalProgress, goalReward, KASABA_TAMAM_HEDEFI, ZENGIN_KASABA,
+  serialize, tick, goalProgress, goalReward, KASABA_TAMAM_HEDEFI, EFSANE_HEDEFI, ZENGIN_KASABA,
 } from '../src/logic/game';
 import { add } from './helpers';
 import { checkGoals } from '../src/logic/goals';
@@ -45,9 +45,10 @@ describe('tick', () => {
 });
 
 describe('hedefler', () => {
-  it('15 hedef, 5. hedef "Kasaba tamamlandı", sonuncusu "Kasaba efsanesi"', () => {
-    expect(GOALS).toHaveLength(15);
-    expect(GOALS[GOALS.length - 1].ad).toBe('Kasaba efsanesi');
+  it('18 hedef, 5. hedef "Kasaba tamamlandı", 15. "Kasaba efsanesi", sonuncusu "Masal kasabası"', () => {
+    expect(GOALS).toHaveLength(18);
+    expect(GOALS[EFSANE_HEDEFI].ad).toBe('Kasaba efsanesi');
+    expect(GOALS[GOALS.length - 1].ad).toBe('Masal kasabası');
     expect(GOALS[KASABA_TAMAM_HEDEFI].ad).toBe('Kasaba tamamlandı');
   });
 
@@ -102,6 +103,19 @@ describe('hedefler', () => {
     expect(checkGoals(s)).toEqual([12]);
     konaklar[0].seviye = 5;
     expect(checkGoals(s)).toEqual([13, 14]);
+    expect(s.hedef).toBe(EFSANE_HEDEFI + 1);
+    // Büyük projeler: Kervansaray, Botanik Bahçesi, 500 nüfus ve mutluluk ≥ 80.
+    expect(goalProgress(s)).toBeNull();
+    const kerv = add(s, 'kervansaray', 40, 40);
+    kerv.insaat = 1;
+    expect(checkGoals(s)).toEqual([]);
+    delete kerv.insaat;
+    expect(checkGoals(s)).toEqual([15]);
+    add(s, 'botanik', -40, 40);
+    expect(checkGoals(s)).toEqual([16]);
+    s.nufus = 500;
+    s.mutluluk = 80;
+    expect(checkGoals(s)).toEqual([17]);
     expect(s.hedef).toBe(GOALS.length);
     expect(goalProgress(s)).toBeNull();
   });

@@ -107,7 +107,62 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     type: 'tiyatro', ad: 'Tiyatro', aciklama: 'Etki alanındaki evlere kültür ve eğlence verir. Köşkler tiyatro ister.',
     maliyet: 150, gider: 16, taban: 1.8, etki: 10, mutluluk: 5, isci: 4, acilmaNufus: 140, saglar: 'kultur', yukseltilebilir: true,
   },
+  // ---- Süsler: yol istemez; mutlulukları bir eve en fazla BALANCE.susMutlulukSinir sayılır (ağaç tavanından ayrı) ----
+  cit: {
+    type: 'cit', ad: 'Çit', aciklama: 'Kağıt bahçe çiti. Yakındaki evleri biraz mutlu eder.',
+    maliyet: 4, gider: 0, taban: 0.45, etki: 2.5, mutluluk: 1, isci: 0, acilmaNufus: 10, sus: true,
+  },
+  bank: {
+    type: 'bank', ad: 'Bank', aciklama: 'Sakinler oturup sohbet eder. Yakındaki evleri biraz mutlu eder.',
+    maliyet: 8, gider: 0, taban: 0.35, etki: 3, mutluluk: 1, isci: 0, acilmaNufus: 15, sus: true,
+  },
+  ciceklik: {
+    type: 'ciceklik', ad: 'Çiçeklik', aciklama: 'Taş saksıda çiçekler. Yakındaki evlere mutluluk.',
+    maliyet: 10, gider: 0, taban: 0.35, etki: 3, mutluluk: 2, isci: 0, acilmaNufus: 20, sus: true,
+  },
+  lamba: {
+    type: 'lamba', ad: 'Sokak Lambası', aciklama: 'Geceleri yanar. Yakındaki evleri biraz mutlu eder.',
+    maliyet: 12, gider: 0, taban: 0.25, etki: 4, mutluluk: 1, isci: 0, acilmaNufus: 25, sus: true,
+  },
+  heykel: {
+    type: 'heykel', ad: 'Heykel', aciklama: 'Kasabanın gururu: geniş bir alana mutluluk yayar.',
+    maliyet: 200, gider: 2, taban: 0.9, etki: 10, mutluluk: 3, isci: 0, acilmaNufus: 120, sus: true,
+  },
+  // ---- Büyük projeler: Saat Kulesi bitince açılır, iskeleyle başlar, dört aşamada tamamlanır ----
+  kervansaray: {
+    type: 'kervansaray', ad: 'Kervansaray', aciklama: 'Tüccarların konakladığı han. Bitince tüccar daha çok takas yapar ve daha iyi fiyat verir.',
+    maliyet: 150, gider: 8, taban: 2.0, etki: 10, mutluluk: 5, isci: 3, acilmaNufus: 150, anit: true, acilmaAnit: 'saatKulesi', tek: true,
+    anitAsamalar: [
+      { para: 150, mal: { tas: 30 } },
+      { para: 150, mal: { kumas: 20 } },
+      { para: 200, mal: { mobilya: 25 } },
+      { para: 250, mal: { kumas: 20, tas: 30 } },
+    ],
+    anitEtkileri: [
+      { anahtar: 'ticaretKota', islem: 'ekle', deger: 30 },
+      { anahtar: 'ticaretSatisCarpani', islem: 'carp', deger: 1.2 },
+    ],
+  },
+  botanik: {
+    type: 'botanik', ad: 'Botanik Bahçesi', aciklama: 'Camlı sera ve bahçeler. Bitince ağaç ve çiçeklerin mutluluk tavanı yükselir, arılıklar daha çok bal yapar.',
+    maliyet: 150, gider: 8, taban: 2.0, etki: 10, mutluluk: 8, isci: 3, acilmaNufus: 150, anit: true, acilmaAnit: 'saatKulesi', tek: true,
+    anitAsamalar: [
+      { para: 150, mal: { odun: 40 } },
+      { para: 150, mal: { bal: 20 } },
+      { para: 200, mal: { odun: 30, bal: 20 } },
+      { para: 250, mal: { tas: 30, bal: 20 } },
+    ],
+    anitEtkileri: [
+      { anahtar: 'agacMutlulukSinir', islem: 'ekle', deger: 6 },
+      { anahtar: 'uretim.arilik.bal', islem: 'carp', deger: 1.25 },
+    ],
+  },
 };
+
+/** Yol istemeyen, patikası olmayan parçalar: doğa (ağaç, çiçek) ve süsler. */
+export function yolsuz(t: BuildingType): boolean {
+  return dogaTuru(t) || !!BUILDINGS[t].sus;
+}
 
 /** Yol istemeyen, kapısı ve patikası olmayan doğa parçaları (ağaç, çiçek). */
 export function dogaTuru(t: BuildingType): boolean {
@@ -117,6 +172,7 @@ export function dogaTuru(t: BuildingType): boolean {
 export const BUILDING_ORDER: BuildingType[] = [
   'ev', 'agac', 'cicek', 'tarla', 'cesme', 'degirmen', 'firin', 'oduncu', 'balikci', 'tasOcagi', 'marangoz', 'agil', 'dokumaci',
   'arilik', 'ambar', 'pazar', 'okul', 'hastane', 'park', 'hamam', 'tiyatro', 'saatKulesi',
+  'cit', 'bank', 'ciceklik', 'lamba', 'heykel', 'kervansaray', 'botanik',
 ];
 
 export const HOUSE_LEVELS: HouseLevelDef[] = [
@@ -152,6 +208,8 @@ export const BALANCE = {
   mutlulukTaban: 45,
   /** Bir evi kapsayan ağaçların mutluluk toplamı en fazla bu kadar sayılır. */
   agacMutlulukSinir: 9,
+  /** Bir evi kapsayan süslerin mutluluk toplamı en fazla bu kadar sayılır. */
+  susMutlulukSinir: 6,
   /** Evin mevcut seviyesinde karşılanan ihtiyaç başına mutluluk. */
   ihtiyacMutluluk: 2,
   mutlulukMin: 0,

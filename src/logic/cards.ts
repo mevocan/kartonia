@@ -34,6 +34,11 @@ export function tabanDeger(a: AyarAnahtari): number {
 
 const KART_BY_ID = new Map(KARTLAR.map((k) => [k.id, k]));
 
+/** Büyük projelerin etkilediği ayar anahtarları (ayar() yalnızca bunlarda binaları tarar). */
+const ANIT_ANAHTARLARI = new Set<AyarAnahtari>(
+  (Object.keys(BUILDINGS) as BuildingType[]).flatMap((t) => (BUILDINGS[t].anitEtkileri ?? []).map((e) => e.anahtar)),
+);
+
 export function kartBul(id: string): KararKarti | undefined {
   return KART_BY_ID.get(id);
 }
@@ -50,6 +55,14 @@ export function ayar(s: GameState, a: AyarAnahtari): number {
     for (const e of k.etkiler) {
       if (e.anahtar !== a) continue;
       v = e.islem === 'ekle' ? v + e.deger : v * e.deger;
+    }
+  }
+  // Tamamlanmış büyük projelerin kalıcı etkileri (Kervansaray, Botanik Bahçesi). Yalnızca ilgili anahtarlarda binalar taranır.
+  if (ANIT_ANAHTARLARI.has(a)) {
+    for (const b of s.binalar) {
+      const ee = BUILDINGS[b.type].anitEtkileri;
+      if (!ee || b.insaat) continue;
+      for (const e of ee) if (e.anahtar === a) v = e.islem === 'ekle' ? v + e.deger : v * e.deger;
     }
   }
   for (const e of s.etkiler ?? []) {

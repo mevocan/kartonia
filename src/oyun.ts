@@ -3,16 +3,17 @@ import type { BuildingType, DayReport, GameState, Good, RoadType, Vec2 } from '.
 import { buildingPins, type SonGun } from './logic/pins';
 import { igneGorunumu } from './ui/ikonlar';
 import {
-  canPlace, canUpgrade, createGame, upgradeBuilding, demolish, demolishRoad, deserialize, getBuildingInfo, getRoadInfo, GOALS, KASABA_TAMAM_HEDEFI, placeBuilding,
+  canPlace, canUpgrade, createGame, upgradeBuilding, demolish, demolishRoad, deserialize, getBuildingInfo, getRoadInfo, GOALS, KASABA_TAMAM_HEDEFI, EFSANE_HEDEFI, placeBuilding,
   placeRoad, planRoad, serialize, tick, mevsim, monumentStage, canAdvanceMonument, advanceMonument,
   tuccarVarMi, tuccarGeldiMi, tuccarKalisGunu, tuccarKonumu, buyGood, sellGood, canBuy, canSell, checkRequest, deliverRequest,
-  senlikBaslat, senlikDurumu, suregenEtkiler, siparisTeslim,
+  senlikBaslat, senlikDurumu, suregenEtkiler, siparisTeslim, kasabaUnvani,
   bekleyenSecim, kartCek, kartSec, kartBul, secimGunu, toplamSecim,
   anlikGoruntu, geriAl, geriAlEkle, geriAlinabilir, geriAlTemizle, geriAlYigini, type GeriAlTur,
 } from './logic/game';
 import type { Gazete } from './logic/types';
-import { createJournal, createNewspaper, gazeteGosterilsin, senlikAd } from './ui/gunluk';
-import { BALANCE, BUILDINGS } from './data/buildings';
+import { createJournal, createNewspaper, gazeteGosterilsin, senlikAd, unvanAd } from './ui/gunluk';
+import { BALANCE, BUILDINGS, BUILDING_ORDER } from './data/buildings';
+import { isUnlocked } from './logic/placement';
 import { createRenderer } from './render/renderer';
 import type { GameRenderer } from './render/api';
 import { createHud, MEVSIM_GORUNUM } from './ui/hud';
@@ -204,7 +205,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     // Yeni (kaydedilmemiş, hiç girilmemiş) kasabada "Devam et" yok: oyuncu "Yeni kasaba" ile başlar.
     const ozet = yuklenen.yeni && !girildi
       ? null
-      : { gun: s.gun, nufus: s.nufus, mevsim: MEVSIM_GORUNUM[mevsim(s.gun)].ad, bitti: s.bitti };
+      : { gun: s.gun, nufus: s.nufus, mevsim: MEVSIM_GORUNUM[mevsim(s.gun)].ad, bitti: s.bitti, unvan: unvanAd(kasabaUnvani(s)) };
     giris.show(ozet, ses.isEnabled());
   }
 
@@ -590,7 +591,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
   function anitIlerlet(id: number): void {
     const c = canAdvanceMonument(s, id);
     if (!c.ok) {
-      const m = c.sebep === 'para' ? t('bildirim.asamaParaYok') : c.sebep === 'tas' || c.sebep === 'odun' || c.sebep === 'mobilya'
+      const m = c.sebep === 'para' ? t('bildirim.asamaParaYok') : c.sebep === 'tas' || c.sebep === 'odun' || c.sebep === 'mobilya' || c.sebep === 'kumas' || c.sebep === 'bal'
         ? yerlestirmeSebebi(c.sebep) : t('bildirim.zatenTamam');
       toasts.show(m, 'kotu');
       return;
@@ -601,6 +602,13 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     geriAlSifirla();
     const asama = monumentStage(b);
     renderer.setMonumentStage(id, asama);
+    if (!b.insaat) {
+      // Anıt bitti: ona bağlı yeni binalar açıldıysa bildir (ör. Saat Kulesi → büyük projeler).
+      for (const tur of BUILDING_ORDER) {
+        if (BUILDINGS[tur].acilmaAnit === b.type && isUnlocked(s, tur)) toasts.show(t('bildirim.yeniBina', { bina: binaAd(tur) }), 'iyi');
+      }
+      if (b.type !== 'saatKulesi') toasts.show(t('bildirim.projeTamam', { bina: binaAd(b.type) }), 'iyi');
+    }
     ses.play(asama >= 4 ? 'hedef' : 'seviye');
     renderer.floatText(b.x, b.z, `−${m}`, KIRMIZI);
     bilgiYenile();
@@ -770,7 +778,7 @@ function startGame(container: HTMLElement, ui: HTMLElement): void {
     if (sonHedef !== undefined && GOALS[sonHedef]) goal.kutla(hedefMetni(sonHedef).ad, r.hedefOdulu);
     for (const i of r.yeniHedefler) {
       if (i === KASABA_TAMAM_HEDEFI) toasts.show(t('bildirim.kasabaTamam'), 'iyi');
-      if (i === GOALS.length - 1) toasts.show(t('bildirim.efsane'), 'iyi');
+      if (i === EFSANE_HEDEFI) toasts.show(t('bildirim.efsane'), 'iyi');
     }
     for (const tur of r.yeniAcilanlar) toasts.show(t('bildirim.yeniBina', { bina: binaAd(tur) }), 'iyi');
     if (r.tamamlananIstek) toasts.show(istekTamamMetni(r.tamamlananIstek), 'iyi');

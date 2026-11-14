@@ -13,6 +13,7 @@ import { buildMill, buildBakery, buildWoodcutter } from './production';
 import { buildFountain, buildFountainWater, buildMarket, buildSchool, buildClockTower, ANIT_ASAMA } from './civic';
 import { buildHospital, buildBarn, buildFishery, buildQuarry, buildCarpenter } from './extra';
 import { buildSheepfold, buildWeaver, buildApiary } from './pastoral';
+import { buildBench, buildLamp, buildFence, buildPlanter, buildStatue, buildCaravanserai, buildBotanic } from './decor';
 
 // Model şablonları: her (tür, seviye, çeşit) için bir kez üretilir, örnekler geometriyi paylaşır.
 
@@ -66,7 +67,7 @@ function fromBuilder(b: ModelBuilder): ModelTemplate {
 export function getTemplate(type: BuildingType, level: number, variant: number, asama = ANIT_ASAMA): ModelTemplate {
   const maxLv = type === 'ev' ? HOUSE_LEVELS.length : BUILDINGS[type].yukseltilebilir ? 3 : 1;
   const lv = Math.max(1, Math.min(maxLv, level));
-  const as = type === 'saatKulesi' ? Math.max(0, Math.min(ANIT_ASAMA, Math.round(asama))) : ANIT_ASAMA;
+  const as = BUILDINGS[type].anit ? Math.max(0, Math.min(ANIT_ASAMA, Math.round(asama))) : ANIT_ASAMA;
   const key = as < ANIT_ASAMA ? `${type}-${lv}-${variant}-a${as}` : `${type}-${lv}-${variant}`;
   const hit = cache.get(key);
   if (hit) return hit;
@@ -143,6 +144,27 @@ export function getTemplate(type: BuildingType, level: number, variant: number, 
       break;
     case 'tiyatro':
       tpl = fromBuilder(buildTheater(lv));
+      break;
+    case 'bank':
+      tpl = fromBuilder(buildBench());
+      break;
+    case 'lamba':
+      tpl = fromBuilder(buildLamp());
+      break;
+    case 'cit':
+      tpl = fromBuilder(buildFence());
+      break;
+    case 'ciceklik':
+      tpl = fromBuilder(buildPlanter());
+      break;
+    case 'heykel':
+      tpl = fromBuilder(buildStatue());
+      break;
+    case 'kervansaray':
+      tpl = fromBuilder(buildCaravanserai(as));
+      break;
+    case 'botanik':
+      tpl = fromBuilder(buildBotanic(as));
       break;
   }
   cache.set(key, tpl);

@@ -436,7 +436,7 @@ describe('açılan binalar', () => {
     for (let i = 0; i < 4; i++) add(s, 'ev', i * 3, 0);
     const r = endDay(s);
     expect(s.nufus).toBe(12);
-    expect(r.yeniAcilanlar).toEqual(['degirmen', 'firin', 'balikci']);
+    expect(r.yeniAcilanlar).toEqual(['degirmen', 'firin', 'balikci', 'cit']);
     expect(endDay(s).yeniAcilanlar).toEqual([]);
   });
 });

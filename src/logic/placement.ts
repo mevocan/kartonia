@@ -1,4 +1,4 @@
-import { BALANCE, BUILDINGS, dogaTuru } from '../data/buildings';
+import { BALANCE, BUILDINGS, dogaTuru, yolsuz } from '../data/buildings';
 import type { Building, BuildingType, GameState, Good, PlaceCheck, PlaceFailReason } from './types';
 import { circleSamples, circlesOverlap } from './geometry';
 import { heightAt, isLake, isLand, lakeDistance } from './terrain';
@@ -12,7 +12,18 @@ export function isUnlockedAt(nufus: number, t: BuildingType): boolean {
 }
 
 export function isUnlocked(s: GameState, t: BuildingType): boolean {
-  return isUnlockedAt(s.nufus, t);
+  const a = BUILDINGS[t].acilmaAnit;
+  return isUnlockedAt(s.nufus, t) && (!a || anitTamam(s, a));
+}
+
+/** Kasabada bu türde tamamlanmış (iskelesi kalkmış) bir anıt var mı. */
+export function anitTamam(s: GameState, t: BuildingType): boolean {
+  return s.binalar.some((b) => b.type === t && !b.insaat);
+}
+
+/** Anıtın aşamaları (binaya özel ya da Saat Kulesi'nin BALANCE.anit.asamalar'ı). */
+export function anitAsamalari(t: BuildingType): { para: number; mal: Partial<Record<Good, number>> }[] {
+  return BUILDINGS[t].anitAsamalar ?? BALANCE.anit.asamalar;
 }
 
 /** Yer kontrolü (para/kilit hariç): disarida → gol → egim → taslikYok → golYok → cakisiyor → yol → yolYok. Uygunsa null. */
@@ -44,13 +55,14 @@ export function checkSite(s: GameState, t: BuildingType, x: number, z: number): 
     if (g < 0) return 'yol';
     enYakin = Math.min(enYakin, g);
   }
-  if (!dogaTuru(t) && enYakin > BALANCE.yolYakinlik) return 'yolYok';
+  if (!yolsuz(t) && enYakin > BALANCE.yolYakinlik) return 'yolYok';
   return null;
 }
 
 export function canPlace(s: GameState, t: BuildingType, x: number, z: number): PlaceCheck {
   if (s.bitti) return { ok: false, sebep: 'bitti' };
   if (!isUnlocked(s, t)) return { ok: false, sebep: 'kilitli' };
+  if (BUILDINGS[t].tek && s.binalar.some((b) => b.type === t)) return { ok: false, sebep: 'tek' };
   if (s.para < BUILDINGS[t].maliyet) return { ok: false, sebep: 'para' };
   const sebep = checkSite(s, t, x, z);
   return sebep ? { ok: false, sebep } : { ok: true };
@@ -60,13 +72,11 @@ export function placeBuilding(s: GameState, t: BuildingType, x: number, z: numbe
   if (!canPlace(s, t, x, z).ok) return null;
   s.para -= BUILDINGS[t].maliyet;
   const b: Building = { id: s.sonrakiId++, type: t, x, z, rot, seviye: 1, iyiGun: 0, kotuGun: 0 };
-  if (BUILDINGS[t].anit) b.insaat = BALANCE.anit.asamalar.length; // iskeleyle başlar
+  if (BUILDINGS[t].anit) b.insaat = anitAsamalari(t).length; // iskeleyle başlar
   if (t === 'agac' && s.istek?.tur === 'agaclandirma') s.istek.ilerleme++; // ağaçlandırma isteği
   if (t === 'cicek' && s.istek?.tur === 'cicekDik') s.istek.ilerleme++; // çiçek dikme isteği
-  if (!dogaTuru(t)) {
-    b.baglanti = linkFor(s, x, z);
-    binaSayaci(s); // yılın gazetesi: kurulan bina
-  }
+  if (!yolsuz(t)) b.baglanti = linkFor(s, x, z);
+  if (!dogaTuru(t)) binaSayaci(s); // yılın gazetesi: kurulan bina
   s.binalar.push(b);
   return b;
 }
@@ -146,7 +156,7 @@ export function demolishRefund(b: Building): number {
   let harcanan = BUILDINGS[b.type].maliyet;
   if (BUILDINGS[b.type].yukseltilebilir) for (let l = 2; l <= upgradeIndex(b) + 1; l++) harcanan += levelCost(b.type, l);
   // Anıt: tamamlanan aşamalara harcanan para da dahil (mallar geri gelmez).
-  if (BUILDINGS[b.type].anit) for (let i = 0; i < monumentStage(b); i++) harcanan += BALANCE.anit.asamalar[i].para;
+  if (BUILDINGS[b.type].anit) for (let i = 0; i < monumentStage(b); i++) harcanan += anitAsamalari(b.type)[i].para;
   return Math.floor(harcanan * BALANCE.yikimIadeOrani);
 }
 
@@ -190,14 +200,14 @@ export function linkFor(s: GameState, x: number, z: number): Building['baglanti'
 /** Anıtın tamamlanan aşama sayısı (0..toplam). Anıt değilse 0; insaat alanı yoksa tamam. */
 export function monumentStage(b: Building): number {
   if (!BUILDINGS[b.type].anit) return 0;
-  const toplam = BALANCE.anit.asamalar.length;
+  const toplam = anitAsamalari(b.type).length;
   return toplam - Math.min(toplam, Math.max(0, b.insaat ?? 0));
 }
 
 /** Sıradaki aşamanın maliyeti; anıt değilse ya da tamamsa null. */
-export function nextMonumentCost(b: Building): (typeof BALANCE.anit.asamalar)[number] | null {
+export function nextMonumentCost(b: Building): { para: number; mal: Partial<Record<Good, number>> } | null {
   if (!BUILDINGS[b.type].anit || !b.insaat) return null;
-  return BALANCE.anit.asamalar[monumentStage(b)] ?? null;
+  return anitAsamalari(b.type)[monumentStage(b)] ?? null;
 }
 
 /** Sıradaki aşamaya malzeme gönderilebilir mi. Nedenler: bitti, kilitli (anıt değil / tamam), para, tas, odun, mobilya. */
@@ -209,7 +219,7 @@ export function canAdvanceMonument(s: GameState, id: number): PlaceCheck {
   if (s.para < m.para) return { ok: false, sebep: 'para' };
   for (const [g, n] of Object.entries(m.mal) as [Good, number][]) {
     if (s.stok[g] < n - 1e-9) {
-      if (g === 'tas' || g === 'odun' || g === 'mobilya') return { ok: false, sebep: g };
+      if (g === 'tas' || g === 'odun' || g === 'mobilya' || g === 'kumas' || g === 'bal') return { ok: false, sebep: g };
       return { ok: false, sebep: 'kilitli' }; // tanımlı olmayan mal (veri hatası)
     }
   }
@@ -224,9 +234,11 @@ export function advanceMonument(s: GameState, id: number): number | null {
   s.para -= m.para;
   for (const [g, n] of Object.entries(m.mal) as [Good, number][]) s.stok[g] = Math.max(0, s.stok[g] - n);
   b.insaat = (b.insaat ?? 1) - 1;
+  const kule = b.type === 'saatKulesi';
   if (b.insaat <= 0) {
     delete b.insaat; // tamam: eski kayıtlardaki kulelerle aynı biçim
-    gunlukYaz(s, 'kuleTamam');
-  } else gunlukYaz(s, 'kule', monumentStage(b));
+    if (kule) gunlukYaz(s, 'kuleTamam');
+    else gunlukYaz(s, 'projeTamam', b.type);
+  } else if (kule) gunlukYaz(s, 'kule', monumentStage(b));
   return m.para;
 }

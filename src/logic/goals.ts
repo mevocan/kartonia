@@ -81,6 +81,20 @@ const GOAL_LIST: Goal[] = [
     check: (s) => s.nufus >= 400 && s.mutluluk >= 75,
     ilerleme: (s) => [s.nufus, 400],
   },
+  // ---- Büyük projeler (yalnızca sona eklenir: indeksler kayıtlıdır) ----
+  {
+    ad: 'Kervansaray', aciklama: "Kervansaray'ı tamamla.", odul: 500,
+    check: (s) => s.binalar.some((b) => b.type === 'kervansaray' && !b.insaat),
+  },
+  {
+    ad: 'Botanik Bahçesi', aciklama: "Botanik Bahçesi'ni tamamla.", odul: 600,
+    check: (s) => s.binalar.some((b) => b.type === 'botanik' && !b.insaat),
+  },
+  {
+    ad: 'Masal kasabası', aciklama: '500 nüfusa ulaş, ortalama mutluluk en az 80 olsun.', odul: 1500,
+    check: (s) => s.nufus >= 500 && s.mutluluk >= 80,
+    ilerleme: (s) => [s.nufus, 500],
+  },
 ];
 
 export const GOALS: GoalDef[] = GOAL_LIST.map(({ ad, aciklama, odul }) => ({ ad, aciklama, odul }));
@@ -90,6 +104,9 @@ export const ESKI_HEDEF_SAYISI = 13;
 
 /** "Kasaba tamamlandı" hedefinin indeksi (eski son hedef; sonrasında yeni hedefler başlar). */
 export const KASABA_TAMAM_HEDEFI = 4;
+
+/** "Kasaba efsanesi" hedefinin indeksi (büyük projelerden önceki son hedef). */
+export const EFSANE_HEDEFI = 14;
 
 /** Mevcut hedefin sayısal ilerlemesi; sayılamayan hedefte ya da hepsi bittiyse null. */
 export function goalProgress(s: GameState): { mevcut: number; hedef: number } | null {

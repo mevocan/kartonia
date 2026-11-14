@@ -3,7 +3,8 @@ import { BALANCE, BUILDINGS, HOUSE_LEVELS, dogaTuru } from '../data/buildings';
 import { HARITA, OYUN_YARI_GENISLIK, haritayiAyarla, makeRng } from '../data/map';
 import type { BuildingInfo, DayReport, GameState, Good } from './types';
 import {
-  buildingUpkeep, demolishRefund, effectRadius, stockLimit, monumentStage, naturalCut, nextMonumentCost, upgradeCost, upgradeStone,
+  anitAsamalari, buildingUpkeep, demolishRefund, effectRadius, stockLimit, monumentStage, naturalCut, nextMonumentCost, upgradeCost,
+  upgradeStone,
 } from './placement';
 import { fillForests, fillMeadows } from './doga';
 import { resample } from './geometry';
@@ -17,7 +18,7 @@ import {
 
 export {
   isUnlocked, canPlace, placeBuilding, demolish, upgradeCost, upgradeStone, canUpgrade, upgradeBuilding, effectRadius,
-  buildingUpkeep, stockLimit, monumentStage, canAdvanceMonument, advanceMonument,
+  buildingUpkeep, stockLimit, monumentStage, canAdvanceMonument, advanceMonument, anitAsamalari, anitTamam,
 } from './placement';
 export { endDay, housesInRange } from './economy';
 export {
@@ -37,7 +38,8 @@ export {
 export { ayar, kartCek, kartSec, kartBul, bekleyenSecim, secimGunu, toplamSecim, suregenEtkiler, mevsimEtkileri } from './cards';
 export { senlikDurumu, senlikBaslat, senlikBedeli, type SenlikDurumu } from './senlik';
 export { serialize, deserialize } from './save';
-export { GOALS, goalProgress, goalReward, KASABA_TAMAM_HEDEFI, ZENGIN_KASABA } from './goals';
+export { GOALS, goalProgress, goalReward, KASABA_TAMAM_HEDEFI, EFSANE_HEDEFI, ZENGIN_KASABA } from './goals';
+export { kasabaUnvani, UNVAN_SAYISI } from './gunluk';
 export { YIL_GUN, yilNo, yilSonuMu } from './gunluk';
 export {
   anlikGoruntu, geriAl, geriAlEkle, geriAlinabilir, geriAlTemizle, geriAlYigini, type GeriAlTur, type GeriAlYigini,
@@ -158,7 +160,7 @@ export function getBuildingInfo(s: GameState, id: number): BuildingInfo | null {
   }
   if (BUILDINGS[b.type].anit) {
     const m = nextMonumentCost(b);
-    info.anit = { asama: monumentStage(b), toplam: BALANCE.anit.asamalar.length, sonraki: m ? { para: m.para, mal: { ...m.mal } } : null };
+    info.anit = { asama: monumentStage(b), toplam: anitAsamalari(b.type).length, sonraki: m ? { para: m.para, mal: { ...m.mal } } : null };
   }
   if (b.type === 'oduncu') info.agacSayisi = treesInRange(s, b);
   return info;

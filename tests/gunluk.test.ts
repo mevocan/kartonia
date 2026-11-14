@@ -74,7 +74,7 @@ describe('kasaba günlüğü', () => {
     const y = deserialize(serialize(s));
     expect(gorunen(y).map((k) => k.tur)).toEqual(['gunlukBasladi']);
     expect(y.gunluk!.filter((k) => k.gizli).map((k) => k.tur)).toEqual(
-      ['ilkEv', 'ilkYemek', 'ilkTuccar', 'ilkKis', 'nufus', 'nufus', 'evSeviye'],
+      ['ilkEv', 'ilkYemek', 'ilkTuccar', 'ilkKis', 'nufus', 'nufus', 'evSeviye', 'unvan', 'unvan'],
     );
     endDay(y);
     expect(gorunen(y).some((k) => k.tur === 'ilkEv' || k.tur === 'ilkYemek')).toBe(false);

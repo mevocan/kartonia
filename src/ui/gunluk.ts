@@ -1,11 +1,14 @@
 // Kasaba günlüğü (defter) ve yıl sonu gazetesi (Kartonia Postası). İkisi de ortada açılan kağıt pencerelerdir;
 // açıkken oyun durur (main yönetir). Gazete her yıl sonunda kendiliğinden açılır (oyuncu kapatabilir: localStorage).
-import type { Gazete, GameState, GunlukKaydi } from '../logic/types';
+import type { BuildingType, Gazete, GameState, GunlukKaydi } from '../logic/types';
 import { GOALS, kartBul, mevsim, yilNo } from '../logic/game';
 import { el, panelAc, panelKapat, tr } from './dom';
-import { evSeviyeAd, hedefMetni, kartMetni, kucuk, mevsimAd, t, type Anahtar } from './i18n';
+import { binaAd, evSeviyeAd, hedefMetni, kartMetni, kucuk, mevsimAd, t, type Anahtar } from './i18n';
 import { SENLIKLER } from '../data/senlikler';
 import type { Mevsim } from '../logic/season';
+
+/** Kasaba unvanının adı (0 Mezra … 4 Efsane kasaba). */
+export const unvanAd = (n: number): string => t(`unvan.${Math.max(0, Math.min(4, n))}` as Anahtar);
 
 /** Mevsim şenliğinin adı. */
 export const senlikAd = (m: Mevsim): string => t(`senlik.${m}.ad` as Anahtar);
@@ -49,6 +52,8 @@ export function gunlukMetni(k: GunlukKaydi): string {
     case 'gazete': return t('gunluk.gazete', { yil: Number(k.veri) });
     case 'gunlukBasladi': return t('gunluk.basladi');
     case 'festival': return t('gunluk.festival', { ad: senlikAd(String(k.veri) as Mevsim) });
+    case 'projeTamam': return t('gunluk.projeTamam', { ad: binaAd(String(k.veri) as BuildingType) });
+    case 'unvan': return t('gunluk.unvan', { ad: unvanAd(Number(k.veri)) });
   }
 }
 
@@ -67,6 +72,8 @@ function ikon(k: GunlukKaydi): string {
     case 'gazete': return '📰';
     case 'gunlukBasladi': return '📖';
     case 'festival': return SENLIKLER[k.veri as Mevsim]?.ikon ?? '🎪';
+    case 'projeTamam': return '🏛️';
+    case 'unvan': return '🏅';
   }
 }
 
@@ -93,7 +100,9 @@ export function createNewspaper(root: HTMLElement, onClose: () => void): Newspap
       const bas = el('div', 'manset-ust');
       bas.append(
         el('div', 'gazete-ad', t('gazete.ad')),
-        el('div', 'gazete-tarih', t('gazete.tarih', { yil: g.yil, gun: g.gun })),
+        el('div', 'gazete-tarih', g.unvan !== undefined
+          ? t('gazete.unvan', { unvan: unvanAd(g.unvan), yil: g.yil, gun: g.gun })
+          : t('gazete.tarih', { yil: g.yil, gun: g.gun })),
       );
       const manset = el('h2', 'manset', g.manset ? gunlukMetni(g.manset) : t('gazete.sakinYil'));
       const fark = g.nufusSon - g.nufusBasi;

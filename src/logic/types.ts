@@ -1,6 +1,6 @@
 // Kağıt Kasaba — ortak tipler ve mantık API sözleşmesi.
 // Bu dosya mantık, çizim ve arayüz arasındaki sözleşmedir. Değiştirmeden önce bütün katmanları düşün.
-import type { AyarAnahtari } from '../data/cards';
+import type { AyarAnahtari, KartEtkisi } from '../data/cards';
 import type { Mevsim } from './season';
 
 /** Süreli etki: ayar anahtarına `islem` ile `deger` uygular, bitisGun dahil. */
@@ -35,7 +35,16 @@ export type BuildingType =
   | 'cicek'
   | 'park'
   | 'hamam'
-  | 'tiyatro';
+  | 'tiyatro'
+  // Süsler (yol istemez, mutlulukları bir eve en fazla BALANCE.susMutlulukSinir sayılır)
+  | 'bank'
+  | 'lamba'
+  | 'cit'
+  | 'ciceklik'
+  | 'heykel'
+  // Büyük projeler (anıt; Saat Kulesi bitince açılır)
+  | 'kervansaray'
+  | 'botanik';
 
 /** 'yemek' ortak yemek stoğudur: fırın, balıkçı (ve ileride başka yemek binaları) farklı miktarlarda üretir. */
 export type Good = 'bugday' | 'un' | 'yemek' | 'odun' | 'tas' | 'mobilya' | 'yun' | 'kumas' | 'bal';
@@ -74,8 +83,18 @@ export interface BuildingDef {
   depo?: number;
   /** Hizmet binası: yerinde yükseltilir, etki alanı ve gideri büyür (BALANCE.yukseltme). */
   yukseltilebilir?: boolean;
-  /** Anıt (Saat Kulesi): iskeleyle kurulur, BALANCE.anit.asamalar ile tamamlanır. */
+  /** Anıt (Saat Kulesi, büyük projeler): iskeleyle kurulur, aşamalarla tamamlanır (anitAsamalar ya da BALANCE.anit.asamalar). */
   anit?: boolean;
+  /** Anıtın aşamaları (yoksa BALANCE.anit.asamalar). */
+  anitAsamalar?: { para: number; mal: Partial<Record<Good, number>> }[];
+  /** Anıt tamamlanınca kalıcı ayar etkileri (ayar() okur). */
+  anitEtkileri?: KartEtkisi[];
+  /** Bu anıt tamamlanmadan açılmaz (nüfus eşiğine ek olarak). */
+  acilmaAnit?: BuildingType;
+  /** Kasabada yalnızca bir tane olabilir. */
+  tek?: boolean;
+  /** Süs: yol istemez, patikası yoktur; mutluluğu bir eve en fazla BALANCE.susMutlulukSinir sayılır. */
+  sus?: boolean;
   /** Kışın üretmez (Tarla). */
   kisinUretmez?: boolean;
   /** Komşuluk bonusları (logic/adjacency.ts): yerine göre üretim ya da mutluluk artışı. */
@@ -240,7 +259,7 @@ export interface GameState {
 
 export type GunlukTur =
   | 'ilkEv' | 'ilkYemek' | 'ilkTuccar' | 'ilkKis' | 'nufus' | 'evSeviye' | 'kule' | 'kuleTamam' | 'kart' | 'senlik'
-  | 'hedef' | 'gazete' | 'gunlukBasladi' | 'festival';
+  | 'hedef' | 'gazete' | 'gunlukBasladi' | 'festival' | 'projeTamam' | 'unvan';
 
 export interface GunlukKaydi {
   gun: number;
@@ -266,6 +285,8 @@ export interface Gazete {
   enMutluEv: { id: number; seviye: number; mutluluk: number } | null;
   /** Gazete çıktığında sıradaki hedefin indeksi (ipucu için). */
   hedef: number;
+  /** Kasabanın o günkü unvanı (eski gazetelerde yok). */
+  unvan?: number;
 }
 
 export type PlaceFailReason =
@@ -282,6 +303,9 @@ export type PlaceFailReason =
   | 'tas'          // yükseltmeye / anıta taş yetmiyor
   | 'odun'         // anıta odun yetmiyor
   | 'mobilya'      // anıta mobilya yetmiyor
+  | 'kumas'        // anıta kumaş yetmiyor
+  | 'bal'          // anıta bal yetmiyor
+  | 'tek'          // bu binadan kasabada zaten var
   | 'para'
   | 'kilitli'
   | 'bitti';

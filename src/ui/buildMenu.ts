@@ -87,8 +87,11 @@ const KATEGORILER: Record<Kategori, { ad: string; ikon: string; renk: string; og
     ad: t('menu.uretim'), ikon: '🌾', renk: '#f2d272',
     ogeler: ['tarla', 'degirmen', 'firin', 'oduncu', 'balikci', 'tasOcagi', 'marangoz', 'agil', 'dokumaci', 'arilik', 'ambar'],
   },
-  hizmet: { ad: t('menu.hizmet'), ikon: '🏛️', renk: '#a9d5e8', ogeler: ['cesme', 'pazar', 'okul', 'hastane', 'park', 'hamam', 'tiyatro', 'saatKulesi'] },
-  doga: { ad: t('menu.doga'), ikon: '🌳', renk: '#b9d99a', ogeler: ['agac', 'cicek'] },
+  hizmet: {
+    ad: t('menu.hizmet'), ikon: '🏛️', renk: '#a9d5e8',
+    ogeler: ['cesme', 'pazar', 'okul', 'hastane', 'park', 'hamam', 'tiyatro', 'saatKulesi', 'kervansaray', 'botanik'],
+  },
+  doga: { ad: t('menu.doga'), ikon: '🌳', renk: '#b9d99a', ogeler: ['agac', 'cicek', 'cit', 'bank', 'ciceklik', 'lamba', 'heykel'] },
 };
 const YIKIM_RENK = '#f0a399';
 /** Kilitli kartın altındaki "🔒 35 nüfus". */
@@ -220,7 +223,9 @@ export function createBuildMenu(
         }
         if (!acik) yeniKilitli.add(t);
         k.b.classList.toggle('kilitli', !acik);
-        k.kilit.textContent = acik ? '' : `🔒 ${esik} ${NUFUS_KISA}`;
+        // Nüfus yetiyor ama bir anıt bekleniyorsa (büyük projeler: Saat Kulesi) onu yaz.
+        const anit = !isRoadTool(t) ? BUILDINGS[t].acilmaAnit : undefined;
+        k.kilit.textContent = acik ? '' : anit && s.nufus >= esik ? `🔒 ${binaAd(anit)}` : `🔒 ${esik} ${NUFUS_KISA}`;
         k.maliyet.style.display = acik ? '' : 'none';
         k.maliyet.classList.toggle('yetmez', s.para < fiyat);
       }
